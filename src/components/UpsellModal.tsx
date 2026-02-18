@@ -64,18 +64,26 @@ const UpsellModal = ({ currentSlug, onClose }: UpsellModalProps) => {
 
       {/* Modal */}
       <div className="relative bg-background rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-5 h-5 text-secondary" />
-              <h2 className="text-lg font-bold text-foreground">Complete Your Learning Path</h2>
+        {/* Savings Banner */}
+        <div className="bg-secondary text-secondary-foreground px-6 py-3 flex items-center justify-between rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <div className="bg-secondary-foreground/20 rounded-full p-1.5">
+              <Sparkles className="w-4 h-4" />
             </div>
-            <p className="text-sm text-muted-foreground">Students who enroll in multiple courses save 10%</p>
+            <div>
+              <p className="text-sm font-bold">Save 10% — Enroll in 2+ Courses</p>
+              <p className="text-xs opacity-80">Most students add a complementary course to fast-track their career</p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="opacity-70 hover:opacity-100">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Header */}
+        <div className="px-6 pt-5 pb-4 border-b border-border">
+          <h2 className="text-lg font-bold text-foreground">Complete Your Learning Path</h2>
+          <p className="text-sm text-muted-foreground mt-1">Add a recommended course below and your <strong className="text-primary">10% discount</strong> applies automatically.</p>
         </div>
 
         {/* Current Course */}
@@ -101,33 +109,50 @@ const UpsellModal = ({ currentSlug, onClose }: UpsellModalProps) => {
 
         {/* Recommendations */}
         <div className="p-6 border-b border-border">
-          <p className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-wider">Recommended For You</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Recommended For You</p>
+            <span className="text-xs bg-secondary/15 text-secondary-foreground px-2 py-0.5 rounded font-medium">
+              + Add to unlock 10% off
+            </span>
+          </div>
           <div className="space-y-3">
             {recommendations.map((course) => {
               const inCart = isInCart(course.slug);
+              const coursePrice = parseFloat(course.price.replace(/[^0-9.]/g, ""));
+              const savedAmount = Math.round(coursePrice * 0.1);
               return (
                 <div
                   key={course.slug}
-                  className={`flex items-center justify-between rounded p-4 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded p-4 cursor-pointer transition-all ${
                     inCart
-                      ? "bg-secondary/10 border border-secondary/30"
-                      : "bg-card border border-border hover:border-muted-foreground/30"
+                      ? "bg-secondary/10 border-2 border-secondary/40 shadow-sm"
+                      : "bg-card border border-border hover:border-secondary/30 hover:shadow-sm"
                   }`}
                   onClick={() => toggleCourse(course)}
                 >
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-foreground">{course.title}</h3>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex flex-wrap gap-2 mt-1">
                       <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded">{course.category}</span>
                       <span className="text-xs text-muted-foreground">{course.level}</span>
                       <span className="text-xs text-muted-foreground">•</span>
                       <span className="text-xs text-muted-foreground">{course.duration}</span>
                     </div>
+                    {!inCart && (
+                      <p className="text-xs text-secondary-foreground mt-1.5 font-medium">
+                        Add & save £{savedAmount} on your entire order
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-bold text-foreground text-sm">{course.price}</span>
+                  <div className="flex items-center gap-3 shrink-0 ml-3">
+                    <div className="text-right">
+                      <span className="font-bold text-foreground text-sm">{course.price}</span>
+                      {inCart && (
+                        <p className="text-xs text-secondary-foreground font-medium">Saving applied ✓</p>
+                      )}
+                    </div>
                     <div
-                      className={`w-6 h-6 rounded flex items-center justify-center ${
+                      className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${
                         inCart ? "bg-secondary" : "border-2 border-border"
                       }`}
                     >
