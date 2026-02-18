@@ -84,7 +84,7 @@ const Checkout = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Form */}
-          <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
+          <form id="checkout-form" onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             {/* Personal Details */}
             <div className="bg-card border border-border rounded p-6">
               <h2 className="text-lg font-bold text-foreground mb-4">Personal Details</h2>
@@ -156,35 +156,6 @@ const Checkout = () => {
                 </div>
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={isProcessing}
-              className="w-full bg-secondary text-secondary-foreground py-3 rounded font-bold text-sm hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin" />
-                  Processing Payment...
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4" />
-                  Complete Enrollment — £{finalTotal.toLocaleString()}
-                </>
-              )}
-            </button>
-
-            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
-                SSL Encrypted
-              </div>
-              <span>•</span>
-              <span>100% Secure Payment</span>
-              <span>•</span>
-              <span>14-Day Refund Policy</span>
-            </div>
           </form>
 
           {/* Order Summary Sidebar */}
@@ -236,19 +207,46 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <div className="flex justify-between text-base font-bold">
+              <div className="flex justify-between text-base font-bold mb-4">
                 <span className="text-foreground">Total</span>
                 <span className="text-primary">£{finalTotal.toLocaleString()}</span>
               </div>
 
               {items.length >= 2 && (
-                <div className="mt-4 bg-secondary/10 border border-secondary/20 rounded p-3 text-center">
+                <div className="mb-4 bg-secondary/10 border border-secondary/20 rounded p-3 text-center">
                   <p className="text-xs font-semibold text-secondary-foreground">
                     🎉 You're saving £{discountAmount.toLocaleString()} with bundle discount!
                   </p>
                 </div>
               )}
 
+              <button
+                type="submit"
+                form="checkout-form"
+                disabled={isProcessing}
+                className="w-full bg-secondary text-secondary-foreground py-3 rounded font-bold text-sm hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin" />
+                    Processing Payment...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    Complete Enrollment — £{finalTotal.toLocaleString()}
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground mt-3">
+                <div className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  SSL Encrypted
+                </div>
+                <span>•</span>
+                <span>Secure Payment</span>
+              </div>
             </div>
           </div>
         </div>
