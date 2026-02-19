@@ -26,6 +26,7 @@ interface QualData {
 const Qualifications = () => {
   const [data, setData] = useState<QualData | null>(null);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [activeLevel, setActiveLevel] = useState("All");
 
   useEffect(() => {
     fetchContent<QualData>("qualifications").then(setData);
@@ -33,10 +34,14 @@ const Qualifications = () => {
 
   if (!data) return <LoadingSpinner />;
 
-  const filtered =
-    activeCategory === "All"
-      ? data.qualifications
-      : data.qualifications.filter((q) => q.category === activeCategory);
+  // Derive unique levels from data
+  const levels = ["All", ...Array.from(new Set(data.qualifications.map((q) => q.level))).sort()];
+
+  const filtered = data.qualifications.filter((q) => {
+    const catMatch = activeCategory === "All" || q.category === activeCategory;
+    const lvlMatch = activeLevel === "All" || q.level === activeLevel;
+    return catMatch && lvlMatch;
+  });
 
   return (
     <div>
@@ -52,21 +57,31 @@ const Qualifications = () => {
       </div>
 
       <Section title="">
-        {/* Category Filters */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          {data.categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-5 py-2 text-sm font-medium rounded ${
-                activeCategory === cat
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-border"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Dropdown Filters */}
+        <div className="flex flex-wrap justify-end gap-3 mb-8">
+          <select
+            value={activeCategory}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            className="bg-card border border-border text-foreground text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+          >
+            {data.categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat === "All" ? "All Categories" : cat}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={activeLevel}
+            onChange={(e) => setActiveLevel(e.target.value)}
+            className="bg-card border border-border text-foreground text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+          >
+            {levels.map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl === "All" ? "All Levels" : lvl}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
