@@ -35,7 +35,7 @@ const App = () => (
               <>
                 <TopBar />
                 <Header />
-                <main className="min-h-screen" style={{ marginTop: 104 }}>
+                <main className="min-h-screen" style={{ marginTop: 108 }}>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/about" element={<About />} />

@@ -51,7 +51,7 @@ const simpleNavItems: SimpleNavItem[] = [
   { label: "Contact", href: "/contact" },
 ];
 
-const TOP_BAR_HEIGHT = 32;
+const TOP_BAR_HEIGHT = 36;
 const HEADER_HEIGHT_FULL = 72;
 const HEADER_HEIGHT_SHRUNK = 52;
 
