@@ -1,4 +1,7 @@
+import { Link } from "react-router-dom";
+
 interface QualificationCardProps {
+  id: string;
   title: string;
   category: string;
   level: string;
@@ -8,6 +11,7 @@ interface QualificationCardProps {
 }
 
 const QualificationCard = ({
+  id,
   title,
   category,
   level,
@@ -23,18 +27,20 @@ const QualificationCard = ({
         </span>
         <span className="text-xs text-muted-foreground">{level}</span>
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2 leading-snug">{title}</h3>
+      <Link to={`/qualifications/${id}`}>
+        <h3 className="text-lg font-semibold text-foreground mb-2 leading-snug hover:text-primary transition-colors">{title}</h3>
+      </Link>
       <p className="text-sm text-muted-foreground mb-4 flex-1">{description}</p>
       <div className="flex items-center justify-between border-t border-border pt-4">
         <div className="text-sm text-muted-foreground">{duration}</div>
         <div className="text-lg font-bold text-primary">{price}</div>
       </div>
-      <a
-        href="/contact"
+      <Link
+        to={`/qualifications/${id}`}
         className="mt-4 block text-center bg-primary text-primary-foreground py-2 rounded text-sm font-semibold hover:opacity-90"
       >
-        Enquire Now
-      </a>
+        View Details
+      </Link>
     </div>
   );
 };
