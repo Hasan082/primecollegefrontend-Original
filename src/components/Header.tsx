@@ -17,24 +17,48 @@ const categoryNavItems: CategoryNav[] = [
   {
     label: "Business",
     qualifications: [
-      { label: "OTHM Level 4 Diploma in Business Management", href: "/qualifications/othm-level-4-diploma-in-business-management" },
-      { label: "OTHM Level 5 Extended Diploma in Business Management", href: "/qualifications/othm-level-5-extended-diploma-in-business-management" },
-      { label: "OTHM Level 6 Diploma in Business Management", href: "/qualifications/othm-level-6-diploma-in-business-management" },
+      {
+        label: "OTHM Level 4 Diploma in Business Management",
+        href: "/qualifications/othm-level-4-diploma-in-business-management",
+      },
+      {
+        label: "OTHM Level 5 Extended Diploma in Business Management",
+        href: "/qualifications/othm-level-5-extended-diploma-in-business-management",
+      },
+      {
+        label: "OTHM Level 6 Diploma in Business Management",
+        href: "/qualifications/othm-level-6-diploma-in-business-management",
+      },
     ],
   },
   {
     label: "Management",
     qualifications: [
-      { label: "OTHM Level 7 Diploma in Strategic Management and Leadership", href: "/qualifications/othm-level-7-diploma-in-strategic-management-and-leadership" },
-      { label: "QUALIFI Level 7 Diploma in Strategic Management and Leadership", href: "/qualifications/qualifi-level-7-diploma-in-strategic-management-and-leadership" },
+      {
+        label: "OTHM Level 7 Diploma in Strategic Management and Leadership",
+        href: "/qualifications/othm-level-7-diploma-in-strategic-management-and-leadership",
+      },
+      {
+        label: "QUALIFI Level 7 Diploma in Strategic Management and Leadership",
+        href: "/qualifications/qualifi-level-7-diploma-in-strategic-management-and-leadership",
+      },
     ],
   },
   {
     label: "Care",
     qualifications: [
-      { label: "QUALIFI Level 3 Diploma in Health and Social Care", href: "/qualifications/qualifi-level-3-diploma-in-health-and-social-care" },
-      { label: "OTHM Level 5 Diploma in Health and Social Care Management", href: "/qualifications/othm-level-5-diploma-in-health-and-social-care-management" },
-      { label: "OTHM Level 7 Diploma in Healthcare Management", href: "/qualifications/othm-level-7-diploma-in-healthcare-management" },
+      {
+        label: "QUALIFI Level 3 Diploma in Health and Social Care",
+        href: "/qualifications/qualifi-level-3-diploma-in-health-and-social-care",
+      },
+      {
+        label: "OTHM Level 5 Diploma in Health and Social Care Management",
+        href: "/qualifications/othm-level-5-diploma-in-health-and-social-care-management",
+      },
+      {
+        label: "OTHM Level 7 Diploma in Healthcare Management",
+        href: "/qualifications/othm-level-7-diploma-in-healthcare-management",
+      },
     ],
   },
 ];
@@ -70,12 +94,20 @@ const Header = () => {
   const headerHeight = scrolled ? HEADER_HEIGHT_SHRUNK : HEADER_HEIGHT_FULL;
 
   return (
-    <div className="fixed left-0 right-0 z-50 transition-all duration-300" style={{ top: TOP_BAR_HEIGHT }} onMouseLeave={() => setOpenMega(null)}>
+    <div
+      className="fixed left-0 right-0 z-50 transition-all duration-300"
+      style={{ top: TOP_BAR_HEIGHT }}
+      onMouseLeave={() => setOpenMega(null)}
+    >
       <header className="bg-primary transition-all duration-300" style={{ height: headerHeight }}>
         <div className="container mx-auto flex items-center justify-between h-full px-4 py-2">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Prime College" className={`transition-all duration-300 w-auto ${scrolled ? "h-10" : "h-16"}`} />
+            <img
+              src={logo}
+              alt="Prime College"
+              className={`transition-all duration-300 py-2 w-auto ${scrolled ? "h-10" : "h-16"}`}
+            />
           </Link>
 
           {/* Desktop Nav */}
@@ -122,10 +154,7 @@ const Header = () => {
 
           {/* Mobile Cart + Toggle */}
           <div className="lg:hidden flex items-center gap-3">
-            <button
-              className="text-primary-foreground"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
+            <button className="text-primary-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -179,15 +208,11 @@ const Header = () => {
             <div key={cat.label}>
               <button
                 className="flex items-center justify-between w-full text-primary-foreground py-2 text-sm font-medium"
-                onClick={() =>
-                  setMobileExpanded(mobileExpanded === cat.label ? null : cat.label)
-                }
+                onClick={() => setMobileExpanded(mobileExpanded === cat.label ? null : cat.label)}
               >
                 {cat.label}
                 <ChevronDown
-                  className={`w-3 h-3 transition-transform ${
-                    mobileExpanded === cat.label ? "rotate-180" : ""
-                  }`}
+                  className={`w-3 h-3 transition-transform ${mobileExpanded === cat.label ? "rotate-180" : ""}`}
                 />
               </button>
               {mobileExpanded === cat.label && (
