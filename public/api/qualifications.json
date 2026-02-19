@@ -4,7 +4,7 @@
   "categories": ["All", "Business", "Management", "Care"],
   "qualifications": [
     {
-      "id": "1",
+      "id": "othm-level-7-diploma-in-strategic-management-and-leadership",
       "title": "OTHM Level 7 Diploma in Strategic Management and Leadership",
       "category": "Management",
       "level": "Level 7",
@@ -13,7 +13,7 @@
       "description": "This qualification is designed for managers and leaders who have the authority and inspiration to translate organisational strategy into effective operational performance."
     },
     {
-      "id": "2",
+      "id": "othm-level-6-diploma-in-business-management",
       "title": "OTHM Level 6 Diploma in Business Management",
       "category": "Business",
       "level": "Level 6",
@@ -22,7 +22,7 @@
       "description": "Develop advanced business management skills and prepare for senior management roles or further study at postgraduate level."
     },
     {
-      "id": "3",
+      "id": "othm-level-5-extended-diploma-in-business-management",
       "title": "OTHM Level 5 Extended Diploma in Business Management",
       "category": "Business",
       "level": "Level 5",
@@ -31,7 +31,7 @@
       "description": "Build a strong foundation in business management principles and practices for mid-level management careers."
     },
     {
-      "id": "4",
+      "id": "othm-level-5-diploma-in-health-and-social-care-management",
       "title": "OTHM Level 5 Diploma in Health and Social Care Management",
       "category": "Care",
       "level": "Level 5",
@@ -40,7 +40,7 @@
       "description": "Gain specialist knowledge in health and social care management to lead teams and services effectively."
     },
     {
-      "id": "5",
+      "id": "qualifi-level-3-diploma-in-health-and-social-care",
       "title": "QUALIFI Level 3 Diploma in Health and Social Care",
       "category": "Care",
       "level": "Level 3",
@@ -49,7 +49,7 @@
       "description": "An entry-level qualification providing foundational knowledge in health and social care practice."
     },
     {
-      "id": "6",
+      "id": "othm-level-4-diploma-in-business-management",
       "title": "OTHM Level 4 Diploma in Business Management",
       "category": "Business",
       "level": "Level 4",
@@ -58,7 +58,7 @@
       "description": "Start your journey in business management with this comprehensive Level 4 qualification."
     },
     {
-      "id": "7",
+      "id": "qualifi-level-7-diploma-in-strategic-management-and-leadership",
       "title": "QUALIFI Level 7 Diploma in Strategic Management and Leadership",
       "category": "Management",
       "level": "Level 7",
@@ -67,7 +67,7 @@
       "description": "An advanced qualification for senior professionals looking to enhance their strategic leadership capabilities."
     },
     {
-      "id": "8",
+      "id": "othm-level-7-diploma-in-healthcare-management",
       "title": "OTHM Level 7 Diploma in Healthcare Management",
       "category": "Care",
       "level": "Level 7",
