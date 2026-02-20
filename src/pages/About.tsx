@@ -98,17 +98,16 @@ const About = () => {
 
       {/* Mission Section - image strip + text overlay */}
       <section className="relative">
-        <div className="h-[300px] overflow-hidden">
+        <div className="h-[400px] overflow-hidden">
           <img src={aboutMission} alt="Our Mission" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-foreground/65" />
         </div>
-        <div className="container mx-auto px-4">
-          <div className="bg-card border border-border rounded-xl p-8 max-w-xl mx-auto -mt-16 relative z-10 text-center shadow-lg">
+        <div className="absolute inset-0 flex items-center justify-center px-4">
+          <div className="bg-card border border-border rounded-xl p-8 max-w-xl text-center shadow-lg">
             <h2 className="text-2xl font-bold text-foreground mb-4">{data.mission.title}</h2>
             <p className="text-muted-foreground leading-relaxed">{data.mission.content}</p>
           </div>
         </div>
-        <div className="h-16" />
       </section>
 
       {/* Smart Approach */}
