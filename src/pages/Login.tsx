@@ -1,17 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Eye, EyeOff, BookOpen, Users, Award, GraduationCap } from "lucide-react";
+import { Eye, EyeOff, Mail, CheckCircle2, Shield, FileCheck, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/prime-logo-white-notext.png";
-
-const features = [
-  { icon: BookOpen, title: "Interactive Learning", description: "Access engaging course materials anytime, anywhere" },
-  { icon: Users, title: "Collaborative Environment", description: "Connect with peers and tutors seamlessly" },
-  { icon: Award, title: "Accredited Qualifications", description: "Earn recognised professional qualifications" },
-  { icon: GraduationCap, title: "Expert Tutors", description: "Learn from experienced industry professionals" },
-];
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -36,29 +29,70 @@ const Login = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col items-center justify-center p-12 relative overflow-hidden">
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 25px 25px, white 2px, transparent 0)", backgroundSize: "50px 50px" }} />
-        </div>
+      <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-between p-12 relative overflow-hidden">
+        {/* Background image overlay */}
+        <div className="absolute inset-0 bg-primary/90" />
 
-        <div className="relative z-10 text-center max-w-md">
-          <div className="mb-8">
-            <div className="w-24 h-24 mx-auto mb-6 bg-primary-foreground/10 rounded-full flex items-center justify-center border-2 border-primary-foreground/20">
-              <img src={logo} alt="Prime College" className="w-14 h-14 object-contain" />
+        <div className="relative z-10">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-16">
+            <div className="w-16 h-16 bg-primary-foreground/10 rounded-full flex items-center justify-center border-2 border-primary-foreground/20">
+              <img src={logo} alt="Prime College" className="w-10 h-10 object-contain" />
             </div>
-            <h1 className="text-3xl font-bold text-primary-foreground mb-2">Prime College</h1>
-            <p className="text-primary-foreground/70 text-sm">Empowering education through innovative learning management</p>
+            <div>
+              <h2 className="text-lg font-bold text-primary-foreground">The Prime College</h2>
+              <p className="text-primary-foreground/60 text-sm">Learning Platform</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-10">
-            {features.map((feature) => (
-              <div key={feature.title} className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-5 text-left border border-primary-foreground/10">
-                <feature.icon className="w-8 h-8 text-secondary mb-3" strokeWidth={1.5} />
-                <h3 className="font-semibold text-primary-foreground text-sm mb-1">{feature.title}</h3>
-                <p className="text-primary-foreground/60 text-xs leading-relaxed">{feature.description}</p>
+          {/* Main heading */}
+          <h1 className="text-4xl xl:text-5xl font-bold text-primary-foreground leading-tight mb-4">
+            Professional<br />Qualification<br />Assessment System
+          </h1>
+          <p className="text-primary-foreground/70 text-base max-w-lg mb-12">
+            Secure, regulated, and compliant qualification management for learners, trainers, and administrators.
+          </p>
+
+          {/* Learner Portal card */}
+          <div className="border border-primary-foreground/20 rounded-xl p-6 bg-primary-foreground/5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                <Mail className="w-5 h-5 text-secondary-foreground" />
               </div>
-            ))}
+              <div>
+                <h3 className="font-semibold text-primary-foreground text-sm">Learner Portal</h3>
+                <p className="text-primary-foreground/60 text-xs">Access your qualifications, submit evidence, and track your progress</p>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              {["View enrolled qualifications", "Submit evidence for assessment", "Track unit completion"].map((item) => (
+                <div key={item} className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0" />
+                  <span className="text-primary-foreground/80 text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Regulatory compliance footer */}
+        <div className="relative z-10 mt-12">
+          <div className="border-t border-primary-foreground/15 pt-5">
+            <p className="text-primary-foreground/40 text-xs uppercase tracking-widest mb-3">Regulatory Compliance</p>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-secondary" />
+                <span className="text-primary-foreground/70 text-sm">Ofqual Aligned</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-secondary" />
+                <span className="text-primary-foreground/70 text-sm">Ofsted Ready</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-secondary" />
+                <span className="text-primary-foreground/70 text-sm">Quality Assured</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
