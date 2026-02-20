@@ -149,7 +149,7 @@ const Index = () => {
                     to="/qualifications"
                     className="bg-card border border-border rounded-xl overflow-hidden group"
                   >
-                    <div className="aspect-[4/3] overflow-hidden m-2">
+                    <div className="aspect-[4/3] overflow-hidden rounded-t-xl m-2">
                       <img
                         src={heroImageMap[item.image || "classroom"] || heroClassroom}
                         alt={item.title}
