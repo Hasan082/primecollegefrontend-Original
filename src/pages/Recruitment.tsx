@@ -1,9 +1,13 @@
 import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { fetchContent } from "@/lib/api";
 import Section from "@/components/Section";
 import CTASection from "@/components/CTASection";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import recruitmentBanner from "@/assets/recruitment-banner.jpg";
+import heroBusinessImg from "@/assets/hero-business.jpg";
+import heroCareImg from "@/assets/hero-care.jpg";
+import heroLeadershipImg from "@/assets/hero-leadership.jpg";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -161,6 +165,57 @@ const Recruitment = () => {
           ))}
         </div>
       </Section>
+
+      {/* Our Courses Section */}
+      <section className="bg-accent/30 py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">Our Courses</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { img: heroBusinessImg, title: "Business & Management", href: "/qualifications?category=Business" },
+              { img: heroCareImg, title: "Health & Social Care", href: "/qualifications?category=Care" },
+              { img: heroLeadershipImg, title: "Leadership & Strategy", href: "/qualifications?category=Management" },
+            ].map((course) => (
+              <Link
+                key={course.title}
+                to={course.href}
+                className="group block overflow-hidden rounded-lg border border-border bg-card shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="overflow-hidden">
+                  <img
+                    src={course.img}
+                    alt={course.title}
+                    className="w-full h-[220px] object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-foreground">{course.title}</h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* More Than One Course */}
+      <section className="py-16 md:py-20">
+        <div className="container mx-auto px-4 text-center max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+            More Than One Course?
+          </h2>
+          <p className="text-muted-foreground leading-relaxed mb-8">
+            If you are looking to upskill your team in management and leadership, we will offer you
+            comprehensive and flexible solutions. We are excited to discuss how we can support your
+            training objectives by providing customised course packages.
+          </p>
+          <Link
+            to="/contact"
+            className="inline-block bg-secondary text-secondary-foreground px-8 py-3 rounded font-semibold text-sm hover:opacity-90 transition-opacity"
+          >
+            Contact Us
+          </Link>
+        </div>
+      </section>
 
       {/* Job Application Dialog */}
       <Dialog open={!!selectedJob} onOpenChange={(open) => { if (!open) setSelectedJob(null); }}>
