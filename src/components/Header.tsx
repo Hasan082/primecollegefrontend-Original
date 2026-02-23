@@ -197,19 +197,9 @@ const Header = () => {
               .filter((cat) => cat.label === openMega)
               .map((cat) => (
                 <div key={cat.label}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                      {cat.label} Qualifications
-                    </h4>
-                    <Link
-                      to={`/qualifications?category=${getCategorySlug(cat.label)}`}
-                      className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-                      onClick={() => setOpenMega(null)}
-                    >
-                      View All {cat.label} Courses
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </div>
+                  <h4 className="text-xs font-bold uppercase text-muted-foreground mb-4 tracking-wider">
+                    {cat.label} Qualifications
+                  </h4>
                   <div className="grid grid-cols-4 gap-4">
                     {cat.qualifications.map((q) => (
                       <Link
@@ -265,14 +255,6 @@ const Header = () => {
                       {q.label}
                     </Link>
                   ))}
-                  <Link
-                    to={`/qualifications?category=${getCategorySlug(cat.label)}`}
-                    className="block text-secondary font-semibold py-1.5 text-sm mt-1 flex items-center gap-1"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    View All {cat.label} Courses
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
                 </div>
               )}
             </div>
