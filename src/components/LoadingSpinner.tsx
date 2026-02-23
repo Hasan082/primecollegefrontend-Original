@@ -13,7 +13,7 @@ const LoadingSpinner = () => {
           <defs>
             <path
               id="circlePath"
-              d="M 60, 60 m -48, 0 a 48,48 0 1,1 96,0 a 48,48 0 1,1 -96,0"
+              d="M 60, 60 m -44, 0 a 44,44 0 1,1 88,0 a 44,44 0 1,1 -88,0"
             />
           </defs>
           <text
@@ -31,8 +31,8 @@ const LoadingSpinner = () => {
 
         {/* Center circle with logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-[52px] h-[52px] rounded-full border border-secondary/40 bg-primary flex items-center justify-center">
-            <img src={logo} alt="Prime College UK" className="w-10 h-10 object-contain" loading="eager" fetchPriority="high" />
+          <div className="w-[52px] h-[52px] rounded-full border border-secondary/40 bg-primary flex items-center justify-center p-1">
+            <img src={logo} alt="Prime College UK" className="w-full h-full object-contain" loading="eager" fetchPriority="high" />
           </div>
         </div>
       </div>
