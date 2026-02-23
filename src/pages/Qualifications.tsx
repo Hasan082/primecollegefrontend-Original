@@ -162,7 +162,7 @@ const Qualifications = () => {
       </Section>
 
       {/* More Than One Course Section */}
-      <section className="bg-accent/30 py-16 px-4">
+      <section className="bg-primary/5 py-16 px-4">
         <div className="container mx-auto max-w-3xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
             More Than One Course?
