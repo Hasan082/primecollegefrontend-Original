@@ -1,23 +1,25 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export type UserRole = "learner" | "trainer" | "admin";
+
 interface DemoUser {
   name: string;
   email: string;
-  role: "learner";
+  role: UserRole;
 }
 
 interface AuthContextType {
   user: DemoUser | null;
-  login: () => void;
+  login: (role?: UserRole) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const DEMO_USER: DemoUser = {
-  name: "John Smith",
-  email: "john.smith@example.com",
-  role: "learner",
+const DEMO_USERS: Record<UserRole, DemoUser> = {
+  learner: { name: "John Smith", email: "john.smith@example.com", role: "learner" },
+  trainer: { name: "Sarah Jones", email: "trainer@primecollege.edu", role: "trainer" },
+  admin: { name: "Admin User", email: "admin@primecollege.edu", role: "admin" },
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -26,9 +28,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const login = () => {
-    sessionStorage.setItem("demo_user", JSON.stringify(DEMO_USER));
-    setUser(DEMO_USER);
+  const login = (role: UserRole = "learner") => {
+    const u = DEMO_USERS[role];
+    sessionStorage.setItem("demo_user", JSON.stringify(u));
+    setUser(u);
   };
 
   const logout = () => {

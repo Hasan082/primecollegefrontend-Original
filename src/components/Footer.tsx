@@ -54,8 +54,11 @@ const Footer = () => {
             </div>
           </div>
         </div>
-        <div className="border-t border-primary-foreground/20 mt-8 pt-6 text-center text-sm text-primary-foreground/60">
-          © {new Date().getFullYear()} The Prime College. All rights reserved.
+        <div className="border-t border-primary-foreground/20 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-primary-foreground/60">
+          <span>© {new Date().getFullYear()} The Prime College. All rights reserved.</span>
+          <Link to="/login" className="text-primary-foreground/40 hover:text-primary-foreground/70 text-xs transition-colors">
+            Staff Portal
+          </Link>
         </div>
       </div>
     </footer>

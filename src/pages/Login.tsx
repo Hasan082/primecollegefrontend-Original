@@ -1,24 +1,60 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Eye, EyeOff, Mail, CheckCircle2, Shield, FileCheck, Award, ArrowLeft } from "lucide-react";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { Eye, EyeOff, Mail, CheckCircle2, Shield, FileCheck, Award, ArrowLeft, Lock, GraduationCap, Users, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/prime-logo-white-notext.png";
+
+const ROLE_CONFIG = {
+  learner: {
+    icon: GraduationCap,
+    label: "Learner",
+    description: "Access your qualifications, submit evidence, and track your progress",
+    features: ["View enrolled qualifications", "Submit evidence for assessment", "Track unit completion"],
+    cardTitle: "Learner Portal",
+    signInLabel: "Sign In to Learner Portal",
+    demoRedirect: "/learner/dashboard",
+    placeholder: "learner@example.com",
+  },
+  trainer: {
+    icon: Users,
+    label: "Trainer",
+    description: "Review submissions, provide feedback, and assess learner evidence",
+    features: ["Review pending submissions", "Provide detailed feedback", "Track learner progress"],
+    cardTitle: "Trainer / Assessor Portal",
+    signInLabel: "Sign In to Trainer Portal",
+    demoRedirect: "/trainer/dashboard",
+    placeholder: "trainer@primecollege.edu",
+  },
+  admin: {
+    icon: Settings,
+    label: "Admin",
+    description: "Manage qualifications, learners, trainers, and platform settings",
+    features: ["Manage qualifications & units", "Enrol learners & assign trainers", "Monitor progress & reporting"],
+    cardTitle: "Administration Portal",
+    signInLabel: "Sign In to Admin Portal",
+    demoRedirect: "/admin/dashboard",
+    placeholder: "admin@primecollege.edu",
+  },
+} as const;
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<UserRole>("learner");
   const { toast } = useToast();
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const config = ROLE_CONFIG[selectedRole];
+
   const handleDemoLogin = () => {
-    login();
-    navigate("/learner/dashboard");
+    login(selectedRole);
+    navigate(config.demoRedirect);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,11 +74,8 @@ const Login = () => {
     <div className="min-h-screen flex">
       {/* Left - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-between p-12 relative overflow-hidden">
-        {/* Background image overlay */}
         <div className="absolute inset-0 bg-primary/90" />
-
         <div className="relative z-10">
-          {/* Logo */}
           <div className="flex items-center gap-3 mb-16">
             <div className="w-20 h-20 rounded-full flex items-center justify-center border border-primary-foreground/30 p-0.5">
               <img src={logo} alt="Prime College" className="w-full h-full object-contain" />
@@ -53,27 +86,26 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Main heading */}
           <h1 className="text-4xl xl:text-5xl font-bold text-primary-foreground leading-tight mb-4">
             Professional<br />Qualification<br />Assessment System
           </h1>
           <p className="text-primary-foreground/70 text-base max-w-lg mb-12">
-            Secure, regulated, and compliant qualification management for learners.
+            Secure, regulated, and compliant qualification management for learners, trainers, and administrators.
           </p>
 
-          {/* Learner Portal card */}
-          <div className="border border-primary-foreground/20 rounded-xl p-6 bg-primary-foreground/5">
+          {/* Dynamic role card */}
+          <div className="border border-primary-foreground/20 rounded-xl p-6 bg-primary-foreground/5 transition-all">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-                <Mail className="w-5 h-5 text-secondary-foreground" />
+                <config.icon className="w-5 h-5 text-secondary-foreground" />
               </div>
               <div>
-                <h3 className="font-semibold text-primary-foreground text-sm">Learner Portal</h3>
-                <p className="text-primary-foreground/60 text-xs">Access your qualifications, submit evidence, and track your progress</p>
+                <h3 className="font-semibold text-primary-foreground text-sm">{config.cardTitle}</h3>
+                <p className="text-primary-foreground/60 text-xs">{config.description}</p>
               </div>
             </div>
             <div className="space-y-2.5">
-              {["View enrolled qualifications", "Submit evidence for assessment", "Track unit completion"].map((item) => (
+              {config.features.map((item) => (
                 <div key={item} className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0" />
                   <span className="text-primary-foreground/80 text-sm">{item}</span>
@@ -83,7 +115,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Regulatory compliance footer */}
         <div className="relative z-10 mt-12">
           <div className="border-t border-primary-foreground/15 pt-5">
             <p className="text-primary-foreground/40 text-xs uppercase tracking-widest mb-3">Regulatory Compliance</p>
@@ -119,18 +150,43 @@ const Login = () => {
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground">Welcome Back</h2>
-              <p className="text-muted-foreground text-sm mt-1">Sign in to access your learning dashboard</p>
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Lock className="w-5 h-5 text-foreground" />
+                <h2 className="text-2xl font-bold text-foreground">Secure Access</h2>
+              </div>
+              <p className="text-muted-foreground text-sm">Select your role and sign in to continue</p>
+            </div>
+
+            {/* Role Tabs */}
+            <div className="flex gap-1 bg-muted rounded-xl p-1 mb-6">
+              {(["learner", "trainer", "admin"] as UserRole[]).map((role) => {
+                const Icon = ROLE_CONFIG[role].icon;
+                const isActive = selectedRole === role;
+                return (
+                  <button
+                    key={role}
+                    onClick={() => setSelectedRole(role)}
+                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {ROLE_CONFIG[role].label}
+                  </button>
+                );
+              })}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="login-email">Email</Label>
+                <Label htmlFor="login-email">Email Address</Label>
                 <Input
                   id="login-email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={config.placeholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   maxLength={255}
@@ -163,18 +219,13 @@ const Login = () => {
                 </div>
               </div>
 
-              <div className="text-right">
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline font-medium">
-                  Forgot Password?
-                </Link>
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-secondary text-secondary-foreground h-11 rounded-lg font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                className="w-full bg-secondary text-secondary-foreground h-11 rounded-lg font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
               >
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? "Signing in..." : config.signInLabel}
+                {!loading && <span>→</span>}
               </button>
             </form>
 
@@ -187,8 +238,13 @@ const Login = () => {
               onClick={handleDemoLogin}
               className="w-full h-11 rounded-lg font-semibold text-sm border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
             >
-              🚀 Demo Login (One Click)
+              🚀 Demo {ROLE_CONFIG[selectedRole].label} Login
             </button>
+
+            <div className="flex items-center justify-center gap-1.5 mt-5 text-xs text-muted-foreground">
+              <Lock className="w-3 h-3" />
+              Encrypted Connection • Secure Authentication
+            </div>
           </div>
 
           <Link to="/" className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-primary-foreground hover:bg-primary hover:border-primary transition-colors">
