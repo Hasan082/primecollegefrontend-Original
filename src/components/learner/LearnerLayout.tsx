@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, UserCircle, KeyRound, LogOut } from "lucide-react";
+import { User, UserCircle, KeyRound, LogOut, ChevronDown } from "lucide-react";
 import logo from "@/assets/prime-logo-white-notext.png";
 import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -54,6 +54,7 @@ const LearnerLayout = () => {
                       <User className="w-4 h-4 text-secondary-foreground" />
                     </div>
                     <span className="hidden sm:inline text-sm font-medium">{user.name}</span>
+                    <ChevronDown className="w-4 h-4 opacity-70" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem asChild>
