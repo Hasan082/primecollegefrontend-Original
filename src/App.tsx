@@ -29,6 +29,11 @@ import MyQualifications from "./pages/learner/MyQualifications";
 import UnitDetail from "./pages/learner/UnitDetail";
 import Profile from "./pages/learner/Profile";
 import ChangePassword from "./pages/learner/ChangePassword";
+import TrainerLayout from "./components/trainer/TrainerLayout";
+import TrainerDashboard from "./pages/trainer/Dashboard";
+import AssessmentReview from "./pages/trainer/AssessmentReview";
+import AssignedLearners from "./pages/trainer/AssignedLearners";
+import AssessmentHistory from "./pages/trainer/AssessmentHistory";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +72,12 @@ const App = () => {
                   <Route path="change-password" element={<ChangePassword />} />
                   <Route path="qualification/:id" element={<QualificationView />} />
                   <Route path="qualification/:qualificationId/unit/:unitId" element={<UnitDetail />} />
+                </Route>
+                <Route path="/trainer" element={<TrainerLayout />}>
+                  <Route path="dashboard" element={<TrainerDashboard />} />
+                  <Route path="learners" element={<AssignedLearners />} />
+                  <Route path="history" element={<AssessmentHistory />} />
+                  <Route path="review/:id" element={<AssessmentReview />} />
                 </Route>
                 <Route path="*" element={
                   <>

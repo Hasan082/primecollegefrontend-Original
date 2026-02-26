@@ -1,0 +1,179 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Users, Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { pendingSubmissions, trainerLearners, recentAssessments } from "@/data/trainerMockData";
+
+const stats = [
+  { label: "Assigned Learners", value: trainerLearners.length, icon: Users, color: "bg-primary text-primary-foreground" },
+  { label: "Pending Assessments", value: pendingSubmissions.length, icon: Clock, color: "bg-secondary text-secondary-foreground" },
+  { label: "Assessed This Week", value: 12, icon: CheckCircle, color: "bg-green-600 text-white" },
+  { label: "Overdue (7+ days)", value: 0, icon: AlertCircle, color: "bg-destructive text-destructive-foreground" },
+];
+
+const outcomeColors: Record<string, string> = {
+  "Competent": "bg-green-100 text-green-800",
+  "Resubmission Required": "bg-secondary/20 text-secondary-foreground",
+  "Not Yet Competent": "bg-destructive/10 text-destructive",
+};
+
+const TrainerDashboard = () => {
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-foreground mb-1">Assessment Dashboard</h1>
+      <p className="text-muted-foreground mb-8">Review submissions and provide assessment outcomes</p>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {stats.map((s) => (
+          <Card key={s.label} className="p-5 flex items-center gap-4">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${s.color}`}>
+              <s.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{s.label}</p>
+              <p className="text-2xl font-bold text-foreground">{s.value}</p>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="pending" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="pending">Pending Submissions</TabsTrigger>
+          <TabsTrigger value="learners">Assigned Learners</TabsTrigger>
+          <TabsTrigger value="recent">Recent Assessments</TabsTrigger>
+        </TabsList>
+
+        {/* Pending Submissions */}
+        <TabsContent value="pending">
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-primary mb-1">Submissions Awaiting Assessment</h2>
+            <p className="text-sm text-muted-foreground mb-4">Review and assess submitted evidence</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Learner</TableHead>
+                  <TableHead>Qualification</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Wait</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingSubmissions.map((sub) => (
+                  <TableRow key={sub.id}>
+                    <TableCell className="font-medium text-primary">{sub.learnerName}</TableCell>
+                    <TableCell>
+                      <div>{sub.qualification}</div>
+                      <Badge className="bg-primary text-primary-foreground text-[10px] mt-0.5">{sub.qualificationCategory}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{sub.unitCode}: {sub.unitTitle.length > 30 ? sub.unitTitle.slice(0, 30) + '...' : sub.unitTitle}</TableCell>
+                    <TableCell className="text-sm">{sub.submittedDate}</TableCell>
+                    <TableCell>
+                      <Badge className={`${sub.daysWaiting >= 4 ? 'bg-destructive' : sub.daysWaiting >= 3 ? 'bg-secondary' : 'bg-green-600'} text-white text-xs`}>
+                        {sub.daysWaiting}d
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to={`/trainer/review/${sub.id}`}
+                        className="inline-flex items-center px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-semibold rounded-md hover:opacity-90 transition-opacity"
+                      >
+                        Review
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+              <span>Showing 1–{pendingSubmissions.length} of {pendingSubmissions.length}</span>
+              <div className="flex gap-1">
+                <button className="p-1.5 rounded border border-border hover:bg-muted" disabled><ChevronLeft className="w-4 h-4" /></button>
+                <button className="p-1.5 rounded border border-border hover:bg-muted" disabled><ChevronRight className="w-4 h-4" /></button>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Assigned Learners */}
+        <TabsContent value="learners">
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-primary mb-1">Assigned Learners</h2>
+            <p className="text-sm text-muted-foreground mb-4">Learners under your assessment</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Learner</TableHead>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Qualification</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Units</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trainerLearners.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell className="font-medium text-primary">{l.name}</TableCell>
+                    <TableCell className="text-sm">{l.learnerId}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">{l.qualification}</div>
+                      <Badge className="bg-primary text-primary-foreground text-[10px] mt-0.5">{l.qualificationCategory}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${l.progress}%` }} />
+                        </div>
+                        <span className="text-xs text-muted-foreground">{l.progress}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{l.unitsCompleted}/{l.totalUnits}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+
+        {/* Recent Assessments */}
+        <TabsContent value="recent">
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-primary mb-1">Recent Assessments</h2>
+            <p className="text-sm text-muted-foreground mb-4">Your latest assessment decisions</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Learner</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Outcome</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentAssessments.map((a) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="font-medium">{a.learnerName}</TableCell>
+                    <TableCell className="text-sm">{a.unitTitle}</TableCell>
+                    <TableCell className="text-sm">{a.assessedDate}</TableCell>
+                    <TableCell>
+                      <Badge className={outcomeColors[a.outcome]}>{a.outcome}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default TrainerDashboard;
