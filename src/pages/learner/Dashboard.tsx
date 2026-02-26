@@ -1,15 +1,54 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Clock, CheckCircle2, AlertTriangle, Eye } from "lucide-react";
+import { BookOpen, Clock, CheckCircle2, AlertTriangle, Eye, FileText, MessageSquare, Upload } from "lucide-react";
 import { learnerQualifications } from "@/data/learnerMockData";
 import { Progress } from "@/components/ui/progress";
 
+// Build recent activity from mock data
+const buildRecentActivity = () => {
+  const activities: { icon: typeof FileText; label: string; detail: string; date: string; color: string }[] = [];
+
+  learnerQualifications.forEach((q) => {
+    q.units.forEach((u) => {
+      if (u.assessedDate && u.feedback) {
+        activities.push({
+          icon: MessageSquare,
+          label: "Feedback received",
+          detail: `${u.code}: ${u.title}`,
+          date: u.assessedDate,
+          color: u.status === "competent" ? "text-green-600" : "text-orange-500",
+        });
+      }
+      if (u.submittedDate) {
+        activities.push({
+          icon: Upload,
+          label: "Evidence submitted",
+          detail: `${u.code}: ${u.title}`,
+          date: u.submittedDate,
+          color: "text-primary",
+        });
+      }
+    });
+  });
+
+  // Sort by date descending (DD/MM/YYYY)
+  activities.sort((a, b) => {
+    const parseDate = (d: string) => {
+      const [day, month, year] = d.split("/").map(Number);
+      return new Date(year, month - 1, day).getTime();
+    };
+    return parseDate(b.date) - parseDate(a.date);
+  });
+
+  return activities.slice(0, 5);
+};
+
 const Dashboard = () => {
-  // Calculate stats across all qualifications
   const allUnits = learnerQualifications.flatMap((q) => q.units);
   const enrolled = learnerQualifications.length;
   const awaiting = allUnits.filter((u) => u.status === "awaiting_assessment").length;
   const competent = allUnits.filter((u) => u.status === "competent").length;
   const resubmission = allUnits.filter((u) => u.status === "resubmission").length;
+  const recentActivity = buildRecentActivity();
 
   const stats = [
     { label: "Enrolled", value: enrolled, icon: BookOpen, color: "bg-primary" },
@@ -19,8 +58,8 @@ const Dashboard = () => {
   ];
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-foreground mb-1">My Qualifications</h1>
+    <div className="max-w-5xl mx-auto">
+      <h1 className="text-3xl font-bold text-foreground mb-1">My Dashboard</h1>
       <p className="text-muted-foreground mb-8">Track your progress and submit evidence for assessment</p>
 
       {/* Stats */}
@@ -38,7 +77,27 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* Recent Activity */}
+      <div className="mb-10">
+        <h2 className="text-xl font-bold text-foreground mb-4">Recent Activity</h2>
+        <div className="bg-card border border-border rounded-xl divide-y divide-border">
+          {recentActivity.map((a, i) => (
+            <div key={i} className="flex items-center gap-4 p-4">
+              <div className={`w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0`}>
+                <a.icon className={`w-4 h-4 ${a.color}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">{a.label}</p>
+                <p className="text-xs text-muted-foreground truncate">{a.detail}</p>
+              </div>
+              <span className="text-xs text-muted-foreground flex-shrink-0">{a.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Qualification cards */}
+      <h2 className="text-xl font-bold text-foreground mb-4">My Qualifications</h2>
       <div className="space-y-6">
         {learnerQualifications.map((q) => {
           const completed = q.units.filter((u) => u.status === "competent").length;
@@ -50,7 +109,7 @@ const Dashboard = () => {
               <div className="flex items-start justify-between mb-1">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <h2 className="text-xl font-bold text-foreground">{q.title}</h2>
+                    <h3 className="text-xl font-bold text-foreground">{q.title}</h3>
                     <span className={`${q.categoryColor} text-white text-xs font-bold px-2.5 py-0.5 rounded`}>
                       {q.category}
                     </span>
