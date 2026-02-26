@@ -1,5 +1,8 @@
+import { Link } from "react-router-dom";
+import { Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trainerLearners } from "@/data/trainerMockData";
 
@@ -13,13 +16,12 @@ const AssignedLearners = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Learner</TableHead>
+              <TableHead>Learner Name</TableHead>
               <TableHead>ID</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Qualification</TableHead>
-              <TableHead>Enrolled</TableHead>
               <TableHead>Progress</TableHead>
-              <TableHead>Units</TableHead>
+              <TableHead>Pending</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -27,21 +29,27 @@ const AssignedLearners = () => {
               <TableRow key={l.id}>
                 <TableCell className="font-medium text-primary">{l.name}</TableCell>
                 <TableCell className="text-sm">{l.learnerId}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{l.email}</TableCell>
                 <TableCell>
                   <div className="text-sm">{l.qualification}</div>
                   <Badge className="bg-primary text-primary-foreground text-[10px] mt-0.5">{l.qualificationCategory}</Badge>
                 </TableCell>
-                <TableCell className="text-sm">{l.enrolledDate}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${l.progress}%` }} />
-                    </div>
-                    <span className="text-xs text-muted-foreground">{l.progress}%</span>
-                  </div>
+                <TableCell className="text-sm">
+                  {l.unitsCompleted}/{l.totalUnits} ({l.progress}%)
                 </TableCell>
-                <TableCell className="text-sm">{l.unitsCompleted}/{l.totalUnits}</TableCell>
+                <TableCell>
+                  {l.pendingSubmissions > 0 ? (
+                    <Badge className="bg-secondary text-secondary-foreground text-xs">{l.pendingSubmissions}</Badge>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">None</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                    <Link to={`/trainer/learner/${l.id}`}>
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
