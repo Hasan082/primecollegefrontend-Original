@@ -138,7 +138,7 @@ const TrainerDashboard = () => {
                     </TableCell>
                     <TableCell>
                       <Button variant="outline" size="icon" className="h-8 w-8" asChild>
-                        <Link to={`/trainer/learners`}>
+                        <Link to={`/trainer/learner/${l.id}`}>
                           <Eye className="h-4 w-4" />
                         </Link>
                       </Button>
