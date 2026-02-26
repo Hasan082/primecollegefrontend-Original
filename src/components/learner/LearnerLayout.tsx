@@ -1,14 +1,21 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { User } from "lucide-react";
+import { User, UserCircle, KeyRound, LogOut } from "lucide-react";
 import logo from "@/assets/prime-logo-white-notext.png";
 import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import LearnerSidebar from "@/components/learner/LearnerSidebar";
 import NotificationBell from "@/components/learner/NotificationBell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const LearnerLayout = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,8 +24,13 @@ const LearnerLayout = () => {
 
   if (!user) return null;
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex w-full">
         <LearnerSidebar />
 
@@ -27,7 +39,7 @@ const LearnerLayout = () => {
           <header className="bg-primary text-primary-foreground sticky top-0 z-30">
             <div className="px-4 sm:px-6 h-14 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="text-primary-foreground hover:bg-sidebar-accent rounded-md p-1.5 xl:hidden" />
+                <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10 rounded-md p-1.5" />
                 <div className="w-8 h-8 rounded-full border border-primary-foreground/30 p-0.5">
                   <img src={logo} alt="Prime College" className="w-full h-full object-contain" />
                 </div>
@@ -36,12 +48,33 @@ const LearnerLayout = () => {
 
               <div className="flex items-center gap-3">
                 <NotificationBell />
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                    <User className="w-4 h-4 text-secondary-foreground" />
-                  </div>
-                  <span className="hidden sm:inline text-sm font-medium">{user.name}</span>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center gap-2 outline-none hover:opacity-80 transition-opacity">
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                      <User className="w-4 h-4 text-secondary-foreground" />
+                    </div>
+                    <span className="hidden sm:inline text-sm font-medium">{user.name}</span>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/learner/profile" className="flex items-center gap-2 cursor-pointer">
+                        <UserCircle className="h-4 w-4" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/learner/change-password" className="flex items-center gap-2 cursor-pointer">
+                        <KeyRound className="h-4 w-4" />
+                        Change Password
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-destructive cursor-pointer">
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </header>
