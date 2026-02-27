@@ -123,8 +123,8 @@ export const trainerLearners: TrainerLearner[] = [
 export const pendingSubmissions: PendingSubmission[] = [
   {
     id: "s1", learnerId: "LRN-2024-001", learnerName: "John Smith",
-    qualification: "Level 4 Diploma in Adult Care", qualificationCategory: "Care",
-    unitCode: "VTCT303", unitTitle: "Health and Safety in Care Settings",
+    qualification: "Level 3 Diploma in Business Administration", qualificationCategory: "Business",
+    unitCode: "BUS305", unitTitle: "Business Project Planning",
     submittedDate: "08/02/25", daysWaiting: 2,
     files: [
       { name: "Business_Planning_Portfolio.pdf", type: "PDF", size: "2.4 MB" },
@@ -135,7 +135,7 @@ export const pendingSubmissions: PendingSubmission[] = [
   {
     id: "s2", learnerId: "LRN-2024-002", learnerName: "Emma Johnson",
     qualification: "Level 2 Certificate in Mental Health Awareness", qualificationCategory: "Care",
-    unitCode: "VTCT201", unitTitle: "Understanding Mental Health",
+    unitCode: "MH201", unitTitle: "Understanding Mental Health",
     submittedDate: "07/02/25", daysWaiting: 3,
     files: [{ name: "Mental_Health_Essay.pdf", type: "PDF", size: "1.8 MB" }],
     criteria: ["Define key concepts of mental health", "Identify common mental health conditions", "Explain impact of mental health on individuals"],

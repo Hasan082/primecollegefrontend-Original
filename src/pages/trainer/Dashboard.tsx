@@ -6,6 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { pendingSubmissions, trainerLearners, recentAssessments } from "@/data/trainerMockData";
+
+const findLearnerId = (lrnCode: string) => {
+  const learner = trainerLearners.find((l) => l.learnerId === lrnCode);
+  return learner?.id || "";
+};
 import { FileText } from "lucide-react";
 
 const stats = [
@@ -83,7 +88,7 @@ const TrainerDashboard = () => {
                     </TableCell>
                     <TableCell>
                       <Link
-                        to={`/trainer/review/${sub.id}`}
+                        to={`/trainer/learner/${findLearnerId(sub.learnerId)}/unit/${sub.unitCode}`}
                         className="inline-flex items-center px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-semibold rounded-md hover:opacity-90 transition-opacity"
                       >
                         Review
