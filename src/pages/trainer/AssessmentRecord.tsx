@@ -25,8 +25,8 @@ const AssessmentRecord = () => {
 
   return (
     <div>
-      <Link to="/trainer/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+      <Link to="/trainer/history" className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm mb-6">
+        <ArrowLeft className="w-4 h-4" /> Back to Assessment History
       </Link>
 
       {/* Header Card */}
