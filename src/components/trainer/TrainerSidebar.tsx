@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, ClipboardCheck, History } from "lucide-react";
+import { LayoutDashboard, Users, History, BookOpen } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -14,6 +14,7 @@ import {
 const navItems = [
   { title: "Dashboard", url: "/trainer/dashboard", icon: LayoutDashboard },
   { title: "Assigned Learners", url: "/trainer/learners", icon: Users },
+  { title: "Question Bank", url: "/trainer/question-bank", icon: BookOpen },
   { title: "Assessment History", url: "/trainer/history", icon: History },
 ];
 

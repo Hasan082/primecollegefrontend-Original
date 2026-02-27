@@ -37,6 +37,8 @@ import AssessmentHistory from "./pages/trainer/AssessmentHistory";
 import AssessmentRecord from "./pages/trainer/AssessmentRecord";
 import LearnerDetail from "./pages/trainer/LearnerDetail";
 import UnitManagement from "./pages/trainer/UnitManagement";
+import QuestionBank from "./pages/trainer/QuestionBank";
+import QuestionBankEditor from "./pages/trainer/QuestionBankEditor";
 import StaffLogin from "./pages/StaffLogin";
 
 const queryClient = new QueryClient();
@@ -86,6 +88,8 @@ const App = () => {
                   <Route path="review/:id" element={<AssessmentReview />} />
                   <Route path="record/:id" element={<AssessmentRecord />} />
                   <Route path="learner/:learnerId/unit/:unitCode" element={<UnitManagement />} />
+                  <Route path="question-bank" element={<QuestionBank />} />
+                  <Route path="question-bank/:qualificationId/:unitCode" element={<QuestionBankEditor />} />
                 </Route>
                 <Route path="*" element={
                   <>
