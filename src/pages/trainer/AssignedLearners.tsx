@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Eye } from "lucide-react";
+import { Eye, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,9 @@ import { trainerLearners } from "@/data/trainerMockData";
 const AssignedLearners = () => {
   return (
     <div>
+      <Link to="/trainer/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm mb-6">
+        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+      </Link>
       <h1 className="text-3xl font-bold text-foreground mb-1">Assigned Learners</h1>
       <p className="text-muted-foreground mb-8">View all learners under your assessment</p>
 
