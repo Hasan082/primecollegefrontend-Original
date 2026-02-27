@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { trainerLearners } from "@/data/trainerMockData";
+import QuizResultsPanel from "@/components/trainer/QuizResultsPanel";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   Competent: { label: "Competent", className: "bg-green-600 text-white" },
@@ -213,27 +214,8 @@ const UnitManagement = () => {
                     <div className="mb-6">
                       <h4 className="font-bold text-foreground text-sm mb-3">📋 Submission Details</h4>
 
-                      {sub.type === "quiz" && sub.quizDetails && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-card border border-border rounded-xl p-4">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Questions</p>
-                            <p className="font-semibold text-sm">{sub.quizDetails.answered}/{sub.quizDetails.totalQuestions}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Time Taken</p>
-                            <p className="font-semibold text-sm">{sub.quizDetails.timeTaken}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Violations</p>
-                            <p className={`font-semibold text-sm ${sub.quizDetails.violations > 0 ? "text-amber-600" : "text-green-600"}`}>
-                              {sub.quizDetails.violations}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Status</p>
-                            <p className="font-semibold text-sm text-foreground">Auto-scored</p>
-                          </div>
-                        </div>
+                      {sub.type === "quiz" && (
+                        <QuizResultsPanel unitCode={unitCode!} />
                       )}
 
                       {sub.type === "written" && (
