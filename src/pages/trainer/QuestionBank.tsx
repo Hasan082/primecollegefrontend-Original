@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, ChevronRight, CheckCircle2, AlertCircle, Search } from "lucide-react";
+import { BookOpen, ChevronRight, CheckCircle2, AlertCircle, Search, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,9 @@ const QuestionBank = () => {
 
   return (
     <div>
+      <Link to="/trainer/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm mb-6">
+        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+      </Link>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Question Bank</h1>
         <p className="text-sm text-muted-foreground mt-1">

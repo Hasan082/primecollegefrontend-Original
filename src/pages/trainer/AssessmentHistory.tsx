@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText } from "lucide-react";
+import { FileText, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { recentAssessments } from "@/data/trainerMockData";
 
@@ -15,6 +15,9 @@ const outcomeColors: Record<string, string> = {
 const AssessmentHistory = () => {
   return (
     <div>
+      <Link to="/trainer/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm mb-6">
+        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+      </Link>
       <h1 className="text-3xl font-bold text-foreground mb-1">Assessment History</h1>
       <p className="text-muted-foreground mb-8">View your past assessment decisions</p>
 
