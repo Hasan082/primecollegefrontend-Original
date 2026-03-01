@@ -126,7 +126,7 @@ const TrainerManagement = () => {
                       {isExpanded ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />}
                     </button>
                     {isExpanded && (
-                      <div className="space-y-1.5 mt-2">
+                      <div className="space-y-1.5 mt-2 max-h-[220px] overflow-y-auto pr-1">
                         {learners.map((l) => (
                           <div key={l.id} className="flex items-center justify-between text-sm bg-muted/30 rounded-md px-3 py-1.5">
                             <span>{l.name} — <span className="text-muted-foreground">{l.qualification}</span></span>
