@@ -141,6 +141,24 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </Link>
+            <Link to="/admin/trainers" className="block p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <UserCheck className="w-4 h-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Manage Trainers</p>
+                  <p className="text-xs text-muted-foreground">{adminStats.activeTrainers} active trainers</p>
+                </div>
+              </div>
+            </Link>
+            <Link to="/admin/progress" className="block p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Progress Monitoring</p>
+                  <p className="text-xs text-muted-foreground">Track learner progress & at-risk alerts</p>
+                </div>
+              </div>
+            </Link>
             <Link to="/admin/reports" className="block p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <FileText className="w-4 h-4 text-primary" />
