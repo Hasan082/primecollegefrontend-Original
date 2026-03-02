@@ -130,8 +130,8 @@ const PageManagement = () => {
 };
 
 const PageCard = ({ page }: { page: PageConfig }) => (
-  <Card className="hover:shadow-md transition-shadow">
-    <CardContent className="p-5">
+  <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+    <CardContent className="p-5 flex flex-col flex-1">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground truncate">{page.title}</h3>
@@ -141,7 +141,7 @@ const PageCard = ({ page }: { page: PageConfig }) => (
           {page.blocks.length} block{page.blocks.length !== 1 ? "s" : ""}
         </Badge>
       </div>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
         {page.blocks.slice(0, 3).map((b) => (
           <Badge key={b.id} variant="secondary" className="text-[10px]">
             {b.label}
@@ -149,11 +149,13 @@ const PageCard = ({ page }: { page: PageConfig }) => (
         ))}
         {page.blocks.length > 3 && <span>+{page.blocks.length - 3} more</span>}
       </div>
-      <Link to={`/admin/pages/${page.id}`}>
-        <Button size="sm" className="w-full">
-          <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Page
-        </Button>
-      </Link>
+      <div className="mt-auto">
+        <Link to={`/admin/pages/${page.id}`}>
+          <Button size="sm" className="w-full">
+            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Page
+          </Button>
+        </Link>
+      </div>
     </CardContent>
   </Card>
 );
