@@ -46,7 +46,7 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
       timeoutRef.current = setTimeout(() => {
         setPrevIndex(null);
         setIsAnimating(false);
-      }, 600);
+      }, 800);
     },
     [current, isAnimating]
   );
@@ -99,15 +99,8 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
     </div>
   );
 
-  const enterClass =
-    direction === "right"
-      ? "animate-[slideInRight_0.6s_ease-in-out_forwards]"
-      : "animate-[slideInLeft_0.6s_ease-in-out_forwards]";
-
-  const exitClass =
-    direction === "right"
-      ? "animate-[slideOutLeft_0.6s_ease-in-out_forwards]"
-      : "animate-[slideOutRight_0.6s_ease-in-out_forwards]";
+  const enterClass = "animate-[fadeSlideIn_0.8s_ease-in-out_forwards]";
+  const exitClass = "animate-[fadeSlideOut_0.8s_ease-in-out_forwards]";
 
   return (
     <section className="relative w-full overflow-hidden" style={{ height: slideHeight }}>
