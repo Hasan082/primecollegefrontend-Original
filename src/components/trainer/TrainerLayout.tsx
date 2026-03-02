@@ -18,14 +18,14 @@ const TrainerLayout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user || user.role !== "trainer") navigate("/login", { replace: true });
+    if (!user || user.role !== "trainer") navigate("/staff-login", { replace: true });
   }, [user, navigate]);
 
   if (!user || user.role !== "trainer") return null;
 
   const handleLogout = () => {
     logout();
-    navigate("/login", { replace: true });
+    navigate("/staff-login", { replace: true });
   };
 
   return (
