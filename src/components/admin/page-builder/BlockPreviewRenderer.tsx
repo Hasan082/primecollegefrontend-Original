@@ -335,11 +335,6 @@ const BlockPreviewRenderer = ({ blocks, pageTitle }: BlockPreviewRendererProps) 
                           <div className="h-8 bg-muted" />
                         )}
                         <div className="p-1.5">
-                          {item.category && !hasFullImage && (
-                            <span className="bg-secondary text-secondary-foreground text-[5px] font-bold px-1 py-0.5 rounded uppercase">
-                              {item.category}
-                            </span>
-                          )}
                           <p className="text-[7px] font-bold text-foreground mt-0.5 line-clamp-2">{item.title}</p>
                           {item.description && (
                             <p className="text-[6px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight">{item.description}</p>
