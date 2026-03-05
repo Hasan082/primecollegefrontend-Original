@@ -5,21 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { adminLearners, adminQualifications, adminTrainers } from "@/data/adminMockData";
-import { Search, Plus, ArrowLeft, UserPlus } from "lucide-react";
+import { adminLearners, adminQualifications, adminTrainers, AdminLearner } from "@/data/adminMockData";
+import { Search, Plus, ArrowLeft, UserPlus, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import TablePagination from "@/components/admin/TablePagination";
+import LearnerDetailModal from "@/components/admin/LearnerDetailModal";
 
 const LearnerManagement = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [selectedLearner, setSelectedLearner] = useState<AdminLearner | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const { toast } = useToast();
 
   const filtered = adminLearners.filter((l) => {
@@ -114,7 +116,7 @@ const LearnerManagement = () => {
       <Card>
         <CardContent className="p-0">
           <Table>
-            <TableHeader>
+             <TableHeader>
               <TableRow>
                 <TableHead>Learner</TableHead>
                 <TableHead className="hidden md:table-cell">Qualification</TableHead>
@@ -122,11 +124,12 @@ const LearnerManagement = () => {
                 <TableHead>Progress</TableHead>
                 <TableHead className="hidden md:table-cell">Payment</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((l) => (
-                <TableRow key={l.id}>
+              {filtered.slice((currentPage - 1) * 10, currentPage * 10).map((l) => (
+                <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelectedLearner(l); setDetailOpen(true); }}>
                   <TableCell>
                     <div>
                       <p className="font-medium text-sm">{l.name}</p>
@@ -147,6 +150,11 @@ const LearnerManagement = () => {
                       {l.status.charAt(0).toUpperCase() + l.status.slice(1)}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setSelectedLearner(l); setDetailOpen(true); }}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -154,11 +162,13 @@ const LearnerManagement = () => {
           <TablePagination
             currentPage={currentPage}
             totalItems={filtered.length}
-            itemsPerPage={itemsPerPage}
+            itemsPerPage={10}
             onPageChange={setCurrentPage}
           />
         </CardContent>
       </Card>
+
+      <LearnerDetailModal learner={selectedLearner} open={detailOpen} onOpenChange={setDetailOpen} />
     </div>
   );
 };
