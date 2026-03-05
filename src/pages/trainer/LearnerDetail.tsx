@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Calendar, GraduationCap, TrendingUp, CheckCircle, Clock, XCircle } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, GraduationCap, TrendingUp, CheckCircle, Clock, XCircle, Timer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trainerLearners } from "@/data/trainerMockData";
+import { useToast } from "@/hooks/use-toast";
 import TablePagination from "@/components/admin/TablePagination";
+import { DEADLINE_PRESETS, createDeadline, getDeadlineStatus, getDaysRemaining, getDeadlineLabel, getDeadlineBadgeVariant, type UnitDeadline } from "@/lib/deadlines";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -21,6 +25,8 @@ const LearnerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
+  const [unitDeadlines, setUnitDeadlines] = useState<Map<string, UnitDeadline>>(new Map());
+  const { toast } = useToast();
   const learner = trainerLearners.find((l) => l.id === id);
 
   if (!learner) {
@@ -106,12 +112,13 @@ const LearnerDetail = () => {
         <h2 className="text-lg font-bold text-primary mb-1">Unit Progress</h2>
         <p className="text-sm text-muted-foreground mb-4">Detailed breakdown of qualification units</p>
 
-        <Table>
+         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Unit Code</TableHead>
               <TableHead>Unit Name</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Deadline</TableHead>
               <TableHead>Completed Date</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
@@ -120,6 +127,17 @@ const LearnerDetail = () => {
             {learner.units.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((unit) => {
               const config = statusConfig[unit.status];
               const Icon = config.icon;
+              const deadline = unitDeadlines.get(unit.code);
+              const deadlineStatus = deadline ? getDeadlineStatus(deadline.deadlineDate) : "none";
+              const daysLeft = deadline ? getDaysRemaining(deadline.deadlineDate) : 0;
+              const isCompleted = unit.status === "Competent";
+
+              const handleSetDeadline = (days: string) => {
+                const dl = createDeadline(parseInt(days), unit.code);
+                setUnitDeadlines(prev => new Map(prev).set(unit.code, dl));
+                toast({ title: "Deadline set", description: `${unit.name} — ${days} day deadline` });
+              };
+
               return (
                 <TableRow key={unit.code} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/trainer/learner/${id}/unit/${unit.code}`)}>
                   <TableCell className="font-medium text-primary">{unit.code}</TableCell>
@@ -129,6 +147,27 @@ const LearnerDetail = () => {
                       <Icon className="w-3 h-3" />
                       {unit.status}
                     </Badge>
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {isCompleted ? (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    ) : deadline ? (
+                      <Badge variant={getDeadlineBadgeVariant(deadlineStatus)} className="text-[10px] gap-1">
+                        <Timer className="w-3 h-3" />
+                        {getDeadlineLabel(deadlineStatus, daysLeft)}
+                      </Badge>
+                    ) : (
+                      <Select onValueChange={handleSetDeadline}>
+                        <SelectTrigger className="h-7 text-[10px] w-24">
+                          <SelectValue placeholder="Set deadline" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DEADLINE_PRESETS.map(p => (
+                            <SelectItem key={p.value} value={String(p.value)} className="text-xs">{p.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">{unit.completedDate || "—"}</TableCell>
                   <TableCell>

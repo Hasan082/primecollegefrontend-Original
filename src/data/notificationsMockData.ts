@@ -1,6 +1,6 @@
 export interface NotificationData {
   id: string;
-  type: "feedback" | "resubmission" | "competent" | "system" | "resource";
+  type: "feedback" | "resubmission" | "competent" | "system" | "resource" | "deadline_warning" | "deadline_urgent" | "deadline_overdue";
   title: string;
   message: string;
   timestamp: string;
@@ -70,5 +70,32 @@ export const mockNotifications: NotificationData[] = [
     timestamp: "2025-02-28T16:20:00Z",
     read: true,
     link: "/learner/qualification/management-l4",
+  },
+  {
+    id: "n8",
+    type: "deadline_warning",
+    title: "Deadline Approaching",
+    message: "Unit 5: Person-Centred Approaches is due in 7 days. Please submit your evidence before the deadline.",
+    timestamp: "2025-03-01T09:00:00Z",
+    read: false,
+    link: "/learner/qualification/adult-care-l4/unit/u5",
+  },
+  {
+    id: "n9",
+    type: "deadline_urgent",
+    title: "Urgent: Deadline in 3 Days",
+    message: "Unit 4: Safeguarding and Protection deadline is in 3 days. Immediate action required.",
+    timestamp: "2025-03-03T09:00:00Z",
+    read: false,
+    link: "/learner/qualification/adult-care-l4/unit/u4",
+  },
+  {
+    id: "n10",
+    type: "deadline_overdue",
+    title: "Overdue: Unit Deadline Passed",
+    message: "Unit 6: Communication in Care Settings deadline has passed. Please contact your trainer immediately.",
+    timestamp: "2025-03-05T09:00:00Z",
+    read: false,
+    link: "/learner/qualification/adult-care-l4/unit/u6",
   },
 ];
