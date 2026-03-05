@@ -45,16 +45,20 @@ const buildRecentActivity = () => {
   return activities.slice(0, 5);
 };
 
-// Mock deadline alerts for demo — grouped by qualification
-const deadlineAlerts = [
-  { unit: "Unit 5: Person-Centred Approaches", daysLeft: 5, status: "warning" as const, link: "/learner/qualification/adult-care-l4/unit/u5", qualId: "adult-care-l4" },
-  { unit: "Unit 4: Safeguarding and Protection", daysLeft: 2, status: "urgent" as const, link: "/learner/qualification/adult-care-l4/unit/u4", qualId: "adult-care-l4" },
-  { unit: "Unit 6: Communication in Care Settings", daysLeft: -3, status: "overdue" as const, link: "/learner/qualification/adult-care-l4/unit/u6", qualId: "adult-care-l4" },
+// Mock qualification-level deadline alerts
+const qualificationDeadlineAlerts = [
+  { qualId: "adult-care-l4", qualTitle: "Level 4 Diploma in Adult Care", expiry: "01/02/2026", daysOverdue: 32 },
+];
+
+// Unit-level upcoming deadlines (non-expired, just warnings)
+const unitDeadlineAlerts = [
+  { unit: "Unit 5: Person-Centred Approaches", daysLeft: 5, status: "warning" as const, link: "/learner/qualification/adult-care-l4/unit/u5" },
+  { unit: "Unit 4: Safeguarding and Protection", daysLeft: 2, status: "urgent" as const, link: "/learner/qualification/adult-care-l4/unit/u4" },
 ];
 
 const Dashboard = () => {
   const [extensionOpen, setExtensionOpen] = useState(false);
-  const [extensionQualTitle, setExtensionQualTitle] = useState("");
+  const [extensionQual, setExtensionQual] = useState<{ title: string; expiry: string }>({ title: "", expiry: "" });
   const allUnits = learnerQualifications.flatMap((q) => q.units);
   const enrolled = learnerQualifications.length;
   const awaiting = allUnits.filter((u) => u.status === "awaiting_assessment").length;
@@ -98,63 +102,70 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Deadline Alerts */}
-      {deadlineAlerts.length > 0 && (
+      {/* Expired Qualifications */}
+      {qualificationDeadlineAlerts.length > 0 && (
         <div className="mb-10">
           <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-            <Timer className="w-5 h-5" /> Upcoming Deadlines
+            <AlertTriangle className="w-5 h-5 text-destructive" /> Expired Qualifications
           </h2>
           <div className="space-y-2">
-            {deadlineAlerts.map((alert, i) => (
+            {qualificationDeadlineAlerts.map((alert, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 p-4 rounded-xl border border-destructive/50 bg-destructive/5"
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-destructive/10">
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{alert.qualTitle}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Access expired on {alert.expiry} — overdue by {alert.daysOverdue} days
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="gap-1.5 flex-shrink-0"
+                  onClick={() => {
+                    setExtensionQual({ title: alert.qualTitle, expiry: alert.expiry });
+                    setExtensionOpen(true);
+                  }}
+                >
+                  <CalendarPlus className="w-3.5 h-3.5" /> Extend & Pay
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Unit Deadline Warnings (non-expired) */}
+      {unitDeadlineAlerts.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+            <Timer className="w-5 h-5" /> Upcoming Unit Deadlines
+          </h2>
+          <div className="space-y-2">
+            {unitDeadlineAlerts.map((alert, i) => (
               <Link
                 key={i}
                 to={alert.link}
                 className={`flex items-center gap-4 p-4 rounded-xl border transition-colors hover:bg-muted/50 ${
-                  alert.status === "overdue" ? "border-destructive/50 bg-destructive/5" :
-                  alert.status === "urgent" ? "border-destructive/30 bg-destructive/5" :
-                  "border-amber-500/30 bg-amber-500/5"
+                  alert.status === "urgent" ? "border-destructive/30 bg-destructive/5" : "border-amber-500/30 bg-amber-500/5"
                 }`}
               >
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  alert.status === "overdue" ? "bg-destructive/10" :
-                  alert.status === "urgent" ? "bg-destructive/10" :
-                  "bg-amber-500/10"
+                  alert.status === "urgent" ? "bg-destructive/10" : "bg-amber-500/10"
                 }`}>
-                  <Timer className={`w-4 h-4 ${
-                    alert.status === "overdue" ? "text-destructive" :
-                    alert.status === "urgent" ? "text-destructive" :
-                    "text-amber-500"
-                  }`} />
+                  <Timer className={`w-4 h-4 ${alert.status === "urgent" ? "text-destructive" : "text-amber-500"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{alert.unit}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {alert.status === "overdue"
-                      ? `Overdue by ${Math.abs(alert.daysLeft)} days`
-                      : `${alert.daysLeft} days remaining`
-                    }
-                  </p>
+                  <p className="text-xs text-muted-foreground">{alert.daysLeft} days remaining</p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {alert.status === "overdue" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 text-[10px] gap-1 border-destructive/30 text-destructive hover:bg-destructive/10"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const qual = learnerQualifications.find(q => q.id === alert.qualId);
-                        setExtensionQualTitle(qual?.title || "");
-                        setExtensionOpen(true);
-                      }}
-                    >
-                      <CalendarPlus className="w-3 h-3" /> Extend
-                    </Button>
-                  )}
-                  <Badge variant={alert.status === "overdue" || alert.status === "urgent" ? "destructive" : "secondary"} className="text-[10px]">
-                    {alert.status === "overdue" ? "Overdue" : alert.status === "urgent" ? "Urgent" : "Warning"}
-                  </Badge>
-                </div>
+                <Badge variant={alert.status === "urgent" ? "destructive" : "secondary"} className="text-[10px]">
+                  {alert.status === "urgent" ? "Urgent" : "Warning"}
+                </Badge>
               </Link>
             ))}
           </div>
@@ -183,8 +194,8 @@ const Dashboard = () => {
       <ExtensionRequestModal
         open={extensionOpen}
         onOpenChange={setExtensionOpen}
-        qualificationTitle={extensionQualTitle}
-        currentExpiry="20/02/2026"
+        qualificationTitle={extensionQual.title}
+        currentExpiry={extensionQual.expiry}
       />
     </div>
   );
