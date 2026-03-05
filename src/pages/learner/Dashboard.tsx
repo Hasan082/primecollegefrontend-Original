@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Clock, CheckCircle2, AlertTriangle, FileText, MessageSquare, Upload, GraduationCap } from "lucide-react";
+import { BookOpen, Clock, CheckCircle2, AlertTriangle, FileText, MessageSquare, Upload, GraduationCap, Timer } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { learnerQualifications } from "@/data/learnerMockData";
 
 // Build recent activity from mock data
@@ -40,6 +41,13 @@ const buildRecentActivity = () => {
 
   return activities.slice(0, 5);
 };
+
+// Mock deadline alerts for demo
+const deadlineAlerts = [
+  { unit: "Unit 5: Person-Centred Approaches", daysLeft: 5, status: "warning" as const, link: "/learner/qualification/adult-care-l4/unit/u5" },
+  { unit: "Unit 4: Safeguarding and Protection", daysLeft: 2, status: "urgent" as const, link: "/learner/qualification/adult-care-l4/unit/u4" },
+  { unit: "Unit 6: Communication in Care Settings", daysLeft: -3, status: "overdue" as const, link: "/learner/qualification/adult-care-l4/unit/u6" },
+];
 
 const Dashboard = () => {
   const allUnits = learnerQualifications.flatMap((q) => q.units);
@@ -84,6 +92,52 @@ const Dashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* Deadline Alerts */}
+      {deadlineAlerts.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+            <Timer className="w-5 h-5" /> Upcoming Deadlines
+          </h2>
+          <div className="space-y-2">
+            {deadlineAlerts.map((alert, i) => (
+              <Link
+                key={i}
+                to={alert.link}
+                className={`flex items-center gap-4 p-4 rounded-xl border transition-colors hover:bg-muted/50 ${
+                  alert.status === "overdue" ? "border-destructive/50 bg-destructive/5" :
+                  alert.status === "urgent" ? "border-destructive/30 bg-destructive/5" :
+                  "border-amber-500/30 bg-amber-500/5"
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  alert.status === "overdue" ? "bg-destructive/10" :
+                  alert.status === "urgent" ? "bg-destructive/10" :
+                  "bg-amber-500/10"
+                }`}>
+                  <Timer className={`w-4 h-4 ${
+                    alert.status === "overdue" ? "text-destructive" :
+                    alert.status === "urgent" ? "text-destructive" :
+                    "text-amber-500"
+                  }`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{alert.unit}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {alert.status === "overdue"
+                      ? `Overdue by ${Math.abs(alert.daysLeft)} days — contact your trainer`
+                      : `${alert.daysLeft} days remaining`
+                    }
+                  </p>
+                </div>
+                <Badge variant={alert.status === "overdue" || alert.status === "urgent" ? "destructive" : "secondary"} className="text-[10px]">
+                  {alert.status === "overdue" ? "Overdue" : alert.status === "urgent" ? "Urgent" : "Warning"}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="mb-10">
