@@ -27,6 +27,7 @@ const LearnerDetail = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [unitDeadlines, setUnitDeadlines] = useState<Map<string, UnitDeadline>>(new Map());
+  const [extensionRequests, setExtensionRequests] = useState<ExtensionRequest[]>(mockExtensionRequests);
   const { toast } = useToast();
   const learner = trainerLearners.find((l) => l.id === id);
 
