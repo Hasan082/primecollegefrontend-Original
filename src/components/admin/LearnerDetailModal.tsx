@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Calendar, GraduationCap, CreditCard, Clock, CheckCircle2, AlertTriangle, FileText, Pencil, Save, X, ChevronDown, ChevronUp } from "lucide-react";
+import { User, Mail, Phone, Calendar, GraduationCap, CreditCard, Clock, CheckCircle2, AlertTriangle, FileText, Pencil, Save, X, ChevronDown, ChevronUp, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { AdminLearner } from "@/data/adminMockData";
 import { adminTrainers } from "@/data/adminMockData";
+import { DEADLINE_PRESETS, createDeadline, getDeadlineStatus, getDaysRemaining, getDeadlineLabel, getDeadlineBadgeVariant, type UnitDeadline } from "@/lib/deadlines";
 
 interface Props {
   learner: AdminLearner | null;
@@ -87,6 +88,7 @@ const LearnerDetailModal = ({ learner, open, onOpenChange, onUpdate }: Props) =>
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ name: "", email: "", phone: "", assignedTrainer: "", status: "" as AdminLearner["status"] });
   const [expandedUnits, setExpandedUnits] = useState<Set<number>>(new Set());
+  const [unitDeadlines, setUnitDeadlines] = useState<Map<string, UnitDeadline>>(new Map());
   const { toast } = useToast();
 
   if (!learner) return null;
