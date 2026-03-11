@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type UserRole = "learner" | "trainer" | "admin";
+export type UserRole = "learner" | "trainer" | "admin" | "iqa";
 
 interface DemoUser {
   name: string;
@@ -20,6 +20,7 @@ const DEMO_USERS: Record<UserRole, DemoUser> = {
   learner: { name: "John Smith", email: "john.smith@example.com", role: "learner" },
   trainer: { name: "Sarah Jones", email: "trainer@primecollege.edu", role: "trainer" },
   admin: { name: "Admin User", email: "admin@primecollege.edu", role: "admin" },
+  iqa: { name: "Claire Morgan", email: "iqa@primecollege.edu", role: "iqa" },
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
