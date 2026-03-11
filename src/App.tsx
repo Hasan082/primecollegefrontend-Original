@@ -49,6 +49,13 @@ import ProgressMonitoring from "./pages/admin/ProgressMonitoring";
 import Reports from "./pages/admin/Reports";
 import PageManagement from "./pages/admin/PageManagement";
 import PageEditor from "./pages/admin/PageEditor";
+import IQALayout from "./components/iqa/IQALayout";
+import IQADashboard from "./pages/iqa/Dashboard";
+import SamplingQueue from "./pages/iqa/SamplingQueue";
+import IQAAssessmentReview from "./pages/iqa/AssessmentReview";
+import TrainerPerformance from "./pages/iqa/TrainerPerformance";
+import IQAReports from "./pages/iqa/Reports";
+import SamplingSettings from "./pages/iqa/SamplingSettings";
 
 const queryClient = new QueryClient();
 
