@@ -106,6 +106,14 @@ const App = () => {
                   <Route path="pages" element={<PageManagement />} />
                   <Route path="pages/:pageId" element={<PageEditor />} />
                 </Route>
+                <Route path="/iqa" element={<IQALayout />}>
+                  <Route path="dashboard" element={<IQADashboard />} />
+                  <Route path="sampling" element={<SamplingQueue />} />
+                  <Route path="review/:id" element={<IQAAssessmentReview />} />
+                  <Route path="trainers" element={<TrainerPerformance />} />
+                  <Route path="reports" element={<IQAReports />} />
+                  <Route path="settings" element={<SamplingSettings />} />
+                </Route>
                 <Route path="/trainer" element={<TrainerLayout />}>
                   <Route path="dashboard" element={<TrainerDashboard />} />
                   <Route path="learners" element={<AssignedLearners />} />

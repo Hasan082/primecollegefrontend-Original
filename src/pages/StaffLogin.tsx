@@ -161,7 +161,7 @@ const StaffLogin = () => {
 
             {/* Role Tabs - Trainer & Admin only */}
             <div className="flex gap-1 bg-muted rounded-xl p-1 mb-6">
-              {(["trainer", "admin"] as StaffRole[]).map((role) => {
+              {(["trainer", "iqa", "admin"] as StaffRole[]).map((role) => {
                 const Icon = ROLE_CONFIG[role].icon;
                 const isActive = selectedRole === role;
                 return (
