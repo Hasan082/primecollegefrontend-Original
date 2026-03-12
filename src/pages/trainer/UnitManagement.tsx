@@ -254,6 +254,15 @@ const UnitManagement = () => {
         </div>
       </Card>
 
+      {/* Assessment Requirements Config */}
+      <div className="mb-6">
+        <UnitAssessmentConfig
+          unitCode={unit.code}
+          unitName={unit.name}
+          onChange={(config) => setAssessmentConfig(config)}
+        />
+      </div>
+
       {/* Unit Sign-Off */}
       <div className="mb-6">
         <UnitSignOff
