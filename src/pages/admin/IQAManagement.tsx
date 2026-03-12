@@ -257,6 +257,13 @@ const IQAManagement = () => {
         itemsPerPage={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
       />
+
+      <IQADetailModal
+        iqa={detailIqa}
+        open={!!detailIqa}
+        onOpenChange={(o) => !o && setDetailIqa(null)}
+        onUpdate={handleIqaUpdate}
+      />
     </div>
   );
 };
