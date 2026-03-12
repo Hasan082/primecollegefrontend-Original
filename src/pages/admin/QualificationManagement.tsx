@@ -250,6 +250,9 @@ const QualificationManagement = () => {
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" title="View" onClick={() => handleView(q)}><Eye className="w-4 h-4" /></Button>
+                      <Link to={`/admin/qualifications/${q.id}`}>
+                        <Button variant="ghost" size="icon" title="Assessment Config"><Settings2 className="w-4 h-4" /></Button>
+                      </Link>
                       <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEditOpen(q)}><Edit className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" title={q.status === "archived" ? "Restore" : "Archive"} onClick={() => handleArchiveToggle(q)}>
                         {q.status === "archived" ? <ArchiveRestore className="w-4 h-4 text-green-600" /> : <Archive className="w-4 h-4" />}
