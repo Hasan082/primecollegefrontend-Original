@@ -56,7 +56,15 @@ const IQAManagement = () => {
   const [newEmail, setNewEmail] = useState("");
   const [selectedQual, setSelectedQual] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [detailIqa, setDetailIqa] = useState<IQAUser | null>(null);
   const { toast } = useToast();
+
+  const handleIqaUpdate = (updated: IQAUser) => {
+    const newList = iqas.map((i) => (i.id === updated.id ? updated : i));
+    setIqas(newList);
+    saveIQAs(newList);
+    setDetailIqa(updated);
+  };
 
   const filtered = iqas.filter(
     (i) => i.name.toLowerCase().includes(search.toLowerCase()) || i.email.toLowerCase().includes(search.toLowerCase())
