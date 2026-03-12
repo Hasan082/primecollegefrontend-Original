@@ -53,6 +53,7 @@ import AdminQuestionBank from "./pages/admin/AdminQuestionBank";
 import AdminQuestionBankEditor from "./pages/admin/AdminQuestionBankEditor";
 import FinalAssessments from "./pages/admin/FinalAssessments";
 import EQAExport from "./pages/admin/EQAExport";
+import AdminQualificationDetail from "./pages/admin/QualificationDetail";
 import IQALayout from "./components/iqa/IQALayout";
 import IQADashboard from "./pages/iqa/Dashboard";
 import SamplingQueue from "./pages/iqa/SamplingQueue";
@@ -103,6 +104,7 @@ const App = () => {
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="qualifications" element={<QualificationManagement />} />
+                  <Route path="qualifications/:qualificationId" element={<AdminQualificationDetail />} />
                   <Route path="learners" element={<LearnerManagement />} />
                   <Route path="trainers" element={<TrainerManagement />} />
                   <Route path="progress" element={<ProgressMonitoring />} />
