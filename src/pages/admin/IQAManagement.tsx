@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { adminQualifications } from "@/data/adminMockData";
 import TablePagination from "@/components/admin/TablePagination";
+import IQADetailModal from "@/components/admin/IQADetailModal";
 
 interface IQAUser {
   id: string;
