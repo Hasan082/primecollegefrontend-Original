@@ -190,9 +190,12 @@ const IQAManagement = () => {
                   <Badge variant={iqa.status === "active" ? "default" : "secondary"}>
                     {iqa.status.charAt(0).toUpperCase() + iqa.status.slice(1)}
                   </Badge>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => toggleStatus(iqa.id)} title={iqa.status === "active" ? "Deactivate" : "Activate"}>
-                    <Power className={`w-4 h-4 ${iqa.status === "active" ? "text-destructive" : "text-green-600"}`} />
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setDetailIqa(iqa)} title="View Details">
+                    <Eye className="w-4 h-4" />
                   </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => toggleStatus(iqa.id)} title={iqa.status === "active" ? "Deactivate" : "Activate"}>
+                     <Power className={`w-4 h-4 ${iqa.status === "active" ? "text-destructive" : "text-green-600"}`} />
+                   </Button>
                 </div>
               </div>
 
