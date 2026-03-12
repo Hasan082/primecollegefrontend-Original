@@ -15,6 +15,7 @@ import CriteriaChecklist, { type Criterion } from "@/components/trainer/Criteria
 import FeedbackFileUpload from "@/components/trainer/FeedbackFileUpload";
 import ResubmissionHistory, { type SubmissionVersion } from "@/components/trainer/ResubmissionHistory";
 import UnitSignOff from "@/components/trainer/UnitSignOff";
+import UnitAssessmentConfig, { loadUnitConfig, type UnitAssessmentRequirements } from "@/components/trainer/UnitAssessmentConfig";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   Competent: { label: "Competent", className: "bg-green-600 text-white" },
