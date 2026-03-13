@@ -214,20 +214,56 @@ const AssessmentReview = () => {
             </CardContent>
           </Card>
 
-          {/* Assessment Criteria — what assessor claimed */}
+          {/* Assessment Criteria — Assessor's Tick State */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" /> Assessment Criteria (Assessor Claims)
+                <GraduationCap className="w-4 h-4" /> Assessor Criteria Tick-State
               </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Shows exactly which criteria the assessor ticked as met or not met
+              </p>
             </CardHeader>
             <CardContent>
+              {/* Summary */}
+              {sample.criteriaSnapshot && (
+                <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-muted/50">
+                  <span className="text-xs text-muted-foreground">Assessor claimed:</span>
+                  <Badge className="bg-green-600 text-white text-xs">
+                    {sample.criteriaSnapshot.filter(c => c.met).length} Met
+                  </Badge>
+                  {sample.criteriaSnapshot.filter(c => !c.met).length > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {sample.criteriaSnapshot.filter(c => !c.met).length} Not Met
+                    </Badge>
+                  )}
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {Math.round((sample.criteriaSnapshot.filter(c => c.met).length / sample.criteriaSnapshot.length) * 100)}% complete
+                  </span>
+                </div>
+              )}
               <div className="space-y-2">
-                {sample.criteria.map((c, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-foreground">{c}</span>
-                    <Badge className="ml-auto bg-green-600 text-white text-[10px]">Met</Badge>
+                {(sample.criteriaSnapshot || []).map((c, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-3 p-3 rounded-lg border ${
+                      c.met
+                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                        : "bg-destructive/5 border-destructive/20"
+                    }`}
+                  >
+                    {c.met ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <span className="text-xs font-bold text-muted-foreground mr-1.5">{c.code}</span>
+                      <span className="text-sm text-foreground">{c.title}</span>
+                    </div>
+                    <Badge className={`text-[10px] ${c.met ? "bg-green-600 text-white" : "bg-destructive text-destructive-foreground"}`}>
+                      {c.met ? "✓ Met" : "✗ Not Met"}
+                    </Badge>
                   </div>
                 ))}
               </div>
