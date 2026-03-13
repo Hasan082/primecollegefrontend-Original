@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardCheck, Users, BarChart3, Settings, ClipboardList } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Users, BarChart3, Settings, ClipboardList, FolderTree } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -15,6 +15,7 @@ import {
 
 const mainNavItems = [
   { title: "Dashboard", url: "/iqa/dashboard", icon: LayoutDashboard },
+  { title: "Qualification Overview", url: "/iqa/qualifications", icon: FolderTree },
   { title: "Sampling Queue", url: "/iqa/sampling", icon: ClipboardCheck },
   { title: "Checklists", url: "/iqa/checklists", icon: ClipboardList },
   { title: "Trainer Performance", url: "/iqa/trainers", icon: Users },
