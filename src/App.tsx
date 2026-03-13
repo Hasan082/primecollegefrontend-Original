@@ -117,6 +117,7 @@ const App = () => {
                   <Route path="final-assessments" element={<FinalAssessments />} />
                   <Route path="eqa-export" element={<EQAExport />} />
                   <Route path="iqa" element={<IQAManagement />} />
+                  <Route path="checklists" element={<ChecklistBuilder />} />
                   <Route path="pages" element={<PageManagement />} />
                   <Route path="pages/:pageId" element={<PageEditor />} />
                 </Route>
