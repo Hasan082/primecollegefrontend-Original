@@ -1392,7 +1392,7 @@ def notify_trainer_of_submission(sender, instance, created, **kwargs):
 ### 9.2 Email Templates (Celery Tasks)
 
 ```python
-# notifications/tasks.py
+# apps/notifications/tasks/email_tasks.py
 
 @shared_task
 def send_assessment_email(learner_id, unit_title, outcome):
