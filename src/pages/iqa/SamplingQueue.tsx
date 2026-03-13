@@ -114,9 +114,9 @@ const SamplingQueue = () => {
 
   return (
     <div className="space-y-6">
-      <Link to="/iqa/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm">
+      <Button variant="outline" size="sm" className="gap-2" onClick={() => window.history.back()}>
         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-      </Link>
+      </Button>
 
       <div className="flex items-center justify-between">
         <div>

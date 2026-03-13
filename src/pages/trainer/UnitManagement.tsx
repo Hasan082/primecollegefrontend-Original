@@ -175,8 +175,10 @@ const UnitManagement = () => {
   if (!learner || !unit) {
     return (
       <div className="text-center py-20">
-        <p className="text-muted-foreground">Unit not found.</p>
-        <Link to="/trainer/learners" className="text-primary underline mt-2 inline-block">Back to Learners</Link>
+        <p className="text-muted-foreground mb-4">Unit not found.</p>
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => window.history.back()}>
+          <ArrowLeft className="w-4 h-4" /> Back to Learners
+        </Button>
       </div>
     );
   }
