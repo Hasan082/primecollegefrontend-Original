@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { trainerLearners, pendingSubmissions } from "@/data/trainerMockData";
 import QuizResultsPanel from "@/components/trainer/QuizResultsPanel";
+import UnitCriteriaTracker from "@/components/trainer/UnitCriteriaTracker";
 import CriteriaChecklist, { type Criterion } from "@/components/trainer/CriteriaChecklist";
 import FeedbackFileUpload from "@/components/trainer/FeedbackFileUpload";
 import ResubmissionHistory, { type SubmissionVersion } from "@/components/trainer/ResubmissionHistory";
