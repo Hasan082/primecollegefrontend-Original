@@ -1291,7 +1291,7 @@ class MarkCriteriaView(APIView):
 ### 8.2 Compliance Requirements
 
 ```python
-# Ofsted/DfE compliance middleware
+# core/middleware.py — ComplianceMiddleware
 
 class ComplianceMiddleware:
     """Ensures all API actions that modify assessment data create audit entries."""
