@@ -1545,7 +1545,7 @@ class StripeWebhookView(APIView):
 ### 11.1 Automated Sampling
 
 ```python
-# iqa/services.py
+# apps/iqa/services/sampling_service.py
 
 class SamplingService:
     """Auto-generate IQA samples based on configured sampling rates."""
