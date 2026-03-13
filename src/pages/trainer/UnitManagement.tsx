@@ -288,6 +288,16 @@ const UnitManagement = () => {
         />
       </div>
 
+      {/* Unit Criteria Progress Tracker */}
+      <div className="mb-6">
+        <UnitCriteriaTracker
+          unitCode={unit.code}
+          unitName={unit.name}
+          criteriaState={criteriaState}
+          submissions={submissions.map(s => ({ id: s.id, title: s.title }))}
+        />
+      </div>
+
       {/* Unit Sign-Off */}
       <div className="mb-6">
         <UnitSignOff
