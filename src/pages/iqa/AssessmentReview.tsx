@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { iqaSamples } from "@/data/iqaMockData";
 import { loadIQAQueue, updateIQAEntry, type IQAQueueEntry } from "@/lib/iqaQueue";
+import { addIQANotification, createDisagreeNotification, createApprovalNotification } from "@/lib/iqaNotifications";
 import { useToast } from "@/hooks/use-toast";
 import VACSVerification, { initialVACSState, type VACSState } from "@/components/iqa/VACSVerification";
 import IQADisagreeForm, { type DisagreeDecision } from "@/components/iqa/IQADisagreeForm";
