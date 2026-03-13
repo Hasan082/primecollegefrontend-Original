@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Clock, CheckCircle, AlertCircle, Eye, FileText } from "lucide-react";
+import { Users, Clock, CheckCircle, AlertCircle, Eye, FileText, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { pendingSubmissions, trainerLearners, recentAssessments } from "@/data/trainerMockData";
 import TablePagination from "@/components/admin/TablePagination";
+import IQANotificationsPanel from "@/components/trainer/IQANotificationsPanel";
+import { getActionRequiredCount } from "@/lib/iqaNotifications";
 
 const findLearnerId = (lrnCode: string) => {
   const learner = trainerLearners.find((l) => l.learnerId === lrnCode);
