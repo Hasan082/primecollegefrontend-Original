@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft, Download, Upload, FileText, CheckCircle2, Clock,
-  AlertTriangle, Circle, ClipboardList, PenLine, File as FileIcon, Lock
+  AlertTriangle, Circle, ClipboardList, PenLine, File as FileIcon, Lock, ShieldCheck
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { learnerQualifications } from "@/data/learnerMockData";
 import type { UnitData, AssignmentData } from "@/data/learnerMockData";
 import { useToast } from "@/hooks/use-toast";
