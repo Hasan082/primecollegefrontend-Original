@@ -61,7 +61,7 @@ export interface UnitData {
   id: string;
   code: string;
   title: string;
-  status: "competent" | "awaiting_assessment" | "resubmission" | "not_started";
+  status: "competent" | "awaiting_assessment" | "resubmission" | "not_started" | "awaiting_iqa";
   submittedDate?: string;
   assessedDate?: string;
   feedback?: string;
@@ -157,6 +157,7 @@ export const learnerQualifications: QualificationData[] = [
         status: "competent", submittedDate: "15/12/2024", assessedDate: "20/12/2024",
         feedback: "All criteria met successfully. Excellent understanding of duty of care principles.",
         detail: {
+
           overview: "This unit focuses on understanding the concept of duty of care and how it applies to your own role in adult care settings. You will learn about dilemmas that may arise and how to address complaints.",
           requirements: [
             "Understand the implications of duty of care",
@@ -202,7 +203,7 @@ export const learnerQualifications: QualificationData[] = [
       },
       {
         id: "u2", code: "VTCT302", title: "Equality, Diversity and Inclusion in Adult Care",
-        status: "competent", submittedDate: "18/12/2024", assessedDate: "22/12/2024",
+        status: "awaiting_iqa", submittedDate: "18/12/2024", assessedDate: "22/12/2024",
         feedback: "Excellent evidence provided with clear real-world examples.",
         detail: {
           overview: "This unit covers the importance of equality, diversity and inclusion in adult care settings. You will explore legislation, organisational practices, and how to promote inclusive working.",

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Clock, CheckCircle2, AlertTriangle, FileText, MessageSquare, Upload, GraduationCap, Timer, CalendarPlus } from "lucide-react";
+import { BookOpen, Clock, CheckCircle2, AlertTriangle, FileText, MessageSquare, Upload, GraduationCap, Timer, CalendarPlus, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { learnerQualifications } from "@/data/learnerMockData";
@@ -63,12 +63,14 @@ const Dashboard = () => {
   const enrolled = learnerQualifications.length;
   const awaiting = allUnits.filter((u) => u.status === "awaiting_assessment").length;
   const competent = allUnits.filter((u) => u.status === "competent").length;
+  const awaitingIqa = allUnits.filter((u) => u.status === "awaiting_iqa").length;
   const resubmission = allUnits.filter((u) => u.status === "resubmission").length;
   const recentActivity = buildRecentActivity();
 
   const stats = [
     { label: "Enrolled", value: enrolled, icon: BookOpen, color: "bg-primary" },
     { label: "Awaiting Assessment", value: awaiting, icon: Clock, color: "bg-amber-500" },
+    { label: "Awaiting IQA", value: awaitingIqa, icon: ShieldCheck, color: "bg-blue-600" },
     { label: "Competent", value: competent, icon: CheckCircle2, color: "bg-green-600" },
     { label: "Resubmission Required", value: resubmission, icon: AlertTriangle, color: "bg-orange-500" },
   ];
@@ -77,18 +79,17 @@ const Dashboard = () => {
     <div>
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-3xl font-bold text-foreground">My Dashboard</h1>
-        <Link
-          to="/learner/qualifications"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-semibold hover:opacity-90 transition-opacity text-sm"
-        >
-          <GraduationCap className="w-4 h-4" />
-          My Qualifications
-        </Link>
+        <Button asChild>
+          <Link to="/learner/qualifications" className="gap-2">
+            <GraduationCap className="w-4 h-4" />
+            My Qualifications
+          </Link>
+        </Button>
       </div>
       <p className="text-muted-foreground mb-8">Track your progress and submit evidence for assessment</p>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {stats.map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-xl p-5 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-lg ${s.color} flex items-center justify-center flex-shrink-0`}>

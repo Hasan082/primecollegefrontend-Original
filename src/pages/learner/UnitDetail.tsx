@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft, Download, Upload, FileText, CheckCircle2, Clock,
-  AlertTriangle, Circle, ClipboardList, PenLine, File as FileIcon, Lock
+  AlertTriangle, Circle, ClipboardList, PenLine, File as FileIcon, Lock, ShieldCheck
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { learnerQualifications } from "@/data/learnerMockData";
 import type { UnitData, AssignmentData } from "@/data/learnerMockData";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ import ResourceLock from "@/components/learner/ResourceLock";
 const statusConfig: Record<UnitData["status"], { label: string; color: string }> = {
   competent: { label: "Competent", color: "bg-green-600 text-white" },
   awaiting_assessment: { label: "Awaiting Assessment", color: "bg-amber-500 text-white" },
+  awaiting_iqa: { label: "Awaiting IQA Verification", color: "bg-blue-600 text-white" },
   resubmission: { label: "Resubmission Required", color: "bg-orange-500 text-white" },
   not_started: { label: "Not Started", color: "bg-muted text-muted-foreground" },
 };
@@ -93,12 +95,12 @@ const QuizAssignment = ({ assignment }: { assignment: AssignmentData }) => {
         </div>
       ))}
       {!submitted && (
-        <button
+        <Button
           onClick={handleSubmit}
-          className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
+          disabled={submitted}
         >
-          Submit Quiz
-        </button>
+          {submitted ? "Quiz Submitted" : "Submit Quiz"}
+        </Button>
       )}
       {submitted && (
         <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
@@ -141,12 +143,9 @@ const WrittenAssignment = ({ assignment, onSubmitted }: { assignment: Assignment
             <span className={`text-sm ${assignment.wordLimit && wordCount > assignment.wordLimit ? "text-destructive" : "text-muted-foreground"}`}>
               {wordCount} {assignment.wordLimit ? `/ ${assignment.wordLimit}` : ""} words
             </span>
-            <button
-              onClick={handleSubmit}
-              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
+            <Button onClick={handleSubmit}>
               Submit Assignment
-            </button>
+            </Button>
           </div>
         </>
       ) : (
@@ -212,18 +211,15 @@ const FileUploadAssignment = ({ assignment, onSubmitted }: { assignment: Assignm
                   <FileIcon className="w-4 h-4 text-primary flex-shrink-0" />
                   <span className="text-sm text-foreground flex-1">{f.name}</span>
                   <span className="text-xs text-muted-foreground">{f.size}</span>
-                  <button onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-xs text-destructive hover:underline">Remove</button>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}>Remove</Button>
                 </div>
               ))}
             </div>
           )}
 
-          <button
-            onClick={handleSubmit}
-            className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
-          >
+          <Button onClick={handleSubmit}>
             Submit Evidence
-          </button>
+          </Button>
         </>
       ) : (
         <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
@@ -247,6 +243,7 @@ const UnitDetail = () => {
   const [activeAssignment, setActiveAssignment] = useState<string | null>(null);
   const [showStrictQuiz, setShowStrictQuiz] = useState(false);
   const [submittedAssignments, setSubmittedAssignments] = useState<Set<string>>(new Set());
+  const [unitSubmitted, setUnitSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [extraUploads, setExtraUploads] = useState<{ name: string; size: string; date: string }[]>([]);
   const { toast } = useToast();
@@ -266,8 +263,18 @@ const UnitDetail = () => {
   const detail = unit.detail;
   const cfg = statusConfig[unit.status];
 
+  const isExpired = (() => {
+    // Check qualification expiry from mock data
+    const expiryMap: Record<string, string> = { "adult-care-l4": "01/02/2026", "business-admin-l3": "15/09/2026" };
+    const expiry = expiryMap[qualificationId || ""];
+    if (!expiry) return false;
+    const [d, m, y] = expiry.split("/").map(Number);
+    return new Date(y, m - 1, d) < new Date();
+  })();
+
   const evidenceUploaded = (detail?.uploadedFiles.length || 0) + extraUploads.length > 0;
-  const readyForAssessment = unit.status === "not_started" && evidenceUploaded;
+  const alreadySubmitted = unit.status === "awaiting_assessment" || unit.status === "competent" || unit.status === "awaiting_iqa" || unitSubmitted;
+  const readyForAssessment = !alreadySubmitted && evidenceUploaded;
 
   const handleExtraUpload = (fileList: FileList | null) => {
     if (!fileList) return;
@@ -372,12 +379,12 @@ const UnitDetail = () => {
                         <div className="p-5 pt-0 border-t border-border">
                           <p className="text-sm text-muted-foreground mb-5 pt-4">{a.description}</p>
                           {a.type === "quiz" && !isSubmitted && (
-                            <button
+                            <Button
                               onClick={() => setShowStrictQuiz(true)}
-                              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+                              className="gap-2"
                             >
                               <ClipboardList className="w-4 h-4" /> Launch Quiz (Strict Mode)
-                            </button>
+                            </Button>
                           )}
                           {a.type === "quiz" && isSubmitted && (
                             <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
@@ -416,17 +423,31 @@ const UnitDetail = () => {
                       <p className="text-sm font-medium text-primary">{r.name}</p>
                       <p className="text-xs text-muted-foreground">{r.type} • {r.size}</p>
                     </div>
-                    <button className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <Button variant="ghost" size="sm" className="gap-1.5">
                       <Download className="w-4 h-4" /> Download
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Access Expired Block */}
+          {isExpired && (
+            <div className="bg-card border-2 border-destructive/40 rounded-xl p-6 text-center">
+              <Lock className="w-8 h-8 text-destructive mx-auto mb-3" />
+              <h4 className="text-base font-bold text-foreground mb-1">Access Expired</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Your qualification access has expired. Please extend your access to continue uploading evidence.
+              </p>
+              <Button variant="destructive" asChild>
+                <Link to="/learner/qualifications">Extend Access</Link>
+              </Button>
+            </div>
+          )}
+
           {/* Evidence Upload Form — with description + criteria linking */}
-          {detail && qualification.paymentConfirmed && (
+          {detail && qualification.paymentConfirmed && !isExpired && (
             <EvidenceUploadForm
               requirements={detail.requirements}
               isLocked={!qualification.paymentConfirmed}
@@ -493,12 +514,16 @@ const UnitDetail = () => {
             <p className="text-xs text-muted-foreground mb-4">
               Once submitted, your evidence will be reviewed by an assessor. You will receive feedback and an outcome notification.
             </p>
-            <button
-              onClick={() => toast({ title: "Submitted for Assessment", description: "Your work has been submitted. You will be notified when assessed." })}
-              className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
+            <Button
+              className="w-full"
+              disabled={!readyForAssessment || alreadySubmitted || isExpired}
+              onClick={() => {
+                setUnitSubmitted(true);
+                toast({ title: "Submitted for Assessment", description: "Your work has been submitted. You will be notified when assessed." });
+              }}
             >
-              Submit for Assessment
-            </button>
+              {alreadySubmitted ? "Submitted — Awaiting Assessment" : "Submit for Assessment"}
+            </Button>
           </div>
 
           {/* Unit Information */}

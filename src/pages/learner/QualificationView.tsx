@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, Circle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, Circle, ShieldCheck } from "lucide-react";
 import { learnerQualifications } from "@/data/learnerMockData";
 import { Progress } from "@/components/ui/progress";
 import type { UnitData } from "@/data/learnerMockData";
@@ -7,6 +8,7 @@ import type { UnitData } from "@/data/learnerMockData";
 const statusConfig: Record<UnitData["status"], { label: string; color: string; icon: typeof CheckCircle2 }> = {
   competent: { label: "Competent", color: "bg-green-600 text-white", icon: CheckCircle2 },
   awaiting_assessment: { label: "Awaiting Assessment", color: "bg-amber-500 text-white", icon: Clock },
+  awaiting_iqa: { label: "Awaiting IQA Verification", color: "bg-blue-600 text-white", icon: ShieldCheck },
   resubmission: { label: "Resubmission Required", color: "bg-orange-500 text-white", icon: AlertTriangle },
   not_started: { label: "Not Started", color: "bg-muted text-muted-foreground", icon: Circle },
 };
@@ -68,7 +70,7 @@ const QualificationView = () => {
             <div key={unit.id} className="bg-card border border-border rounded-xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1">
-                  <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${unit.status === "competent" ? "text-green-600" : unit.status === "awaiting_assessment" ? "text-amber-500" : unit.status === "resubmission" ? "text-orange-500" : "text-muted-foreground"}`} />
+                  <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${unit.status === "competent" ? "text-green-600" : unit.status === "awaiting_assessment" ? "text-amber-500" : unit.status === "awaiting_iqa" ? "text-blue-600" : unit.status === "resubmission" ? "text-orange-500" : "text-muted-foreground"}`} />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-semibold text-foreground">
@@ -92,12 +94,15 @@ const QualificationView = () => {
                     )}
                   </div>
                 </div>
-                <Link
-                  to={`/learner/qualification/${id}/unit/${unit.id}`}
-                  className="bg-primary text-primary-foreground text-sm font-semibold px-5 py-2 rounded-lg hover:opacity-90 transition-opacity flex-shrink-0"
+                <Button
+                  asChild
+                  size="sm"
+                  className="flex-shrink-0"
                 >
-                  View Unit
-                </Link>
+                  <Link to={`/learner/qualification/${id}/unit/${unit.id}`}>
+                    View Unit
+                  </Link>
+                </Button>
               </div>
             </div>
           );
