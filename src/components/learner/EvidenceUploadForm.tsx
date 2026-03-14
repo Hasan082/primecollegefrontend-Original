@@ -83,6 +83,7 @@ const EvidenceUploadForm = ({ requirements, onSubmit, isLocked }: EvidenceUpload
     setFiles([]);
     setDescription("");
     setLinkedCriteria([]);
+    setDeclarationChecked(false);
     toast({
       title: "Evidence Submitted",
       description: `Reference: ${evidenceRef} — Your evidence has been submitted for assessment.`,
