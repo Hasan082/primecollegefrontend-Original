@@ -143,12 +143,9 @@ const WrittenAssignment = ({ assignment, onSubmitted }: { assignment: Assignment
             <span className={`text-sm ${assignment.wordLimit && wordCount > assignment.wordLimit ? "text-destructive" : "text-muted-foreground"}`}>
               {wordCount} {assignment.wordLimit ? `/ ${assignment.wordLimit}` : ""} words
             </span>
-            <button
-              onClick={handleSubmit}
-              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
+            <Button onClick={handleSubmit}>
               Submit Assignment
-            </button>
+            </Button>
           </div>
         </>
       ) : (
