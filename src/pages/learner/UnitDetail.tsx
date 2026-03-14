@@ -243,6 +243,7 @@ const UnitDetail = () => {
   const [activeAssignment, setActiveAssignment] = useState<string | null>(null);
   const [showStrictQuiz, setShowStrictQuiz] = useState(false);
   const [submittedAssignments, setSubmittedAssignments] = useState<Set<string>>(new Set());
+  const [unitSubmitted, setUnitSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [extraUploads, setExtraUploads] = useState<{ name: string; size: string; date: string }[]>([]);
   const { toast } = useToast();
