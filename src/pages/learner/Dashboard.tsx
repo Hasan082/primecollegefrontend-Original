@@ -79,13 +79,12 @@ const Dashboard = () => {
     <div>
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-3xl font-bold text-foreground">My Dashboard</h1>
-        <Link
-          to="/learner/qualifications"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-semibold hover:opacity-90 transition-opacity text-sm"
-        >
-          <GraduationCap className="w-4 h-4" />
-          My Qualifications
-        </Link>
+        <Button asChild>
+          <Link to="/learner/qualifications" className="gap-2">
+            <GraduationCap className="w-4 h-4" />
+            My Qualifications
+          </Link>
+        </Button>
       </div>
       <p className="text-muted-foreground mb-8">Track your progress and submit evidence for assessment</p>
 
