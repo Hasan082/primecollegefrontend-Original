@@ -71,6 +71,10 @@ const EvidenceUploadForm = ({ requirements, onSubmit, isLocked }: EvidenceUpload
       toast({ title: "Please link at least one assessment criterion", variant: "destructive" });
       return;
     }
+    if (!declarationChecked) {
+      toast({ title: "Please confirm the Learner Declaration", variant: "destructive" });
+      return;
+    }
 
     const evidenceRef = generateEvidenceNumber();
     onSubmit({ files, description, linkedCriteria, evidenceRef });
