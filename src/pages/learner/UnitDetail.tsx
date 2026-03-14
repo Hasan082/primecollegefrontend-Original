@@ -16,6 +16,7 @@ import ResourceLock from "@/components/learner/ResourceLock";
 const statusConfig: Record<UnitData["status"], { label: string; color: string }> = {
   competent: { label: "Competent", color: "bg-green-600 text-white" },
   awaiting_assessment: { label: "Awaiting Assessment", color: "bg-amber-500 text-white" },
+  awaiting_iqa: { label: "Awaiting IQA Verification", color: "bg-blue-600 text-white" },
   resubmission: { label: "Resubmission Required", color: "bg-orange-500 text-white" },
   not_started: { label: "Not Started", color: "bg-muted text-muted-foreground" },
 };

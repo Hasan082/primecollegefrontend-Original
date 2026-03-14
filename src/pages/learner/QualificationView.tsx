@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, Circle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, Circle, ShieldCheck } from "lucide-react";
 import { learnerQualifications } from "@/data/learnerMockData";
 import { Progress } from "@/components/ui/progress";
 import type { UnitData } from "@/data/learnerMockData";
@@ -7,6 +7,7 @@ import type { UnitData } from "@/data/learnerMockData";
 const statusConfig: Record<UnitData["status"], { label: string; color: string; icon: typeof CheckCircle2 }> = {
   competent: { label: "Competent", color: "bg-green-600 text-white", icon: CheckCircle2 },
   awaiting_assessment: { label: "Awaiting Assessment", color: "bg-amber-500 text-white", icon: Clock },
+  awaiting_iqa: { label: "Awaiting IQA Verification", color: "bg-blue-600 text-white", icon: ShieldCheck },
   resubmission: { label: "Resubmission Required", color: "bg-orange-500 text-white", icon: AlertTriangle },
   not_started: { label: "Not Started", color: "bg-muted text-muted-foreground", icon: Circle },
 };
