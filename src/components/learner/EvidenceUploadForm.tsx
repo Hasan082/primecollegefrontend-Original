@@ -23,6 +23,7 @@ const EvidenceUploadForm = ({ requirements, onSubmit, isLocked }: EvidenceUpload
   const [files, setFiles] = useState<{ name: string; size: string }[]>([]);
   const [description, setDescription] = useState("");
   const [linkedCriteria, setLinkedCriteria] = useState<string[]>([]);
+  const [declarationChecked, setDeclarationChecked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
