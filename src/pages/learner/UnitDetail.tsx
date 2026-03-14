@@ -514,12 +514,16 @@ const UnitDetail = () => {
             <p className="text-xs text-muted-foreground mb-4">
               Once submitted, your evidence will be reviewed by an assessor. You will receive feedback and an outcome notification.
             </p>
-            <button
-              onClick={() => toast({ title: "Submitted for Assessment", description: "Your work has been submitted. You will be notified when assessed." })}
-              className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
+            <Button
+              className="w-full"
+              disabled={!readyForAssessment || alreadySubmitted || isExpired}
+              onClick={() => {
+                setUnitSubmitted(true);
+                toast({ title: "Submitted for Assessment", description: "Your work has been submitted. You will be notified when assessed." });
+              }}
             >
-              Submit for Assessment
-            </button>
+              {alreadySubmitted ? "Submitted — Awaiting Assessment" : "Submit for Assessment"}
+            </Button>
           </div>
 
           {/* Unit Information */}
