@@ -89,7 +89,7 @@ const Dashboard = () => {
       <p className="text-muted-foreground mb-8">Track your progress and submit evidence for assessment</p>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {stats.map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-xl p-5 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-lg ${s.color} flex items-center justify-center flex-shrink-0`}>
