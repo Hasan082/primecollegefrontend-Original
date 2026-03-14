@@ -77,6 +77,7 @@ export interface QualificationData {
   enrolledDate: string;
   status: "in_progress" | "completed";
   awardingBody: string;
+  paymentConfirmed: boolean;
   units: UnitData[];
 }
 
