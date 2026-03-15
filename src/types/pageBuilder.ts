@@ -165,6 +165,7 @@ export interface PricingBlock extends BlockBase {
 export type ContentBlock =
   | HeroBlock
   | TextBlock
+  | ImageBlock
   | ImageTextBlock
   | ModulesBlock
   | FAQBlock
