@@ -18,6 +18,7 @@ const imageMap: Record<string, string> = {
 interface Slide {
   category: string;
   title: string;
+  level?: string;
   price: string;
   cta: string;
   image: string;
@@ -87,7 +88,11 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
           <h1 className="text-3xl md:text-5xl font-bold text-background mb-4 leading-tight">
             {slide.title}
           </h1>
-          <p className="text-2xl font-semibold text-secondary mb-6">{slide.price}</p>
+          {slide.level && (
+            <span className="inline-block bg-primary/20 border border-primary text-background text-lg font-semibold px-5 py-1.5 rounded mb-6">
+              {slide.level}
+            </span>
+          )}
           <a
             href={slide.slug ? `/qualifications/${slide.slug}` : "/qualifications"}
             className="inline-block bg-secondary text-secondary-foreground px-8 py-3 font-semibold rounded hover:opacity-90 text-sm"
