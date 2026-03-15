@@ -3,6 +3,7 @@
     {
       "category": "Business",
       "title": "OTHM Level 7 Diploma in Strategic Management and Leadership",
+      "level": "Level 7",
       "price": "£1,500",
       "cta": "Enroll Now",
       "image": "classroom",
@@ -11,6 +12,7 @@
     {
       "category": "Management",
       "title": "OTHM Level 5 Extended Diploma in Business Management",
+      "level": "Level 5",
       "price": "£1,200",
       "cta": "Enroll Now",
       "image": "business",
@@ -19,6 +21,7 @@
     {
       "category": "Care",
       "title": "OTHM Level 5 Diploma in Health and Social Care Management",
+      "level": "Level 5",
       "price": "£1,100",
       "cta": "Enroll Now",
       "image": "leadership",
@@ -27,6 +30,7 @@
     {
       "category": "Business",
       "title": "OTHM Level 6 Diploma in Business Management",
+      "level": "Level 6",
       "price": "£1,350",
       "cta": "Enroll Now",
       "image": "executive",
@@ -35,6 +39,7 @@
     {
       "category": "Care",
       "title": "QUALIFI Level 3 Diploma in Health and Social Care",
+      "level": "Level 3",
       "price": "£950",
       "cta": "Enroll Now",
       "image": "care",
@@ -43,6 +48,7 @@
     {
       "category": "Care",
       "title": "OTHM Level 7 Diploma in Healthcare Management",
+      "level": "Level 7",
       "price": "£1,500",
       "cta": "Enroll Now",
       "image": "care",
