@@ -34,6 +34,7 @@ const PageManagement = () => {
     };
     setPages((prev) => [...prev, page]);
     setNewPage({ title: "", slug: "", type: "static" });
+    
     setAddOpen(false);
     toast({ title: "Page created — add blocks in the editor" });
   };
