@@ -43,7 +43,7 @@ const BlogDetail = () => {
 
   useEffect(() => {
     fetchContent<BlogData>("blog").then((data) => {
-      const found = data.posts.find((p) => p.id === id);
+      const found = data.posts.find((p) => p.id === id || p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") === id);
       setPost(found || null);
       if (found) {
         setRelatedPosts(
