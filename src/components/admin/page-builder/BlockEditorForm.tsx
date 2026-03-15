@@ -131,6 +131,32 @@ const BlockEditorForm = ({ block, onChange, onBlockMetaChange, onClose }: BlockE
         </div>
       )}
 
+      {(typeof local.ctaLabel === "string" || block.type === "hero") && (
+        <div className="space-y-1">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Button Label" value={(local.ctaLabel as string) || ""} onChange={(v) => update("ctaLabel", v)} />
+            <Field label="Button Link" value={(local.ctaHref as string) || ""} onChange={(v) => update("ctaHref", v)} />
+          </div>
+          <p className="text-[10px] text-muted-foreground">Leave empty to hide the button</p>
+        </div>
+      )}
+      {typeof local.price === "string" && (
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Price" value={local.price as string} onChange={(v) => update("price", v)} />
+          {typeof local.duration === "string" && (
+            <Field label="Duration" value={local.duration as string} onChange={(v) => update("duration", v)} />
+          )}
+        </div>
+      )}
+
+      {Array.isArray(local.items) && (
+        <ItemListEditor
+          blockType={block.type}
+          items={local.items as Record<string, string | undefined>[]}
+          onChange={(items) => update("items", items)}
+        />
+      )}
+
       {block.type === "cta" && <CTABackgroundEditor local={local} update={update} />}
 
       {/* Block Style Panel — available for ALL blocks */}
