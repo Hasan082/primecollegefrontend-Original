@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Breadcrumb from "@/components/Breadcrumb";
 import { defaultPages } from "@/data/defaultPages";
 
@@ -52,21 +53,27 @@ const Blog = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Posts Grid */}
             <div className="lg:col-span-2">
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-2 mb-8">
-                {["All", ...categories].map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                      activeCategory === cat
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-muted-foreground border border-border hover:bg-accent"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              {/* Search + Filter Row */}
+              <div className="flex items-center justify-between gap-4 mb-8">
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Search posts..."
+                    className="pr-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2" />
+                </div>
+                <Select value={activeCategory} onValueChange={setActiveCategory}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["All", ...categories].map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
