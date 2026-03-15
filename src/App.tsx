@@ -20,6 +20,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Checkout from "./pages/Checkout";
 import EnrollmentConfirmation from "./pages/EnrollmentConfirmation";
 import NotFound from "./pages/NotFound";
+import BlogDetail from "./pages/BlogDetail";
+import Blog from "./pages/Blog";
 import ScrollToTop from "./components/ScrollToTop";
 import LoadingSpinner from "./components/LoadingSpinner";
 import LearnerLayout from "./components/learner/LearnerLayout";
@@ -154,6 +156,8 @@ const App = () => {
                         <Route path="/qualifications" element={<Qualifications />} />
                         <Route path="/qualifications/:slug" element={<QualificationDetail />} />
                         <Route path="/recruitment" element={<Recruitment />} />
+                        <Route path="/blog" element={<Blog />} />
+                        <Route path="/blog/:id" element={<BlogDetail />} />
                         <Route path="/contact" element={<Contact />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
