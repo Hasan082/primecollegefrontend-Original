@@ -39,6 +39,12 @@ const PageManagement = () => {
     toast({ title: "Page created — add blocks in the editor" });
   };
 
+  const handleDeletePage = (id: string) => {
+    setPages((prev) => prev.filter((p) => p.id !== id));
+    toast({ title: "Blog post deleted" });
+  };
+  };
+
   const staticPages = pages.filter((p) => p.type === "static");
   const qualPages = pages.filter((p) => p.type === "qualification");
   const blogPages = pages.filter((p) => p.type === "blog-post");
