@@ -222,8 +222,9 @@ export const getDefaultBlockData = (type: BlockType): ContentBlock => {
   const label = BLOCK_TYPE_LABELS[type];
 
   const defaults: Record<BlockType, () => ContentBlock> = {
-    hero: () => ({ id, type: "hero", label, data: { title: "Page Title", subtitle: "", image: "classroom", ctaLabel: "", ctaHref: "" } }),
+    hero: () => ({ id, type: "hero", label, data: { title: "Page Title", subtitle: "", image: "", ctaLabel: "", ctaHref: "" } }),
     text: () => ({ id, type: "text", label, data: { title: "Section Title", content: "Enter your content here." } }),
+    image: () => ({ id, type: "image", label, data: { image: "", alt: "", caption: "" } }),
     "image-text": () => ({ id, type: "image-text", label, data: { headline: "Headline", paragraphs: ["Paragraph text here."], description: "", image: "", imagePosition: "right", ctaLabel: "", ctaHref: "" } }),
     modules: () => ({ id, type: "modules", label, data: { title: "Modules", items: [{ title: "Module 1", description: "Description" }] } }),
     faq: () => ({ id, type: "faq", label, data: { title: "FAQs", items: [{ question: "Question?", answer: "Answer." }] } }),
