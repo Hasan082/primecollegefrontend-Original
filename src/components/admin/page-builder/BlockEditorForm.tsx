@@ -14,7 +14,7 @@ import ItemListEditor from "./ItemListEditor";
 interface BlockEditorFormProps {
   block: ContentBlock;
   onChange: (data: Record<string, unknown>) => void;
-  onBlockMetaChange?: (meta: { alignment?: TextAlignment; style?: BlockStyle }) => void;
+  onBlockMetaChange?: (meta: { alignment?: TextAlignment; style?: BlockStyle; label?: string }) => void;
   onClose: () => void;
 }
 
