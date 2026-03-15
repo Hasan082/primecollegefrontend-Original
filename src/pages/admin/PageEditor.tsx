@@ -19,6 +19,7 @@ import BlockPreviewRenderer from "@/components/admin/page-builder/BlockPreviewRe
 const BLOCK_DESCRIPTIONS: Record<BlockType, string> = {
   hero: "Full-width banner",
   text: "Title + content",
+  image: "Full-width image",
   "image-text": "Side by side",
   modules: "Numbered list",
   faq: "Accordion Q&A",
@@ -78,7 +79,7 @@ const PageEditor = () => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, data: { ...(b.data as Record<string, unknown>), ...data } } as ContentBlock : b)));
   }, []);
 
-  const updateBlockMeta = useCallback((id: string, meta: { alignment?: TextAlignment; style?: BlockStyle }) => {
+  const updateBlockMeta = useCallback((id: string, meta: { alignment?: TextAlignment; style?: BlockStyle; label?: string }) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...meta } as ContentBlock : b)));
   }, []);
 

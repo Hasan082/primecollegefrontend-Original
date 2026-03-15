@@ -3,6 +3,7 @@
 export type BlockType =
   | "hero"
   | "text"
+  | "image"
   | "image-text"
   | "modules"
   | "faq"
@@ -55,6 +56,15 @@ export interface TextBlock extends BlockBase {
     title?: string;
     content: string;
     alignment?: "left" | "center" | "right";
+  };
+}
+
+export interface ImageBlock extends BlockBase {
+  type: "image";
+  data: {
+    image: string;
+    alt?: string;
+    caption?: string;
   };
 }
 
@@ -155,6 +165,7 @@ export interface PricingBlock extends BlockBase {
 export type ContentBlock =
   | HeroBlock
   | TextBlock
+  | ImageBlock
   | ImageTextBlock
   | ModulesBlock
   | FAQBlock
@@ -193,6 +204,7 @@ export const generateBlockId = (): string => `block_${Date.now()}_${++_counter}`
 export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   hero: "Hero Banner",
   text: "Text Section",
+  image: "Image",
   "image-text": "Image + Text",
   modules: "Module List",
   faq: "FAQ Accordion",
@@ -210,8 +222,9 @@ export const getDefaultBlockData = (type: BlockType): ContentBlock => {
   const label = BLOCK_TYPE_LABELS[type];
 
   const defaults: Record<BlockType, () => ContentBlock> = {
-    hero: () => ({ id, type: "hero", label, data: { title: "Page Title", subtitle: "", image: "classroom", ctaLabel: "", ctaHref: "" } }),
+    hero: () => ({ id, type: "hero", label, data: { title: "Page Title", subtitle: "", image: "", ctaLabel: "", ctaHref: "" } }),
     text: () => ({ id, type: "text", label, data: { title: "Section Title", content: "Enter your content here." } }),
+    image: () => ({ id, type: "image", label, data: { image: "", alt: "", caption: "" } }),
     "image-text": () => ({ id, type: "image-text", label, data: { headline: "Headline", paragraphs: ["Paragraph text here."], description: "", image: "", imagePosition: "right", ctaLabel: "", ctaHref: "" } }),
     modules: () => ({ id, type: "modules", label, data: { title: "Modules", items: [{ title: "Module 1", description: "Description" }] } }),
     faq: () => ({ id, type: "faq", label, data: { title: "FAQs", items: [{ question: "Question?", answer: "Answer." }] } }),
