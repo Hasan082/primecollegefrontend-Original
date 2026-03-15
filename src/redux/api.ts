@@ -22,13 +22,10 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   const result = await baseQuery(args, api, extraOptions);
 
   if (result?.error?.status === 401) {
-    const res = await fetch(
-      process.env.NEXT_PUBLIC_BASE_URL + "/auth/refresh-token",
-      {
-        method: "GET",
-        credentials: "include",
-      },
-    );
+    const res = await fetch(appConfig.API_BASE_URL + "/auth/refresh-token", {
+      method: "GET",
+      credentials: "include",
+    });
 
     await res.json();
   }
@@ -36,20 +33,9 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   return result;
 };
 
-export const base_api = createApi({
+export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithRefreshToken,
-  tagTypes: [
-    "exams",
-    "exam",
-    "subjects",
-    "topics",
-    "auth",
-    "taken-exams",
-    "users",
-    "subscription",
-    "notes",
-    "notice",
-  ],
+  tagTypes: [],
   endpoints: () => ({}),
 });
