@@ -41,6 +41,7 @@ const PageManagement = () => {
 
   const staticPages = pages.filter((p) => p.type === "static");
   const qualPages = pages.filter((p) => p.type === "qualification");
+  const blogPages = pages.filter((p) => p.type === "blog-post");
 
   return (
     <div className="space-y-6">
