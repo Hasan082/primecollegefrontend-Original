@@ -82,12 +82,27 @@ const BlockEditorForm = ({ block, onChange, onBlockMetaChange, onClose }: BlockE
       {typeof local.subtitle === "string" && (
         <Field label="Subtitle" value={local.subtitle as string} onChange={(v) => update("subtitle", v)} />
       )}
-      {typeof local.content === "string" && (
+      {typeof local.content === "string" && block.type !== "image-text" && (
         <div>
           <Label>Content</Label>
           <RichTextEditor value={local.content as string} onChange={(v) => update("content", v)} />
         </div>
       )}
+
+      {/* Image+Text block: description field */}
+      {block.type === "image-text" && (
+        <div>
+          <Label>Description</Label>
+          <RichTextEditor
+            value={(local.description as string) || (Array.isArray(local.paragraphs) ? (local.paragraphs as string[]).join("") : "")}
+            onChange={(v) => {
+              update("description", v);
+              update("paragraphs", [v]);
+            }}
+          />
+        </div>
+      )}
+
       {typeof local.image === "string" && (
         <ImageField
           value={local.image as string}
@@ -96,33 +111,9 @@ const BlockEditorForm = ({ block, onChange, onBlockMetaChange, onClose }: BlockE
           onPositionChange={local.imagePosition !== undefined ? (v) => update("imagePosition", v) : undefined}
         />
       )}
-      {(typeof local.ctaLabel === "string" || block.type === "hero") && (
-        <div className="space-y-1">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Button Label" value={(local.ctaLabel as string) || ""} onChange={(v) => update("ctaLabel", v)} />
-            <Field label="Button Link" value={(local.ctaHref as string) || ""} onChange={(v) => update("ctaHref", v)} />
-          </div>
-          <p className="text-[10px] text-muted-foreground">Leave empty to hide the button</p>
-        </div>
-      )}
-      {typeof local.price === "string" && (
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Price" value={local.price as string} onChange={(v) => update("price", v)} />
-          {typeof local.duration === "string" && (
-            <Field label="Duration" value={local.duration as string} onChange={(v) => update("duration", v)} />
-          )}
-        </div>
-      )}
 
-      {Array.isArray(local.items) && (
-        <ItemListEditor
-          blockType={block.type}
-          items={local.items as Record<string, string | undefined>[]}
-          onChange={(items) => update("items", items)}
-        />
-      )}
-
-      {Array.isArray(local.paragraphs) && (
+      {/* Paragraphs for non-image-text blocks */}
+      {Array.isArray(local.paragraphs) && block.type !== "image-text" && (
         <div>
           <Label>Paragraphs</Label>
           {(local.paragraphs as string[]).map((p, i) => (
