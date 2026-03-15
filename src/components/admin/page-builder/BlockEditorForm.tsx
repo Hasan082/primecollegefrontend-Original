@@ -22,6 +22,7 @@ const BlockEditorForm = ({ block, onChange, onBlockMetaChange, onClose }: BlockE
   const [local, setLocal] = useState<Record<string, unknown>>(block.data as Record<string, unknown>);
   const [alignment, setAlignment] = useState<TextAlignment>(block.alignment || "center");
   const [blockStyle, setBlockStyle] = useState<BlockStyle>(block.style || {});
+  const [blockLabel, setBlockLabel] = useState(block.label);
 
   const update = (key: string, value: unknown) => {
     setLocal((prev) => ({ ...prev, [key]: value }));
@@ -29,7 +30,7 @@ const BlockEditorForm = ({ block, onChange, onBlockMetaChange, onClose }: BlockE
 
   const handleSave = () => {
     onChange(local);
-    onBlockMetaChange?.({ alignment, style: blockStyle });
+    onBlockMetaChange?.({ alignment, style: blockStyle, label: blockLabel });
     onClose();
   };
 
