@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Plus, Pencil, Globe, GraduationCap, ArrowLeft, BookOpen } from "lucide-react";
+import { FileText, Plus, Pencil, Globe, GraduationCap, ArrowLeft, BookOpen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,11 @@ const PageManagement = () => {
     
     setAddOpen(false);
     toast({ title: "Page created — add blocks in the editor" });
+  };
+
+  const handleDeletePage = (id: string) => {
+    setPages((prev) => prev.filter((p) => p.id !== id));
+    toast({ title: "Blog post deleted" });
   };
 
   const staticPages = pages.filter((p) => p.type === "static");
@@ -106,7 +111,7 @@ const PageManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {blogPages.map((page) => (
-              <PageCard key={page.id} page={page} />
+              <PageCard key={page.id} page={page} onDelete={handleDeletePage} />
             ))}
           </div>
         )}
@@ -156,7 +161,7 @@ const PageManagement = () => {
   );
 };
 
-const PageCard = ({ page }: { page: PageConfig }) => (
+const PageCard = ({ page, onDelete }: { page: PageConfig; onDelete?: (id: string) => void }) => (
   <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
     <CardContent className="p-5 flex flex-col flex-1">
       <div className="flex items-start justify-between mb-3">
@@ -176,12 +181,17 @@ const PageCard = ({ page }: { page: PageConfig }) => (
         ))}
         {page.blocks.length > 3 && <span>+{page.blocks.length - 3} more</span>}
       </div>
-      <div className="mt-auto">
-        <Link to={`/admin/pages/${page.id}`}>
+      <div className="mt-auto flex gap-2">
+        <Link to={`/admin/pages/${page.id}`} className="flex-1">
           <Button size="sm" className="w-full">
             <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Page
           </Button>
         </Link>
+        {onDelete && (
+          <Button size="sm" variant="destructive" onClick={() => onDelete(page.id)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
     </CardContent>
   </Card>
