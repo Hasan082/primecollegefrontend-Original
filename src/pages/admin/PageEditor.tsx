@@ -19,6 +19,7 @@ import BlockPreviewRenderer from "@/components/admin/page-builder/BlockPreviewRe
 const BLOCK_DESCRIPTIONS: Record<BlockType, string> = {
   hero: "Full-width banner",
   text: "Title + content",
+  image: "Full-width image",
   "image-text": "Side by side",
   modules: "Numbered list",
   faq: "Accordion Q&A",
