@@ -111,7 +111,7 @@ const PageManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {blogPages.map((page) => (
-              <PageCard key={page.id} page={page} />
+              <PageCard key={page.id} page={page} onDelete={handleDeletePage} />
             ))}
           </div>
         )}
