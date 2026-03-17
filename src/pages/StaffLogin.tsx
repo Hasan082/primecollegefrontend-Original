@@ -83,13 +83,12 @@ const StaffLogin = () => {
   const [selectedRole, setSelectedRole] = useState<StaffRole>("trainer");
 
   const [login, { isLoading: loading }] = useLoginMutation();
-  const { data: csrfData } = useGetCsrfTokenQuery(undefined);
+
   const { toast } = useToast();
 
   const navigate = useNavigate();
 
   const config = ROLE_CONFIG[selectedRole];
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,10 +260,11 @@ const StaffLogin = () => {
                   <button
                     key={role}
                     onClick={() => setSelectedRole(role)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all ${isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                      }`}
+                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
                     <Icon className="w-4 h-4" />
                     {ROLE_CONFIG[role].label}
@@ -325,7 +325,6 @@ const StaffLogin = () => {
                 {!loading && <span>→</span>}
               </button>
             </form>
-
 
             <div className="flex items-center justify-center gap-1.5 mt-5 text-xs text-muted-foreground">
               <Lock className="w-3 h-3" />
