@@ -1,4 +1,9 @@
+import { Outlet, useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { User, UserCircle, KeyRound, LogOut, ChevronDown } from "lucide-react";
 import logo from "@/assets/prime-logo-white-notext.png";
+import { useEffect } from "react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import TrainerSidebar from "@/components/trainer/TrainerSidebar";
 import {
   DropdownMenu,
@@ -7,38 +12,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { useGetMeQuery, useLogoutMutation } from "@/redux/apis/authApi";
-import { ChevronDown, LogOut, User, UserCircle } from "lucide-react";
-import { useEffect } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import LoadingSpinner from "../LoadingSpinner";
 
 const TrainerLayout = () => {
-  const { data: userData, isLoading } = useGetMeQuery(null);
-  const [logout, { isLoading: isLogoutLoading }] = useLogoutMutation();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (
-      !isLoading &&
-      (!userData?.data?.user || userData?.data?.user.role !== "trainer")
-    ) {
-      navigate("/staff-login", { replace: true });
-    }
-  }, [userData, isLoading, navigate]);
+    if (!user || user.role !== "trainer") navigate("/staff-login", { replace: true });
+  }, [user, navigate]);
+
+  if (!user || user.role !== "trainer") return null;
 
   const handleLogout = () => {
-    logout(null);
-
+    logout();
     navigate("/staff-login", { replace: true });
   };
 
-  if (isLoading || isLogoutLoading) return <LoadingSpinner />;
-
-  if (!userData?.data?.user || userData?.data?.user.role !== "trainer") {
-    return <LoadingSpinner />;
-  }
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex flex-col w-full">
@@ -46,19 +35,10 @@ const TrainerLayout = () => {
           <div className="px-4 sm:px-6 h-14 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10 rounded-md p-1.5" />
-              <a
-                href="/"
-                className="w-8 h-8 rounded-full border border-primary-foreground/30 p-0.5 block"
-              >
-                <img
-                  src={logo}
-                  alt="Prime College"
-                  className="w-full h-full object-contain"
-                />
+              <a href="/" className="w-8 h-8 rounded-full border border-primary-foreground/30 p-0.5 block">
+                <img src={logo} alt="Prime College" className="w-full h-full object-contain" />
               </a>
-              <span className="text-lg font-bold hidden sm:inline">
-                Trainer / Assessor Portal
-              </span>
+              <span className="text-lg font-bold hidden sm:inline">Trainer / Assessor Portal</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -67,28 +47,18 @@ const TrainerLayout = () => {
                   <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                     <User className="w-4 h-4 text-secondary-foreground" />
                   </div>
-                  <span className="hidden sm:inline text-sm font-medium">
-                    {userData?.data?.user?.first_name +
-                      " " +
-                      userData?.data?.user?.last_name}
-                  </span>
+                  <span className="hidden sm:inline text-sm font-medium">{user.name}</span>
                   <ChevronDown className="w-4 h-4 opacity-70" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem asChild>
-                    <Link
-                      to="/trainer/profile"
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
+                    <Link to="/trainer/profile" className="flex items-center gap-2 cursor-pointer">
                       <UserCircle className="h-4 w-4" />
                       My Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 text-destructive cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
