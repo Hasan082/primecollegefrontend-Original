@@ -1,25 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
-import {
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  Shield,
-  FileCheck,
-  Award,
-  ArrowLeft,
-  Lock,
-  Users,
-  Settings,
-} from "lucide-react";
+import { Eye, EyeOff, CheckCircle2, Shield, FileCheck, Award, ArrowLeft, Lock, Users, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/prime-logo-white-notext.png";
-import { useLoginMutation, useGetCsrfTokenQuery } from "@/redux/apis/authApi";
-import { TryCatch } from "@/utils/apiTryCatch";
-import { appConfig } from "@/app.config";
 
 type StaffRole = "trainer" | "admin" | "iqa";
 
@@ -27,13 +13,8 @@ const ROLE_CONFIG = {
   trainer: {
     icon: Users,
     label: "Trainer",
-    description:
-      "Review submissions, provide feedback, and assess learner evidence",
-    features: [
-      "Review pending submissions",
-      "Provide detailed feedback",
-      "Track learner progress",
-    ],
+    description: "Review submissions, provide feedback, and assess learner evidence",
+    features: ["Review pending submissions", "Provide detailed feedback", "Track learner progress"],
     cardTitle: "Trainer / Assessor Portal",
     signInLabel: "Sign In to Trainer Portal",
     demoRedirect: "/trainer/dashboard",
@@ -42,27 +23,18 @@ const ROLE_CONFIG = {
   admin: {
     icon: Settings,
     label: "Admin",
-    description:
-      "Manage qualifications, learners, trainers, and platform settings",
-    features: [
-      "Manage qualifications & units",
-      "Enrol learners & assign trainers",
-      "Monitor progress & reporting",
-    ],
+    description: "Manage qualifications, learners, trainers, and platform settings",
+    features: ["Manage qualifications & units", "Enrol learners & assign trainers", "Monitor progress & reporting"],
     cardTitle: "Administration Portal",
     signInLabel: "Sign In to Admin Portal",
-    redirect: appConfig.ADMIN_REDIRECT, // Replaced hardcoded path
+    demoRedirect: "/admin/dashboard",
     placeholder: "admin@primecollege.edu",
   },
   iqa: {
     icon: Shield,
     label: "IQA",
     description: "Monitor assessment quality and ensure regulatory compliance",
-    features: [
-      "Review sampled assessments",
-      "Monitor trainer quality",
-      "Generate compliance reports",
-    ],
+    features: ["Review sampled assessments", "Monitor trainer quality", "Generate compliance reports"],
     cardTitle: "IQA Portal",
     signInLabel: "Sign In to IQA Portal",
     demoRedirect: "/iqa/dashboard",
@@ -70,61 +42,34 @@ const ROLE_CONFIG = {
   },
 } as const;
 
-const redirects = {
-  iqa: appConfig.IQA_REDIRECT,
-  admin: appConfig.ADMIN_REDIRECT,
-  trainer: appConfig.TRAINER_REDIRECT,
-};
-
 const StaffLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<StaffRole>("trainer");
-
-  const [login, { isLoading: loading }] = useLoginMutation();
-
   const { toast } = useToast();
-
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const config = ROLE_CONFIG[selectedRole];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleDemoLogin = () => {
+    login(selectedRole);
+    navigate(config.demoRedirect);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
       toast({ title: "Please fill in all fields", variant: "destructive" });
       return;
     }
-
-    const [result, error] = await TryCatch(
-      login({
-        email,
-        password,
-        role: selectedRole,
-      }).unwrap(),
-    );
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error,
-        variant: "destructive",
-      });
-      return;
-    }
-    if (result?.message || result?.data?.user) {
-      toast({
-        title: "Success",
-        description: result.message || "Logged in successfully",
-      });
-
-      const role = result?.data?.user?.role;
-      if (role === "admin") navigate(appConfig.ADMIN_REDIRECT);
-      else if (role === "trainer") navigate(appConfig.TRAINER_REDIRECT);
-      else if (role === "iqa") navigate(appConfig.IQA_REDIRECT);
-      else navigate(appConfig.LERNER_REDIRECT);
-    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      toast({ title: "Login functionality coming soon", description: "Backend authentication is not yet configured." });
+    }, 1000);
   };
 
   return (
@@ -135,32 +80,19 @@ const StaffLogin = () => {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
             <div className="w-20 h-20 rounded-full flex items-center justify-center border border-primary-foreground/30 p-0.5">
-              <img
-                src={logo}
-                alt="Prime College"
-                className="w-full h-full object-contain"
-              />
+              <img src={logo} alt="Prime College" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-primary-foreground">
-                The Prime College
-              </h2>
-              <p className="text-primary-foreground/60 text-sm">
-                Learning Platform
-              </p>
+              <h2 className="text-lg font-bold text-primary-foreground">The Prime College</h2>
+              <p className="text-primary-foreground/60 text-sm">Learning Platform</p>
             </div>
           </div>
 
           <h1 className="text-4xl xl:text-5xl font-bold text-primary-foreground leading-tight mb-4">
-            Professional
-            <br />
-            Qualification
-            <br />
-            Assessment System
+            Professional<br />Qualification<br />Assessment System
           </h1>
           <p className="text-primary-foreground/70 text-base max-w-lg mb-12">
-            Secure, regulated, and compliant qualification management for
-            learners, trainers, and administrators.
+            Secure, regulated, and compliant qualification management for learners, trainers, and administrators.
           </p>
 
           {/* Dynamic role card */}
@@ -170,21 +102,15 @@ const StaffLogin = () => {
                 <config.icon className="w-5 h-5 text-secondary-foreground" />
               </div>
               <div>
-                <h3 className="font-semibold text-primary-foreground text-sm">
-                  {config.cardTitle}
-                </h3>
-                <p className="text-primary-foreground/60 text-xs">
-                  {config.description}
-                </p>
+                <h3 className="font-semibold text-primary-foreground text-sm">{config.cardTitle}</h3>
+                <p className="text-primary-foreground/60 text-xs">{config.description}</p>
               </div>
             </div>
             <div className="space-y-2.5">
               {config.features.map((item) => (
                 <div key={item} className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0" />
-                  <span className="text-primary-foreground/80 text-sm">
-                    {item}
-                  </span>
+                  <span className="text-primary-foreground/80 text-sm">{item}</span>
                 </div>
               ))}
             </div>
@@ -193,27 +119,19 @@ const StaffLogin = () => {
 
         <div className="relative z-10 mt-12">
           <div className="border-t border-primary-foreground/15 pt-5">
-            <p className="text-primary-foreground/40 text-xs uppercase tracking-widest mb-3">
-              Regulatory Compliance
-            </p>
+            <p className="text-primary-foreground/40 text-xs uppercase tracking-widest mb-3">Regulatory Compliance</p>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-secondary" />
-                <span className="text-primary-foreground/70 text-sm">
-                  Ofqual Aligned
-                </span>
+                <span className="text-primary-foreground/70 text-sm">Ofqual Aligned</span>
               </div>
               <div className="flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-secondary" />
-                <span className="text-primary-foreground/70 text-sm">
-                  Ofsted Ready
-                </span>
+                <span className="text-primary-foreground/70 text-sm">Ofsted Ready</span>
               </div>
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-secondary" />
-                <span className="text-primary-foreground/70 text-sm">
-                  Quality Assured
-                </span>
+                <span className="text-primary-foreground/70 text-sm">Quality Assured</span>
               </div>
             </div>
           </div>
@@ -226,15 +144,9 @@ const StaffLogin = () => {
           <div className="lg:hidden flex justify-center mb-8">
             <Link to="/" className="flex items-center gap-3">
               <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                <img
-                  src={logo}
-                  alt="Prime College"
-                  className="w-8 h-8 object-contain"
-                />
+                <img src={logo} alt="Prime College" className="w-8 h-8 object-contain" />
               </div>
-              <span className="text-xl font-bold text-foreground">
-                The Prime College
-              </span>
+              <span className="text-xl font-bold text-foreground">The Prime College</span>
             </Link>
           </div>
 
@@ -242,13 +154,9 @@ const StaffLogin = () => {
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Lock className="w-5 h-5 text-foreground" />
-                <h2 className="text-2xl font-bold text-foreground">
-                  Secure Access
-                </h2>
+                <h2 className="text-2xl font-bold text-foreground">Secure Access</h2>
               </div>
-              <p className="text-muted-foreground text-sm">
-                Select your role and sign in to continue
-              </p>
+              <p className="text-muted-foreground text-sm">Select your role and sign in to continue</p>
             </div>
 
             {/* Role Tabs - Trainer & Admin only */}
@@ -307,11 +215,7 @@ const StaffLogin = () => {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     tabIndex={-1}
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -326,16 +230,25 @@ const StaffLogin = () => {
               </button>
             </form>
 
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+              <div className="relative flex justify-center"><span className="bg-card px-3 text-xs text-muted-foreground">OR</span></div>
+            </div>
+
+            <button
+              onClick={handleDemoLogin}
+              className="w-full h-11 rounded-lg font-semibold text-sm border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              🚀 Demo {ROLE_CONFIG[selectedRole].label} Login
+            </button>
+
             <div className="flex items-center justify-center gap-1.5 mt-5 text-xs text-muted-foreground">
               <Lock className="w-3 h-3" />
               Encrypted Connection • Secure Authentication
             </div>
           </div>
 
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-primary-foreground hover:bg-primary hover:border-primary transition-colors"
-          >
+          <Link to="/" className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-primary-foreground hover:bg-primary hover:border-primary transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
