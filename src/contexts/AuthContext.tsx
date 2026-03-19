@@ -1,5 +1,5 @@
-import { createContext, useContext, ReactNode, useEffect } from "react";
-import { useGetMeQuery, useLogoutMutation } from "@/redux/apis/authApi";
+import { createContext, useContext, ReactNode, useEffect, useState } from "react";
+import { useGetCsrfTokenQuery, useGetMeQuery, useLogoutMutation } from "@/redux/apis/authApi";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { api } from "@/redux/api";
@@ -17,28 +17,35 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  logout: () => void;
+  logout: (redirectPath?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { data: userData, isLoading, refetch } = useGetMeQuery(undefined);
+  useGetCsrfTokenQuery(undefined);
+  const { data: userData, isLoading } = useGetMeQuery(undefined);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [logoutMutation] = useLogoutMutation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const user = userData?.data?.user || null;
-  const isAuthenticated = !!user;
+  useEffect(() => {
+    setCurrentUser(userData?.data?.user || null);
+  }, [userData]);
 
-  const logout = async () => {
+  const user = currentUser;
+  const isAuthenticated = !!currentUser;
+
+  const logout = async (redirectPath: string = "/") => {
     try {
       await logoutMutation(undefined).unwrap();
     } catch (error) {
 
     } finally {
+      setCurrentUser(null);
       dispatch(api.util.resetApiState());
-      navigate("/");
+      navigate(redirectPath);
     }
   };
 

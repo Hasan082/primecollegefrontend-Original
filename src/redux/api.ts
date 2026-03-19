@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { appConfig } from "@/app.config";
 import {
   BaseQueryApi,
@@ -9,25 +8,18 @@ import {
   fetchBaseQuery,
 } from "@reduxjs/toolkit/query/react";
 
+const getCookie = (name: string) => {
+  const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[2]) : undefined;
+};
+
+const getCsrfToken = () => getCookie("csrftoken");
+const getRefreshToken = () => getCookie("refresh");
+
 const baseQuery = fetchBaseQuery({
   baseUrl: appConfig.API_BASE_URL,
-  prepareHeaders: (headers, { getState }) => {
-    // 1. Try to get token from Redux state (best for cross-origin)
-    const state = getState() as any;
-    const storedToken = state.auth?.csrfToken;
-
-    if (storedToken) {
-      headers.set("X-CSRFToken", storedToken);
-      return headers;
-    }
-
-    // 2. Fallback to cookie (for same-domain/production)
-    const getCookie = (name: string) => {
-      const match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]+)'));
-      return match ? match[2] : undefined;
-    };
-
-    const csrfToken = getCookie("csrftoken");
+  prepareHeaders: (headers) => {
+    const csrfToken = getCsrfToken();
     if (csrfToken) {
       headers.set("X-CSRFToken", csrfToken);
     }
@@ -44,14 +36,17 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   const result = await baseQuery(args, api, extraOptions);
 
   if (result?.error?.status === 401) {
-    try {
-      const state = api.getState() as any;
-      const csrfToken = state.auth?.csrfToken;
+    const refreshCookie = getRefreshToken();
+    if (!refreshCookie) {
+      return result;
+    }
 
+    try {
       const refreshHeaders: HeadersInit = {
         "Content-Type": "application/json",
       };
 
+      const csrfToken = getCsrfToken();
       if (csrfToken) {
         refreshHeaders["X-CSRFToken"] = csrfToken;
       }
@@ -69,7 +64,6 @@ const baseQueryWithRefreshToken: BaseQueryFn<
         const contentType = res.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           await res.json();
-          // After a successful refresh, retry the original request
           return await baseQuery(args, api, extraOptions);
         }
       }

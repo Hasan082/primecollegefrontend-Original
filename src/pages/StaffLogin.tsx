@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import {
   Eye,
@@ -17,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/prime-logo-white-notext.png";
-import { useLoginMutation, useGetCsrfTokenQuery } from "@/redux/apis/authApi";
+import { useLoginMutation } from "@/redux/apis/authApi";
+import { api } from "@/redux/api";
 import { TryCatch } from "@/utils/apiTryCatch";
 import { appConfig } from "@/app.config";
 
@@ -87,6 +89,7 @@ const StaffLogin = () => {
   const { toast } = useToast();
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const config = ROLE_CONFIG[selectedRole];
 
@@ -118,6 +121,8 @@ const StaffLogin = () => {
         title: "Success",
         description: result.message || "Logged in successfully",
       });
+
+      dispatch(api.util.resetApiState());
 
       const role = result?.data?.user?.role;
       if (role === "admin") navigate(appConfig.ADMIN_REDIRECT);
