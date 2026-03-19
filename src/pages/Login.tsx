@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useLoginMutation } from "@/redux/apis/authApi";
+import { api } from "@/redux/api";
 import {
   ArrowLeft,
   Award,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -27,6 +29,7 @@ const Login = () => {
   const [login, { isLoading: loading }] = useLoginMutation();
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +50,8 @@ const Login = () => {
           title: "Success",
           description: result.message || "Logged in successfully",
         });
+
+        dispatch(api.util.resetApiState());
 
         // Smart redirect based on role
         const role = result.data.user.role;

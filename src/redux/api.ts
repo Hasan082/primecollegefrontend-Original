@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { appConfig } from "@/app.config";
 import {
   BaseQueryFn,
@@ -7,18 +6,22 @@ import {
   fetchBaseQuery,
 } from "@reduxjs/toolkit/query/react";
 
-// Base query
+const getCookie = (name: string) => {
+  const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[2]) : undefined;
+};
+
+const getCsrfToken = () => getCookie("csrftoken");
+const getRefreshToken = () => getCookie("refresh");
+
 const baseQuery = fetchBaseQuery({
   baseUrl: appConfig.API_BASE_URL,
   credentials: "include",
-  prepareHeaders: (headers, { getState }) => {
-    const state = getState() as any;
-    const token = state.auth?.csrfToken;
-
-    if (token) {
-      headers.set("X-CSRFToken", token);
+  prepareHeaders: (headers) => {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers.set("X-CSRFToken", csrfToken);
     }
-
     return headers;
   },
 });
@@ -29,24 +32,38 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   unknown,
   unknown
 > = async (args, api, extraOptions) => {
-  let result = await baseQuery(args, api, extraOptions);
+  const result = await baseQuery(args, api, extraOptions);
 
-  //  If unauthorized → try refresh
-  if (result?.error && (result.error as any).status === 401) {
+  if (result?.error?.status === 401) {
+    const refreshCookie = getRefreshToken();
+    if (!refreshCookie) {
+      return result;
+    }
+
     try {
-      const refreshRes = await fetch(
-        `${appConfig.API_BASE_URL}/api/auth/token/refresh/cookie`,
+      const refreshHeaders: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        refreshHeaders["X-CSRFToken"] = csrfToken;
+      }
+
+      const res = await fetch(
+        appConfig.API_BASE_URL + "/api/auth/token/refresh/cookie",
         {
           method: "POST",
           credentials: "include",
         },
       );
 
-      if (refreshRes.ok) {
-        // Retry original request
-        result = await baseQuery(args, api, extraOptions);
-      } else {
-        console.error("Refresh failed");
+      if (res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          await res.json();
+          return await baseQuery(args, api, extraOptions);
+        }
       }
     } catch (err) {
       console.error("Token refresh error:", err);

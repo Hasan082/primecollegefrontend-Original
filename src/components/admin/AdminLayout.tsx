@@ -13,11 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LoadingSpinner from "../LoadingSpinner";
-import { useGetMeQuery, useLogoutMutation } from "@/redux/apis/authApi";
+import { useGetMeQuery } from "@/redux/apis/authApi";
 
 const AdminLayout = () => {
   const { data: userData, isLoading } = useGetMeQuery(null);
-  const [logout, { isLoading: isLogoutLoading }] = useLogoutMutation();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,12 +30,10 @@ const AdminLayout = () => {
   }, [userData, isLoading, navigate]);
 
   const handleLogout = () => {
-    logout(null);
-
-    navigate("/staff-login", { replace: true });
+    logout("/staff-login");
   };
 
-  if (isLoading || isLogoutLoading) return <LoadingSpinner />;
+  if (isLoading) return <LoadingSpinner />;
 
   if (!userData?.data?.user || userData?.data?.user.role !== "admin") {
     return <LoadingSpinner />;

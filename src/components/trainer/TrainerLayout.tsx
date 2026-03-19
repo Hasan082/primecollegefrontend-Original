@@ -8,7 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { useGetMeQuery, useLogoutMutation } from "@/redux/apis/authApi";
+import { useAuth } from "@/contexts/AuthContext";
+import { useGetMeQuery } from "@/redux/apis/authApi";
 import { ChevronDown, LogOut, User, UserCircle } from "lucide-react";
 import { useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -16,7 +17,7 @@ import LoadingSpinner from "../LoadingSpinner";
 
 const TrainerLayout = () => {
   const { data: userData, isLoading } = useGetMeQuery(null);
-  const [logout, { isLoading: isLogoutLoading }] = useLogoutMutation();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,12 +30,10 @@ const TrainerLayout = () => {
   }, [userData, isLoading, navigate]);
 
   const handleLogout = () => {
-    logout(null);
-
-    navigate("/staff-login", { replace: true });
+    logout("/staff-login");
   };
 
-  if (isLoading || isLogoutLoading) return <LoadingSpinner />;
+  if (isLoading) return <LoadingSpinner />;
 
   if (!userData?.data?.user || userData?.data?.user.role !== "trainer") {
     return <LoadingSpinner />;
