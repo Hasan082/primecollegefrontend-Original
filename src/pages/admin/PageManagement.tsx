@@ -52,13 +52,13 @@ const PageManagement = () => {
   const [createPage, { isLoading }] = useCreatePageMutation();
 
   const handleAddPage = async () => {
-    if (!newPage.title || !newPage.slug) {
-      toast({ title: "Title and slug are required", variant: "destructive" });
+    if (!newPage.title) {
+      toast({ title: "Title are required", variant: "destructive" });
       return;
     }
     const slug = newPage.slug.startsWith("/")
       ? newPage.slug
-      : `/${newPage.slug}`;
+      : `${newPage.slug}`;
     const page: PageConfig = {
       id: slug.replace(/\//g, "-").replace(/^-/, "") || "page",
       title: newPage.title,
