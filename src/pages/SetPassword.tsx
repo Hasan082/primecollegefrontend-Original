@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +29,7 @@ const SetPassword = () => {
       return;
     }
     if (!uid || !token) {
-      toast({ title: "Invalid Link", description: "The password setup link is missing the token or uid.", variant: "destructive" });
+      toast({ title: "Invalid Link", description: "This password setup link is invalid or expired. Please open the full link from your email or request a new one.", variant: "destructive" });
       return;
     }
     
@@ -53,7 +53,7 @@ const SetPassword = () => {
     } catch (err: any) {
       toast({
         title: "Failed to set password",
-        description: err?.data?.detail || err?.data?.non_field_errors?.[0] || "An error occurred while setting your password. The link might be invalid or expired.",
+        description: "This password setup link is invalid or expired. Please open the full link from your email or request a new one.",
         variant: "destructive",
       });
     }
@@ -83,6 +83,13 @@ const SetPassword = () => {
             </p>
           </div>
 
+          {(!uid || !token) && (
+            <div className="bg-destructive/10 text-destructive text-sm p-4 rounded-lg flex items-start gap-3 mb-6 border border-destructive/20">
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+              <p>This password setup link is invalid or expired. Please open the full link from your email or request a new one.</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="password">New Password</Label>
@@ -93,6 +100,7 @@ const SetPassword = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-11"
+                disabled={!uid || !token}
                 required
               />
             </div>
@@ -105,13 +113,14 @@ const SetPassword = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="h-11"
+                disabled={!uid || !token}
                 required
               />
             </div>
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !uid || !token}
               className="w-full bg-secondary text-secondary-foreground h-11 rounded-lg font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {isLoading ? "Saving..." : "Set Password"}
