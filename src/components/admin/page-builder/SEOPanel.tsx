@@ -49,12 +49,17 @@ const SEOPanel = ({ slug, onSlugChange, meta, onMetaChange }: SEOPanelProps) => 
           {/* Slug */}
           <div>
             <Label className="text-xs text-muted-foreground">Page Slug (URL)</Label>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-sm text-muted-foreground font-mono">/</span>
+            <div className="flex items-center mt-1">
+              <div className="flex items-center h-8 px-2 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm font-mono">
+                /
+              </div>
               <Input
-                value={slug.replace(/^\//, "")}
-                onChange={(e) => onSlugChange(`/${e.target.value.replace(/^\//, "")}`)}
-                className="h-8 font-mono text-sm"
+                value={slug}
+                onChange={(e) => {
+                  const val = e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "");
+                  onSlugChange(val);
+                }}
+                className="h-8 font-mono text-sm rounded-l-none"
                 placeholder="page-url"
               />
             </div>
@@ -122,7 +127,7 @@ const SEOPanel = ({ slug, onSlugChange, meta, onMetaChange }: SEOPanelProps) => 
                 {meta.title || "Page Title"}
               </p>
               <p className="text-[11px] text-primary/70 font-mono truncate">
-                primecollege.co.uk{slug}
+                primecollege.co.uk/{slug}
               </p>
               <p className="text-xs text-muted-foreground line-clamp-2">
                 {meta.description || "No description set."}

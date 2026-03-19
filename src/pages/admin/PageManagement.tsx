@@ -39,6 +39,32 @@ import {
 import { TryCatch } from "@/utils/apiTryCatch";
 import { handleResponse } from "@/utils/handleResponse";
 
+const inferPageType = (slug: string): "static" | "qualification" | "blog-post" => {
+  if (slug.startsWith("blog-")) return "blog-post";
+  if (slug.startsWith("qualification-")) return "qualification";
+  return "static";
+};
+
+const normalizePageSlug = (rawSlug: string, type: "static" | "qualification" | "blog-post") => {
+  const baseSlug = rawSlug
+    .replace(/^\//, "")
+    .replace(/[^a-z0-9-_]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (type === "blog-post") {
+    return baseSlug.startsWith("blog-") ? baseSlug : `blog-${baseSlug}`;
+  }
+
+  if (type === "qualification") {
+    return baseSlug.startsWith("qualification-") ? baseSlug : `qualification-${baseSlug}`;
+  }
+
+  return baseSlug
+    .replace(/^blog-/, "")
+    .replace(/^qualification-/, "");
+};
+
 const PageManagement = () => {
   const [pages, setPages] = useState<PageConfig[]>(defaultPages);
   const { data: pageData, isLoading: isPageLoading } = useGetPagesQuery(null);
@@ -56,13 +82,14 @@ const PageManagement = () => {
       toast({ title: "Title and slug are required", variant: "destructive" });
       return;
     }
-    const slug = newPage.slug.startsWith("/")
-      ? newPage.slug
-      : `/${newPage.slug}`;
+    const cleanSlug = normalizePageSlug(
+      newPage.slug || newPage.title || "page",
+      newPage.type,
+    );
     const page: PageConfig = {
-      id: slug.replace(/\//g, "-").replace(/^-/, "") || "page",
+      id: cleanSlug,
       title: newPage.title,
-      slug,
+      slug: cleanSlug,
       type: newPage.type,
       blocks: [],
       updatedAt: new Date().toISOString(),
@@ -92,9 +119,24 @@ const PageManagement = () => {
     toast({ title: "Blog post deleted" });
   };
   console.log({ pageData });
-  const staticPages = pages.filter((p) => p.type === "static");
-  const qualPages = pages.filter((p) => p.type === "qualification");
-  const blogPages = pages.filter((p) => p.type === "blog-post");
+  const apiPages: PageConfig[] = (pageData?.data?.data || []).map((page: any) => ({
+    id: page.slug,
+    title: page.title,
+    slug: page.slug,
+    type: inferPageType(page.slug || ""),
+    blocks: page.blocks || [],
+    updatedAt: page.updated_at,
+    isPublished: page.is_published,
+    meta: {
+      title: page.seo_title || undefined,
+      description: page.seo_description || undefined,
+    },
+  }));
+
+  const allPages = apiPages.length ? apiPages : pages;
+  const staticPages = allPages.filter((p) => p.type === "static");
+  const qualPages = allPages.filter((p) => p.type === "qualification");
+  const blogPages = allPages.filter((p) => p.type === "blog-post");
 
   return (
     <div className="space-y-6">
@@ -121,11 +163,17 @@ const PageManagement = () => {
         <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
           <Globe className="h-5 w-5 text-primary" /> Static Pages
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {staticPages.map((page) => (
-            <PageCard key={page.id} page={page} />
-          ))}
-        </div>
+        {isPageLoading ? (
+          <Card><CardContent className="p-8 text-center text-muted-foreground">Loading pages...</CardContent></Card>
+        ) : staticPages.length === 0 ? (
+          <Card><CardContent className="p-8 text-center text-muted-foreground">No static pages yet.</CardContent></Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {staticPages.map((page) => (
+              <PageCard key={page.id} page={page} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Qualification Pages */}
@@ -195,15 +243,24 @@ const PageManagement = () => {
             </div>
             <div>
               <Label>URL Slug</Label>
-              <Input
-                value={newPage.slug}
-                onChange={(e) =>
-                  setNewPage((p) => ({ ...p, slug: e.target.value }))
-                }
-                placeholder="e.g. /our-team"
-              />
+              <div className="flex items-center mt-1">
+                <div className="flex items-center h-10 px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm font-mono">
+                  /
+                </div>
+                <Input
+                  value={newPage.slug.replace(/^\//, "")}
+                  onChange={(e) =>
+                    setNewPage((p) => ({
+                      ...p,
+                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""),
+                    }))
+                  }
+                  className="rounded-l-none"
+                  placeholder="e.g. our-team"
+                />
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
-                The URL path for this page
+                The URL path for this page (letters, numbers, hyphens and underscores only)
               </p>
             </div>
             <div>
@@ -259,12 +316,17 @@ const PageCard = ({
             {page.title}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5 font-mono">
-            {page.slug}
+            {`/${page.slug}`}
           </p>
         </div>
-        <Badge variant="outline" className="ml-2 shrink-0">
-          {page.blocks.length} block{page.blocks.length !== 1 ? "s" : ""}
-        </Badge>
+        <div className="ml-2 shrink-0 flex flex-col items-end gap-1">
+          <Badge variant={page.isPublished ? "default" : "secondary"}>
+            {page.isPublished ? "Published" : "Draft"}
+          </Badge>
+          <Badge variant="outline">
+            {page.blocks.length} block{page.blocks.length !== 1 ? "s" : ""}
+          </Badge>
+        </div>
       </div>
       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
         {page.blocks.slice(0, 3).map((b) => (
@@ -275,7 +337,7 @@ const PageCard = ({
         {page.blocks.length > 3 && <span>+{page.blocks.length - 3} more</span>}
       </div>
       <div className="mt-auto flex gap-2">
-        <Link to={`/admin/pages/${page.id}`} className="flex-1">
+        <Link to={`/admin/pages/${page.slug.replace(/^\//, "")}`} className="flex-1">
           <Button size="sm" className="w-full">
             <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Page
           </Button>

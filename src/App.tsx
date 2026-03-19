@@ -22,7 +22,7 @@ import TrainerLayout from "./components/trainer/TrainerLayout";
 import { useDispatch } from "react-redux";
 import { useAppDispatch } from "./redux/hooks";
 import { useGetCsrfTokenQuery } from "./redux/apis/authApi";
-import { setCsrfToken } from "./redux/slices/authSlice";
+import { setCsrfToken } from "./redux/api";
 
 // public pages
 const Index = lazy(() => import("./pages/Index"));
@@ -118,7 +118,7 @@ const App = () => {
   });
 
   useEffect(() => {
-    if (data?.data) dispatch(setCsrfToken(data?.data?.token));
+    if (data?.data) setCsrfToken(data?.data?.token);
   }, [data?.data]);
 
   useEffect(() => {

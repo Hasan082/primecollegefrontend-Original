@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Eye, EyeOff } from "lucide-react";
 import {
@@ -38,7 +38,13 @@ import SortableBlock from "@/components/admin/page-builder/SortableBlock";
 import BlockEditorForm from "@/components/admin/page-builder/BlockEditorForm";
 import SEOPanel from "@/components/admin/page-builder/SEOPanel";
 import BlockPreviewRenderer from "@/components/admin/page-builder/BlockPreviewRenderer";
-import { useUpdatePageMutation } from "@/redux/apis/pageBuilderApi";
+import { useGetPageQuery, useUpdatePageMutation } from "@/redux/apis/pageBuilderApi";
+
+const getPreviewPath = (slug: string) => {
+  if (slug.startsWith("blog-")) return `/blog/${slug.replace(/^blog-/, "")}`;
+  if (slug.startsWith("qualification-")) return `/qualifications/${slug.replace(/^qualification-/, "")}`;
+  return `/${slug}`;
+};
 
 const BLOCK_DESCRIPTIONS: Record<BlockType, string> = {
   hero: "Full-width banner",
@@ -62,17 +68,27 @@ const PageEditor = () => {
   const { toast } = useToast();
 
   const initialPage = defaultPages.find((p) => p.id === pageId);
+  const { data: pageData } = useGetPageQuery(pageId, { skip: !pageId });
+  const cmsPage = pageData?.data?.data;
   const [pageTitle, setPageTitle] = useState(initialPage?.title || "Untitled");
-  const [blocks, setBlocks] = useState<ContentBlock[]>(
-    initialPage?.blocks || [],
-  );
-  console.log({ blocks });
-  const [slug, setSlug] = useState(initialPage?.slug || `/${pageId}`);
+  const [blocks, setBlocks] = useState<ContentBlock[]>(initialPage?.blocks || []);
+  const [slug, setSlug] = useState(initialPage?.slug?.replace(/^\//, "") || pageId || "");
   const [meta, setMeta] = useState(initialPage?.meta || {});
   const [addOpen, setAddOpen] = useState(false);
   const [editBlock, setEditBlock] = useState<ContentBlock | null>(null);
   const [showPreview, setShowPreview] = useState(true);
   const [updatePage] = useUpdatePageMutation();
+
+  useEffect(() => {
+    if (!cmsPage) return;
+    setPageTitle(cmsPage.title || "Untitled");
+    setBlocks(cmsPage.blocks || []);
+    setSlug((cmsPage.slug || pageId || "").replace(/^\//, ""));
+    setMeta({
+      title: cmsPage.seo_title || "",
+      description: cmsPage.seo_description || "",
+    });
+  }, [cmsPage, pageId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -96,7 +112,7 @@ const PageEditor = () => {
     (id: string) => {
       setBlocks((prev) => {
         const updatedBlocks = prev.filter((b) => b.id !== id);
-        updatePage({ slug: pageId, payload: { blocks: updatedBlocks } });
+        updatePage({ slug, payload: { blocks: updatedBlocks } });
         toast({ title: "Block removed" });
         return updatedBlocks;
       });
@@ -111,7 +127,7 @@ const PageEditor = () => {
       setBlocks((prev) => {
         const updatedBlocks = [...prev, block] as ContentBlock[];
         updatePage({
-          slug: pageId,
+          slug,
           payload: { blocks: updatedBlocks },
         });
         toast({ title: `${BLOCK_TYPE_LABELS[type]} added` });
@@ -136,7 +152,7 @@ const PageEditor = () => {
         );
 
         updatePage({
-          slug: pageId,
+          slug,
           payload: { blocks: updatedBlocks },
         });
 
@@ -164,7 +180,7 @@ const PageEditor = () => {
         );
 
         updatePage({
-          slug: pageId,
+          slug,
           payload: { blocks: updatedBlocks },
         });
 
@@ -201,7 +217,7 @@ const PageEditor = () => {
             className="text-xl font-bold border-none bg-transparent px-0 h-auto focus-visible:ring-0"
           />
           <p className="text-xs text-muted-foreground mt-0.5 font-mono">
-            {slug}
+            {getPreviewPath(slug)}
           </p>
         </div>
         <Button
@@ -290,7 +306,7 @@ const PageEditor = () => {
                     <div className="w-2 h-2 rounded-full bg-primary/30" />
                   </div>
                   <span className="text-[9px] text-muted-foreground font-mono truncate flex-1">
-                    {slug}
+                    {getPreviewPath(slug)}
                   </span>
                 </div>
                 <div className="max-h-[70vh] overflow-y-auto">

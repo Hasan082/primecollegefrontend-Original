@@ -1,4 +1,4 @@
-import { api } from "../api";
+import { api, setCsrfToken } from "../api";
 
 const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -26,6 +26,15 @@ const authApi = api.injectEndpoints({
         url: "/api/auth/csrf/",
         method: "GET",
       }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const token = data?.data?.token ?? null;
+          setCsrfToken(token);
+        } catch {
+          setCsrfToken(null);
+        }
+      },
     }),
     confirmPasswordSetup: builder.mutation({
       query: (payload) => ({
