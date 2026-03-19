@@ -185,6 +185,7 @@ export interface PageConfig {
   blocks: ContentBlock[];
   meta?: { title?: string; description?: string };
   updatedAt?: string;
+  isPublished?: boolean;
   // Blog post specific fields
   blogMeta?: {
     author?: string;

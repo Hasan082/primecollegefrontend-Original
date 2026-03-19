@@ -1,5 +1,6 @@
 import { appConfig } from "@/app.config";
 import {
+  BaseQueryApi,
   BaseQueryFn,
   createApi,
   FetchArgs,
@@ -11,7 +12,13 @@ const getCookie = (name: string) => {
   return match ? decodeURIComponent(match[2]) : undefined;
 };
 
-const getCsrfToken = () => getCookie("csrftoken");
+let csrfTokenMemory: string | null = null;
+
+export const setCsrfToken = (token: string | null) => {
+  csrfTokenMemory = token;
+};
+
+const getCsrfToken = () => csrfTokenMemory;
 const getRefreshToken = () => getCookie("refresh");
 
 const baseQuery = fetchBaseQuery({
@@ -26,12 +33,11 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-// Wrapper for refresh logic
-const baseQueryWithRefreshToken: BaseQueryFn<
-  FetchArgs,
-  unknown,
-  unknown
-> = async (args, api, extraOptions) => {
+const baseQueryWithRefreshToken: BaseQueryFn<FetchArgs, unknown, unknown> = async (
+  args,
+  api,
+  extraOptions,
+) => {
   const result = await baseQuery(args, api, extraOptions);
 
   if (result?.error?.status === 401) {
@@ -55,6 +61,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<
         {
           method: "POST",
           credentials: "include",
+          headers: refreshHeaders,
         },
       );
 
@@ -73,10 +80,9 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   return result;
 };
 
-//  API setup
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithRefreshToken,
-  tagTypes: [],
+  tagTypes: ["User", "Pages"],
   endpoints: () => ({}),
 });

@@ -42,7 +42,7 @@ const Checkout = () => {
     e.preventDefault();
     setIsProcessing(true);
     setTimeout(() => {
-      navigate("/enrollment-confirmation");
+      navigate("/checkout/success");
     }, 2000);
   };
 

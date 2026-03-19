@@ -22,7 +22,7 @@ import TrainerLayout from "./components/trainer/TrainerLayout";
 import { useDispatch } from "react-redux";
 import { useAppDispatch } from "./redux/hooks";
 import { useGetCsrfTokenQuery } from "./redux/apis/authApi";
-import { setCsrfToken } from "./redux/slices/authSlice";
+import { setCsrfToken } from "./redux/api";
 
 // public pages
 const Index = lazy(() => import("./pages/Index"));
@@ -34,13 +34,13 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const Checkout = lazy(() => import("./pages/Checkout"));
-const EnrollmentConfirmation = lazy(
-  () => import("./pages/EnrollmentConfirmation"),
-);
+const CheckoutSuccess = lazy(() => import("./pages/checkout/CheckoutSuccess"));
+const CheckoutCancel = lazy(() => import("./pages/checkout/CheckoutCancel"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const StaffLogin = lazy(() => import("./pages/StaffLogin"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogDetail = lazy(() => import("./pages/BlogDetail"));
+const SetPassword = lazy(() => import("./pages/SetPassword"));
 
 // learner dashboard
 const Dashboard = lazy(() => import("./pages/learner/Dashboard"));
@@ -118,7 +118,7 @@ const App = () => {
   });
 
   useEffect(() => {
-    if (data?.data) dispatch(setCsrfToken(data?.data?.token));
+    if (data?.data) setCsrfToken(data?.data?.token);
   }, [data?.data]);
 
   useEffect(() => {
@@ -147,10 +147,9 @@ const App = () => {
                   <Route path="/staff-login" element={<StaffLogin />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/checkout" element={<Checkout />} />
-                  <Route
-                    path="/enrollment-confirmation"
-                    element={<EnrollmentConfirmation />}
-                  />
+                  <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                  <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+                  <Route path="/set-password" element={<SetPassword />} />
                   <Route path="/learner" element={<LearnerLayout />}>
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route

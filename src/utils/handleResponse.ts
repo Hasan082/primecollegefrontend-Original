@@ -1,11 +1,8 @@
 type ApiResponse<T> = {
-  data?: {
-    success?: boolean;
-    message?: string;
-    data?: T;
-  };
+  success?: boolean;
+  message?: string;
+  data?: T;
 };
-
 type HandleOptions<T> = {
   data: ApiResponse<T> | null;
   error: string | null;
@@ -22,18 +19,17 @@ export const handleResponse = <T>({
   successMessage,
 }: HandleOptions<T>) => {
   // ✅ Success case
-  if (!error && data?.data?.success) {
+  if (!error && data?.success) {
     onSuccess?.(data);
 
     return {
       type: "success",
-      message: data?.data?.message || successMessage || "Operation successful",
+      message: data?.message || successMessage || "Operation successful",
     };
   }
 
   // ❌ Error case
-  const message =
-    data?.data?.message || error || "Something went wrong, try again";
+  const message = data?.message || error || "Something went wrong, try again";
 
   onError?.(message);
 

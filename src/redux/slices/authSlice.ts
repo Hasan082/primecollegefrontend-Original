@@ -13,3 +13,4 @@ const authSlice = createSlice({
 });
 
 export const { setCsrfToken } = authSlice.actions;
+export default authSlice.reducer;
