@@ -1,26 +1,28 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CartProvider } from "./contexts/CartContext";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import { useState, useEffect, Suspense, lazy } from "react";
-import { Provider } from "react-redux";
-import { store } from "./redux/store";
+import { CartProvider } from "./contexts/CartContext";
 
 // shared
-import TopBar from "./components/TopBar";
-import Header from "./components/Header";
 import Footer from "./components/Footer";
-import ScrollToTop from "./components/ScrollToTop";
+import Header from "./components/Header";
 import LoadingSpinner from "./components/LoadingSpinner";
+import ScrollToTop from "./components/ScrollToTop";
+import TopBar from "./components/TopBar";
 
 // layouts
-import TrainerLayout from "./components/trainer/TrainerLayout";
-import LearnerLayout from "./components/learner/LearnerLayout";
-import IQALayout from "./components/iqa/IQALayout";
 import AdminLayout from "./components/admin/AdminLayout";
+import IQALayout from "./components/iqa/IQALayout";
+import LearnerLayout from "./components/learner/LearnerLayout";
+import TrainerLayout from "./components/trainer/TrainerLayout";
+import { useDispatch } from "react-redux";
+import { useAppDispatch } from "./redux/hooks";
+import { useGetCsrfTokenQuery } from "./redux/apis/authApi";
+import { setCsrfToken } from "./redux/slices/authSlice";
 
 // public pages
 const Index = lazy(() => import("./pages/Index"));
@@ -109,6 +111,16 @@ const queryClient = new QueryClient();
 const App = () => {
   const [showLoading, setShowLoading] = useState(true);
 
+  const dispatch = useAppDispatch();
+
+  const { data, isLoading } = useGetCsrfTokenQuery(undefined, {
+    refetchOnMountOrArgChange: false,
+  });
+
+  useEffect(() => {
+    if (data?.data) dispatch(setCsrfToken(data?.data?.token));
+  }, [data?.data]);
+
   useEffect(() => {
     const minTimer = new Promise((res) => setTimeout(res, 2000));
     const contentLoaded = new Promise((res) => {
@@ -120,160 +132,155 @@ const App = () => {
   }, []);
 
   return (
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <CartProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                {showLoading && <LoadingSpinner />}
-                <Toaster />
-                <Sonner />
-                <ScrollToTop />
-                <Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/staff-login" element={<StaffLogin />} />
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              {(showLoading || isLoading) && <LoadingSpinner />}
+              <Toaster />
+              <Sonner />
+              <ScrollToTop />
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/staff-login" element={<StaffLogin />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route
+                    path="/enrollment-confirmation"
+                    element={<EnrollmentConfirmation />}
+                  />
+                  <Route path="/learner" element={<LearnerLayout />}>
+                    <Route path="dashboard" element={<Dashboard />} />
                     <Route
-                      path="/forgot-password"
-                      element={<ForgotPassword />}
+                      path="qualifications"
+                      element={<MyQualifications />}
                     />
-                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="profile" element={<Profile />} />
                     <Route
-                      path="/enrollment-confirmation"
-                      element={<EnrollmentConfirmation />}
+                      path="change-password"
+                      element={<ChangePassword />}
                     />
-                    <Route path="/learner" element={<LearnerLayout />}>
-                      <Route path="dashboard" element={<Dashboard />} />
-                      <Route
-                        path="qualifications"
-                        element={<MyQualifications />}
-                      />
-                      <Route path="profile" element={<Profile />} />
-                      <Route
-                        path="change-password"
-                        element={<ChangePassword />}
-                      />
-                      <Route
-                        path="qualification/:id"
-                        element={<QualificationView />}
-                      />
-                      <Route
-                        path="qualification/:qualificationId/unit/:unitId"
-                        element={<UnitDetail />}
-                      />
-                    </Route>
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route path="dashboard" element={<AdminDashboard />} />
-                      <Route
-                        path="qualifications"
-                        element={<QualificationManagement />}
-                      />
-                      <Route
-                        path="qualifications/:qualificationId"
-                        element={<AdminQualificationDetail />}
-                      />
-                      <Route path="learners" element={<LearnerManagement />} />
-                      <Route path="trainers" element={<TrainerManagement />} />
-                      <Route path="progress" element={<ProgressMonitoring />} />
-                      <Route path="reports" element={<Reports />} />
-                      <Route
-                        path="question-bank"
-                        element={<AdminQuestionBank />}
-                      />
-                      <Route
-                        path="question-bank/:qualificationId/:unitCode"
-                        element={<AdminQuestionBankEditor />}
-                      />
-                      <Route
-                        path="final-assessments"
-                        element={<FinalAssessments />}
-                      />
-                      <Route path="eqa-export" element={<EQAExport />} />
-                      <Route path="iqa" element={<IQAManagement />} />
-                      <Route path="checklists" element={<ChecklistBuilder />} />
-                      <Route path="pages" element={<PageManagement />} />
-                      <Route path="pages/:pageId" element={<PageEditor />} />
-                    </Route>
-                    <Route path="/iqa" element={<IQALayout />}>
-                      <Route path="dashboard" element={<IQADashboard />} />
-                      <Route
-                        path="qualifications"
-                        element={<QualificationTreeView />}
-                      />
-                      <Route path="sampling" element={<SamplingQueue />} />
-                      <Route
-                        path="review/:id"
-                        element={<IQAAssessmentReview />}
-                      />
-                      <Route path="trainers" element={<TrainerPerformance />} />
-                      <Route path="reports" element={<IQAReports />} />
-                      <Route path="settings" element={<SamplingSettings />} />
-                      <Route
-                        path="checklists"
-                        element={<VerificationChecklists />}
-                      />
-                    </Route>
-                    <Route path="/trainer" element={<TrainerLayout />}>
-                      <Route path="dashboard" element={<TrainerDashboard />} />
-                      <Route path="learners" element={<AssignedLearners />} />
-                      <Route path="learner/:id" element={<LearnerDetail />} />
-                      <Route path="history" element={<AssessmentHistory />} />
-                      <Route path="review/:id" element={<AssessmentReview />} />
-                      <Route path="record/:id" element={<AssessmentRecord />} />
-                      <Route
-                        path="learner/:learnerId/unit/:unitCode"
-                        element={<UnitManagement />}
-                      />
-                      <Route path="question-bank" element={<QuestionBank />} />
-                      <Route
-                        path="question-bank/:qualificationId/:unitCode"
-                        element={<QuestionBankEditor />}
-                      />
-                    </Route>
                     <Route
-                      path="*"
-                      element={
-                        <>
-                          <TopBar />
-                          <Header />
-                          <main
-                            className="min-h-screen"
-                            style={{ marginTop: 108 }}
-                          >
-                            <Routes>
-                              <Route path="/" element={<Index />} />
-                              <Route path="/about" element={<About />} />
-                              <Route
-                                path="/qualifications"
-                                element={<Qualifications />}
-                              />
-                              <Route
-                                path="/qualifications/:slug"
-                                element={<QualificationDetail />}
-                              />
-                              <Route
-                                path="/recruitment"
-                                element={<Recruitment />}
-                              />
-                              <Route path="/blog" element={<Blog />} />
-                              <Route path="/blog/:id" element={<BlogDetail />} />
-                              <Route path="/contact" element={<Contact />} />
-                              <Route path="*" element={<NotFound />} />
-                            </Routes>
-                          </main>
-                          <Footer />
-                        </>
-                      }
+                      path="qualification/:id"
+                      element={<QualificationView />}
                     />
-                  </Routes>
-                </Suspense>
-              </AuthProvider>
-            </BrowserRouter>
-          </CartProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </Provider>
+                    <Route
+                      path="qualification/:qualificationId/unit/:unitId"
+                      element={<UnitDetail />}
+                    />
+                  </Route>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route
+                      path="qualifications"
+                      element={<QualificationManagement />}
+                    />
+                    <Route
+                      path="qualifications/:qualificationId"
+                      element={<AdminQualificationDetail />}
+                    />
+                    <Route path="learners" element={<LearnerManagement />} />
+                    <Route path="trainers" element={<TrainerManagement />} />
+                    <Route path="progress" element={<ProgressMonitoring />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route
+                      path="question-bank"
+                      element={<AdminQuestionBank />}
+                    />
+                    <Route
+                      path="question-bank/:qualificationId/:unitCode"
+                      element={<AdminQuestionBankEditor />}
+                    />
+                    <Route
+                      path="final-assessments"
+                      element={<FinalAssessments />}
+                    />
+                    <Route path="eqa-export" element={<EQAExport />} />
+                    <Route path="iqa" element={<IQAManagement />} />
+                    <Route path="checklists" element={<ChecklistBuilder />} />
+                    <Route path="pages" element={<PageManagement />} />
+                    <Route path="pages/:pageId" element={<PageEditor />} />
+                  </Route>
+                  <Route path="/iqa" element={<IQALayout />}>
+                    <Route path="dashboard" element={<IQADashboard />} />
+                    <Route
+                      path="qualifications"
+                      element={<QualificationTreeView />}
+                    />
+                    <Route path="sampling" element={<SamplingQueue />} />
+                    <Route
+                      path="review/:id"
+                      element={<IQAAssessmentReview />}
+                    />
+                    <Route path="trainers" element={<TrainerPerformance />} />
+                    <Route path="reports" element={<IQAReports />} />
+                    <Route path="settings" element={<SamplingSettings />} />
+                    <Route
+                      path="checklists"
+                      element={<VerificationChecklists />}
+                    />
+                  </Route>
+                  <Route path="/trainer" element={<TrainerLayout />}>
+                    <Route path="dashboard" element={<TrainerDashboard />} />
+                    <Route path="learners" element={<AssignedLearners />} />
+                    <Route path="learner/:id" element={<LearnerDetail />} />
+                    <Route path="history" element={<AssessmentHistory />} />
+                    <Route path="review/:id" element={<AssessmentReview />} />
+                    <Route path="record/:id" element={<AssessmentRecord />} />
+                    <Route
+                      path="learner/:learnerId/unit/:unitCode"
+                      element={<UnitManagement />}
+                    />
+                    <Route path="question-bank" element={<QuestionBank />} />
+                    <Route
+                      path="question-bank/:qualificationId/:unitCode"
+                      element={<QuestionBankEditor />}
+                    />
+                  </Route>
+                  <Route
+                    path="*"
+                    element={
+                      <>
+                        <TopBar />
+                        <Header />
+                        <main
+                          className="min-h-screen"
+                          style={{ marginTop: 108 }}
+                        >
+                          <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/about" element={<About />} />
+                            <Route
+                              path="/qualifications"
+                              element={<Qualifications />}
+                            />
+                            <Route
+                              path="/qualifications/:slug"
+                              element={<QualificationDetail />}
+                            />
+                            <Route
+                              path="/recruitment"
+                              element={<Recruitment />}
+                            />
+                            <Route path="/blog" element={<Blog />} />
+                            <Route path="/blog/:id" element={<BlogDetail />} />
+                            <Route path="/contact" element={<Contact />} />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </main>
+                        <Footer />
+                      </>
+                    }
+                  />
+                </Routes>
+              </Suspense>
+            </AuthProvider>
+          </BrowserRouter>
+        </CartProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 

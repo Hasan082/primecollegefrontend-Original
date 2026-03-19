@@ -66,6 +66,7 @@ const PageEditor = () => {
   const [blocks, setBlocks] = useState<ContentBlock[]>(
     initialPage?.blocks || [],
   );
+  console.log({ blocks });
   const [slug, setSlug] = useState(initialPage?.slug || `/${pageId}`);
   const [meta, setMeta] = useState(initialPage?.meta || {});
   const [addOpen, setAddOpen] = useState(false);
