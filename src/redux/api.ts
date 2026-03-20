@@ -33,18 +33,18 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-const baseQueryWithRefreshToken: BaseQueryFn<FetchArgs, unknown, unknown> = async (
-  args,
-  api,
-  extraOptions,
-) => {
+const baseQueryWithRefreshToken: BaseQueryFn<
+  FetchArgs,
+  unknown,
+  unknown
+> = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
 
   if (result?.error?.status === 401) {
     const refreshCookie = getRefreshToken();
-    if (!refreshCookie) {
-      return result;
-    }
+    // if (!refreshCookie) {
+    //   return result;
+    // }
 
     try {
       const refreshHeaders: HeadersInit = {

@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   BookOpen,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +36,7 @@ import type { PageConfig } from "@/types/pageBuilder";
 import { defaultPages } from "@/data/defaultPages";
 import {
   useCreatePageMutation,
+  useDeletePageMutation,
   useGetPagesQuery,
 } from "@/redux/apis/pageBuilderApi";
 import { TryCatch } from "@/utils/apiTryCatch";
@@ -72,9 +74,13 @@ const normalizePageSlug = (
 };
 
 const PageManagement = () => {
-  const [pages, setPages] = useState<PageConfig[]>(defaultPages);
-  const { data: pageData, isLoading: isPageLoading } = useGetPagesQuery(null);
+  const {
+    data: pageData,
+    refetch,
+    isLoading: isPageLoading,
+  } = useGetPagesQuery(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState("");
   const [newPage, setNewPage] = useState({
     title: "",
     slug: "",
@@ -82,15 +88,14 @@ const PageManagement = () => {
   });
   const { toast } = useToast();
   const [createPage, { isLoading }] = useCreatePageMutation();
+  const [deletePage, { isLoading: isPageDeleting }] = useDeletePageMutation();
 
   const handleAddPage = async () => {
     if (!newPage.title) {
       toast({ title: "Title are required", variant: "destructive" });
       return;
     }
-    const slug = newPage.slug.startsWith("/")
-      ? newPage.slug
-      : `${newPage.slug}`;
+
     const cleanSlug = normalizePageSlug(
       newPage.slug || newPage.title || "page",
       newPage.type,
@@ -111,9 +116,9 @@ const PageManagement = () => {
       error,
       successMessage: "Page created — add blocks in the editor",
       onSuccess: () => {
-        setPages((prev) => [...prev, page]);
         setNewPage({ title: "", slug: "", type: "static" });
         setAddOpen(false);
+        refetch();
       },
     });
 
@@ -124,31 +129,34 @@ const PageManagement = () => {
     });
   };
 
-  const handleDeletePage = (id: string) => {
-    setPages((prev) => prev.filter((p) => p.id !== id));
-    toast({ title: "Blog post deleted" });
-  };
-  console.log({ pageData });
-  const apiPages: PageConfig[] = (pageData?.data?.data || []).map(
-    (page: any) => ({
-      id: page.slug,
-      title: page.title,
-      slug: page.slug,
-      type: inferPageType(page.slug || ""),
-      blocks: page.blocks || [],
-      updatedAt: page.updated_at,
-      isPublished: page.is_published,
-      meta: {
-        title: page.seo_title || undefined,
-        description: page.seo_description || undefined,
-      },
-    }),
-  );
+  const handleDeletePage = async (id: string) => {
+    setDeletingId(id);
+    const [data, error] = await TryCatch(deletePage(id).unwrap());
 
-  const allPages = apiPages.length ? apiPages : pages;
-  const staticPages = allPages.filter((p) => p.type === "static");
-  const qualPages = allPages.filter((p) => p.type === "qualification");
-  const blogPages = allPages.filter((p) => p.type === "blog-post");
+    const result = handleResponse({
+      data,
+      error,
+      successMessage: "Page deleted ",
+      onSuccess: () => refetch(),
+    });
+
+    toast({
+      title: result.type === "success" ? "Success" : "Error",
+      description: result.message,
+      variant: result.type === "error" ? "destructive" : "default",
+    });
+    setDeletingId("");
+  };
+
+  const staticPages =
+    pageData?.data?.results?.filter(
+      (p) => !p.slug?.includes("blog") && !p.slug?.includes("qualification"),
+    ) || [];
+  const qualPages =
+    pageData?.data?.results?.filter((p) => p.slug?.includes("qualification")) ||
+    [];
+  const blogPages =
+    pageData?.data?.results?.filter((p) => p.slug?.includes("blog")) || [];
 
   return (
     <div className="space-y-6">
@@ -190,7 +198,13 @@ const PageManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {staticPages.map((page) => (
-              <PageCard key={page.id} page={page} />
+              <PageCard
+                deletingId={deletingId}
+                isPageDeleting={isPageDeleting}
+                key={page.id}
+                onDelete={handleDeletePage}
+                page={page}
+              />
             ))}
           </div>
         )}
@@ -214,7 +228,12 @@ const PageManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {qualPages.map((page) => (
-              <PageCard key={page.id} page={page} />
+              <PageCard
+                key={page.id}
+                deletingId={deletingId}
+                isPageDeleting={isPageDeleting}
+                page={page}
+              />
             ))}
           </div>
         )}
@@ -238,7 +257,13 @@ const PageManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {blogPages.map((page) => (
-              <PageCard key={page.id} page={page} onDelete={handleDeletePage} />
+              <PageCard
+                key={page.id}
+                page={page}
+                deletingId={deletingId}
+                isPageDeleting={isPageDeleting}
+                onDelete={handleDeletePage}
+              />
             ))}
           </div>
         )}
@@ -324,62 +349,81 @@ const PageManagement = () => {
   );
 };
 
+const showDeleteButton = (slug: string) => {
+  const lists = ["home", "contact", "about"];
+
+  return !lists?.includes(slug);
+};
+
 const PageCard = ({
   page,
   onDelete,
+  isPageDeleting,
+  deletingId,
 }: {
   page: PageConfig;
   onDelete?: (id: string) => void;
-}) => (
-  <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
-    <CardContent className="p-5 flex flex-col flex-1">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">
-            {page.title}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5 font-mono">
-            {`/${page.slug}`}
-          </p>
+  isPageDeleting: boolean;
+  deletingId: string;
+}) => {
+  return (
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardContent className="p-5 flex flex-col flex-1">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground truncate">
+              {page.title}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+              {`/${page.slug}`}
+            </p>
+          </div>
+          <div className="ml-2 shrink-0 flex flex-col items-end gap-1">
+            <Badge variant={page.isPublished ? "default" : "secondary"}>
+              {page.isPublished ? "Published" : "Draft"}
+            </Badge>
+            <Badge variant="outline">
+              {page.blocks.length} block{page.blocks.length !== 1 ? "s" : ""}
+            </Badge>
+          </div>
         </div>
-        <div className="ml-2 shrink-0 flex flex-col items-end gap-1">
-          <Badge variant={page.isPublished ? "default" : "secondary"}>
-            {page.isPublished ? "Published" : "Draft"}
-          </Badge>
-          <Badge variant="outline">
-            {page.blocks.length} block{page.blocks.length !== 1 ? "s" : ""}
-          </Badge>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
+          {page.blocks.slice(0, 3).map((b) => (
+            <Badge key={b.id} variant="secondary" className="text-[10px]">
+              {b.label}
+            </Badge>
+          ))}
+          {page.blocks.length > 3 && (
+            <span>+{page.blocks.length - 3} more</span>
+          )}
         </div>
-      </div>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
-        {page.blocks.slice(0, 3).map((b) => (
-          <Badge key={b.id} variant="secondary" className="text-[10px]">
-            {b.label}
-          </Badge>
-        ))}
-        {page.blocks.length > 3 && <span>+{page.blocks.length - 3} more</span>}
-      </div>
-      <div className="mt-auto flex gap-2">
-        <Link
-          to={`/admin/pages/${page.slug.replace(/^\//, "")}`}
-          className="flex-1"
-        >
-          <Button size="sm" className="w-full">
-            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Page
-          </Button>
-        </Link>
-        {onDelete && (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => onDelete(page.id)}
+        <div className="mt-auto flex gap-2">
+          <Link
+            to={`/admin/pages/${page.slug.replace(/^\//, "")}`}
+            className="flex-1"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-);
+            <Button size="sm" className="w-full">
+              <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Page
+            </Button>
+          </Link>
+          {onDelete && showDeleteButton(page?.slug) && (
+            <Button
+              disabled={isPageDeleting}
+              size="sm"
+              variant="destructive"
+              onClick={() => onDelete(page.slug)}
+            >
+              {isPageDeleting && deletingId === page?.slug ? (
+                <Loader2 className="animate-spin h-3.5 w-3.5" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default PageManagement;

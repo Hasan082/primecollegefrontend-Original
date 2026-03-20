@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
@@ -132,6 +132,16 @@ const StaffLogin = () => {
     }
   };
 
+  const handleRole = (role: string) => {
+    localStorage.setItem("role", role);
+    setSelectedRole(role as StaffRole);
+  };
+
+  useEffect(() => {
+    const selectedRole = localStorage.getItem("role");
+    if (selectedRole) setSelectedRole(selectedRole as StaffRole);
+  }, []);
+
   return (
     <div className="min-h-screen flex">
       {/* Left - Branding */}
@@ -264,7 +274,7 @@ const StaffLogin = () => {
                 return (
                   <button
                     key={role}
-                    onClick={() => setSelectedRole(role)}
+                    onClick={() => handleRole(role)}
                     className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all ${
                       isActive
                         ? "bg-primary text-primary-foreground shadow-sm"

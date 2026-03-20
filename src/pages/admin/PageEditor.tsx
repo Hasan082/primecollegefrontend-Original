@@ -38,11 +38,15 @@ import SortableBlock from "@/components/admin/page-builder/SortableBlock";
 import BlockEditorForm from "@/components/admin/page-builder/BlockEditorForm";
 import SEOPanel from "@/components/admin/page-builder/SEOPanel";
 import BlockPreviewRenderer from "@/components/admin/page-builder/BlockPreviewRenderer";
-import { useGetPageQuery, useUpdatePageMutation } from "@/redux/apis/pageBuilderApi";
+import {
+  useGetPageQuery,
+  useUpdatePageMutation,
+} from "@/redux/apis/pageBuilderApi";
 
 const getPreviewPath = (slug: string) => {
   if (slug.startsWith("blog-")) return `/blog/${slug.replace(/^blog-/, "")}`;
-  if (slug.startsWith("qualification-")) return `/qualifications/${slug.replace(/^qualification-/, "")}`;
+  if (slug.startsWith("qualification-"))
+    return `/qualifications/${slug.replace(/^qualification-/, "")}`;
   return `/${slug}`;
 };
 
@@ -71,8 +75,12 @@ const PageEditor = () => {
   const { data: pageData } = useGetPageQuery(pageId, { skip: !pageId });
   const cmsPage = pageData?.data?.data;
   const [pageTitle, setPageTitle] = useState(initialPage?.title || "Untitled");
-  const [blocks, setBlocks] = useState<ContentBlock[]>(initialPage?.blocks || []);
-  const [slug, setSlug] = useState(initialPage?.slug?.replace(/^\//, "") || pageId || "");
+  const [blocks, setBlocks] = useState<ContentBlock[]>(
+    initialPage?.blocks || [],
+  );
+  const [slug, setSlug] = useState(
+    initialPage?.slug?.replace(/^\//, "") || pageId || "",
+  );
   const [meta, setMeta] = useState(initialPage?.meta || {});
   const [addOpen, setAddOpen] = useState(false);
   const [editBlock, setEditBlock] = useState<ContentBlock | null>(null);
