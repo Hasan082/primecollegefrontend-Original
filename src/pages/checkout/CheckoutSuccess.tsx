@@ -1,169 +1,173 @@
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, Download, Mail, Calendar, ArrowRight, Home } from "lucide-react";
+import { CalendarDays, CheckCircle2, Home, Mail, PackageOpen } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
+const STORAGE_KEY = "primecollege_pending_checkout";
+
 const CheckoutSuccess = () => {
-  const { items, totalPrice, clearCart } = useCart();
-  const orderId = `PC-${Date.now().toString(36).toUpperCase()}`;
+  const { clearCart } = useCart();
 
-  const bundleDiscount = items.length >= 2 ? 0.1 : 0;
-  const registrationFee = 50;
-  const discountAmount = totalPrice * bundleDiscount;
-  const finalTotal = totalPrice - discountAmount + registrationFee;
+  const checkoutSummary = useMemo(() => {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as {
+        orderNumber: string;
+        subtotal?: string;
+        discountTotal?: string;
+        grandTotal: string;
+        currency: string;
+        items: Array<{
+          slug: string;
+          title: string;
+          price: string;
+          level?: string | null;
+          duration?: string;
+          qualificationSessionTitle?: string | null;
+        }>;
+        customer?: { firstName: string; email: string };
+      };
+    } catch {
+      return null;
+    }
+  }, []);
 
-  // If cart is empty (e.g. direct navigation), show simplified success message
-  if (items.length === 0) {
-    return (
-      <div className="bg-muted min-h-screen py-16 px-4 flex items-center justify-center">
-        <div className="container mx-auto max-w-md text-center">
-          <div className="bg-card border border-border rounded-2xl p-8 shadow-sm mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-4">Payment Successful!</h1>
-            <p className="text-muted-foreground text-sm mb-8">
-              Thank you for your enrollment. Your payment has been processed successfully. 
-              Check your email for your receipt and login details.
-            </p>
-            <div className="flex flex-col gap-3">
-              <Link
-                to="/learner/dashboard"
-                className="w-full inline-flex justify-center items-center gap-2 bg-primary text-primary-foreground h-11 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
-              >
-                Go to My Dashboard
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/"
-                className="w-full inline-flex justify-center items-center gap-2 bg-secondary text-secondary-foreground h-11 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
-              >
-                <Home className="w-4 h-4" />
-                Back to Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    clearCart();
+    sessionStorage.removeItem("primecollege_payment_setup");
+    sessionStorage.removeItem("primecollege_checkout_form");
+  }, [clearCart]);
+
+  const currency = checkoutSummary?.currency || "GBP";
+  const subtotal = Number(checkoutSummary?.subtotal || checkoutSummary?.grandTotal || 0);
+  const discountTotal = Number(checkoutSummary?.discountTotal || 0);
+  const totalPaid = Number(checkoutSummary?.grandTotal || 0);
 
   return (
-    <div className="bg-muted min-h-screen py-16 px-4">
-      <div className="container mx-auto max-w-2xl">
-        {/* Success Card */}
-        <div className="bg-card border border-border rounded-2xl p-8 text-center mb-8 shadow-sm">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+    <div className="min-h-screen bg-muted px-4 py-16">
+      <div className="mx-auto max-w-3xl space-y-6">
+        <section className="rounded-md border border-border bg-card px-6 py-10 text-center shadow-sm md:px-10">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/8">
+            <CheckCircle2 className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Enrollment Successful!</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-4xl font-bold text-foreground">Enrollment Successful!</h1>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
             Thank you for enrolling with The Prime College. A confirmation email has been sent to your inbox.
           </p>
-        </div>
+        </section>
 
-        {/* Order Details */}
-        <div className="bg-card border border-border rounded-xl p-6 mb-6 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-foreground">Enrollment Details</h2>
-            <span className="text-xs font-mono font-semibold text-muted-foreground bg-muted px-2 py-1 rounded">ID: {orderId}</span>
+        <section className="rounded-md border border-border bg-card p-6 shadow-sm md:p-8">
+          <h2 className="text-2xl font-bold text-foreground">Enrollment Details</h2>
+
+          <div className="mt-6 flex items-center justify-between border-b border-border pb-4 text-sm">
+            <span className="text-muted-foreground">Order ID</span>
+            <span className="font-semibold text-foreground">{checkoutSummary?.orderNumber || "Pending"}</span>
           </div>
-          <div className="space-y-3 text-sm">
-            <div className="border-t border-border pt-4">
-              <p className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-wider">Enrolled Course{items.length > 1 ? 's' : ''}</p>
-              {items.map((item) => (
-                <div key={item.slug} className="flex justify-between py-2">
-                  <div className="flex-1">
-                    <span className="text-foreground font-semibold">{item.title}</span>
-                    <div className="flex gap-2 mt-1">
-                      <span className="text-xs text-muted-foreground">{item.level}</span>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">{item.duration}</span>
+
+          <div className="mt-4 border-b border-border pb-5">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Enrolled Courses</p>
+            <div className="space-y-4">
+              {checkoutSummary?.items?.map((item) => (
+                <div key={item.slug} className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-foreground">{item.title}</p>
+                    <div className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
+                      {item.level ? <span>{item.level}</span> : null}
+                      {item.duration ? <span>• {item.duration}</span> : null}
+                      {item.qualificationSessionTitle ? <span>• {item.qualificationSessionTitle}</span> : null}
                     </div>
                   </div>
-                  <span className="text-foreground font-bold shrink-0 ml-4">{item.price}</span>
+                  <span className="shrink-0 font-semibold text-foreground">{item.price}</span>
                 </div>
-              ))}
-            </div>
-
-            <div className="border-t border-border pt-4 space-y-2">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span>£{totalPrice.toLocaleString()}</span>
-              </div>
-              {bundleDiscount > 0 && (
-                <div className="flex justify-between text-secondary-foreground font-medium">
-                  <span>Bundle Discount (10%)</span>
-                  <span>-£{discountAmount.toLocaleString()}</span>
-                </div>
+              )) || (
+                <p className="text-sm text-muted-foreground">Your enrolled courses will appear here once payment confirmation is available.</p>
               )}
-              <div className="flex justify-between text-muted-foreground">
-                <span>Registration Fee</span>
-                <span>£{registrationFee}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg pt-3 border-t border-border">
-                <span className="text-foreground">Total Paid</span>
-                <span className="text-primary">£{finalTotal.toLocaleString()}</span>
-              </div>
             </div>
           </div>
-        </div>
 
-        {/* Next Steps */}
-        <div className="bg-card border border-border rounded-xl p-6 mb-8 shadow-sm">
-          <h2 className="text-lg font-bold text-foreground mb-6">What Happens Next?</h2>
-          <div className="space-y-5">
-            <div className="flex gap-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-                <Mail className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Check Your Email</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-1">You'll receive a welcome email with login credentials for the learning portal within 24 hours.</p>
-              </div>
+          <div className="mt-5 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-foreground">
+                {new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(subtotal)}
+              </span>
             </div>
-            <div className="flex gap-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-                <Calendar className="w-5 h-5 text-primary" />
+            {discountTotal > 0 ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Discount</span>
+                <span className="text-primary">
+                  -{new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(discountTotal)}
+                </span>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Induction Session</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-1">Our team will contact you to schedule your induction and orientation session.</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-                <Download className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Course Materials</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-1">Access your course materials and study resources through the learning portal once activated.</p>
-              </div>
+            ) : null}
+            <div className="flex justify-between border-t border-border pt-3 text-2xl font-bold">
+              <span className="text-foreground">Total Paid</span>
+              <span className="text-primary">
+                {new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(totalPaid)}
+              </span>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link
-            to="/learner/dashboard"
-            onClick={() => clearCart()}
-            className="flex-1 bg-primary text-primary-foreground h-12 rounded-lg font-bold text-sm text-center hover:opacity-90 flex items-center justify-center gap-2 transition-all shadow-sm"
-          >
-            Go to My Dashboard
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+        <section className="rounded-md border border-border bg-card p-6 shadow-sm md:p-8">
+          <h2 className="text-2xl font-bold text-foreground">What Happens Next?</h2>
+
+          <div className="mt-6 space-y-5">
+            <SuccessStep
+              icon={<Mail className="h-5 w-5 text-primary" />}
+              title="Check Your Email"
+              description="You'll receive a welcome email with login credentials for the learning portal within 24 hours."
+            />
+            <SuccessStep
+              icon={<CalendarDays className="h-5 w-5 text-primary" />}
+              title="Induction Session"
+              description="Our team will contact you to schedule your induction and orientation session."
+            />
+            <SuccessStep
+              icon={<PackageOpen className="h-5 w-5 text-primary" />}
+              title="Course Materials"
+              description="Access your course materials and study resources through the learning portal once activated."
+            />
+          </div>
+        </section>
+
+        <div className="flex flex-col gap-4 sm:flex-row">
           <Link
             to="/"
-            onClick={() => clearCart()}
-            className="flex-1 bg-card border border-border text-foreground h-12 rounded-lg font-bold text-sm text-center hover:bg-muted flex items-center justify-center gap-2 transition-all shadow-sm"
+            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-6 py-4 text-sm font-bold text-primary-foreground hover:opacity-90"
           >
-            <Home className="w-4 h-4" />
             Back to Home
+            <Home className="h-4 w-4" />
+          </Link>
+          <Link
+            to="/qualifications"
+            className="flex flex-1 items-center justify-center rounded-md border border-border bg-card px-6 py-4 text-sm font-bold text-foreground hover:bg-muted"
+          >
+            Browse More Courses
           </Link>
         </div>
       </div>
     </div>
   );
 };
+
+const SuccessStep = ({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) => (
+  <div className="flex gap-4">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/8">{icon}</div>
+    <div>
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
+    </div>
+  </div>
+);
 
 export default CheckoutSuccess;

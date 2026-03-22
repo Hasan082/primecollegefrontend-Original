@@ -1,252 +1,503 @@
-import { useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
-import { ChevronLeft, Lock, CreditCard, ShieldCheck, X } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ChevronLeft, Lock, ShieldCheck, X } from "lucide-react";
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import { useCart } from "@/contexts/CartContext";
+import { useCheckoutOnlineMutation } from "@/redux/apis/orderApi";
+import { useToast } from "@/hooks/use-toast";
+
+const formatMoney = (value: number, currency = "GBP") =>
+  new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+
+const extractErrorMessage = (detail: unknown): string => {
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const nested = detail.map(extractErrorMessage).filter(Boolean);
+    return nested.join(" ");
+  }
+
+  if (detail && typeof detail === "object") {
+    const values = Object.values(detail as Record<string, unknown>)
+      .map(extractErrorMessage)
+      .filter(Boolean);
+    return values.join(" ");
+  }
+
+  return "";
+};
+
+interface CustomerFormState {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postcode: string;
+  country: string;
+}
+
+interface PaymentSetupState {
+  clientSecret: string;
+  publishableKey: string;
+  orderNumber: string;
+}
+
+const PaymentElementSection = ({
+  clientSecret,
+  publishableKey,
+  form,
+  orderNumber,
+  submitButtonRef,
+}: {
+  clientSecret: string;
+  publishableKey: string;
+  form: CustomerFormState;
+  orderNumber: string;
+  submitButtonRef?: React.RefObject<HTMLButtonElement>;
+}) => {
+  const stripePromise = useMemo(() => loadStripe(publishableKey), [publishableKey]);
+  const elementOptions = useMemo(
+    () => ({
+      clientSecret,
+      appearance: {
+        theme: "stripe" as const,
+        variables: {
+          colorPrimary: "#0e4a86",
+          borderRadius: "14px",
+        },
+      },
+    }),
+    [clientSecret],
+  );
+
+  return (
+    <Elements stripe={stripePromise} options={elementOptions}>
+      <PaymentElementForm form={form} orderNumber={orderNumber} submitButtonRef={submitButtonRef} />
+    </Elements>
+  );
+};
+
+const PaymentElementForm = ({
+  form,
+  orderNumber,
+  submitButtonRef,
+}: {
+  form: CustomerFormState;
+  orderNumber: string;
+  submitButtonRef?: React.RefObject<HTMLButtonElement>;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const paymentElementOptions: any = {
+    layout: "tabs",
+    defaultValues: {
+      billingDetails: {
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        email: form.email,
+        phone: form.phone,
+        address: {
+          line1: form.address,
+          city: form.city,
+          postal_code: form.postcode,
+          country: form.country.toLowerCase() === "united kingdom" ? "GB" : form.country,
+        },
+      },
+    },
+  };
+
+  const handleConfirmPayment = async (event?: React.FormEvent) => {
+    if (event) event.preventDefault();
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/checkout/success?order_number=${encodeURIComponent(orderNumber)}`,
+        payment_method_data: {
+          billing_details: {
+            name: `${form.firstName} ${form.lastName}`.trim(),
+            email: form.email,
+            phone: form.phone,
+            address: {
+              line1: form.address,
+              city: form.city,
+              postal_code: form.postcode,
+              country: form.country.toLowerCase() === "united kingdom" ? "GB" : form.country,
+            },
+          },
+        },
+      },
+    });
+
+    if (error) {
+      toast({
+        title: "Payment could not be completed",
+        description: error.message || "Please review your payment details and try again.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (submitButtonRef?.current) {
+      const btn = submitButtonRef.current;
+      const handler = () => handleConfirmPayment();
+      btn.addEventListener("click", handler);
+      return () => btn.removeEventListener("click", handler);
+    }
+  }, [stripe, elements, submitButtonRef]);
+
+  return (
+    <div className="mt-4 space-y-4">
+      <PaymentElement options={paymentElementOptions} />
+      {/* The actual pay button is now in the sidebar, but we provide a fallback for small screens or accessibility if needed, or hide it */}
+      <div className="hidden">
+        <button id="stripe-confirm-btn" onClick={handleConfirmPayment}>
+          Confirm
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const Checkout = () => {
-  const navigate = useNavigate();
-  const { items, removeItem, totalPrice } = useCart();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { items, removeItem } = useCart();
+  const { toast } = useToast();
+  const [checkoutOnline, { isLoading: isPreparingPayment }] = useCheckoutOnlineMutation();
+  const [paymentSetup, setPaymentSetup] = useState<PaymentSetupState | null>(null);
 
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    postcode: "",
-    cardNumber: "",
-    expiry: "",
-    cvv: "",
-    cardName: "",
+  const [form, setForm] = useState<CustomerFormState>(() => {
+    const saved = sessionStorage.getItem("primecollege_checkout_form");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          address: "",
+          city: "",
+          postcode: "",
+          country: "United Kingdom",
+        };
   });
+
+  const paymentStepRef = React.useRef<HTMLDivElement>(null);
+  const sidebarSubmitRef = React.useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    sessionStorage.setItem("primecollege_checkout_form", JSON.stringify(form));
+  }, [form]);
+
+  useEffect(() => {
+    sessionStorage.removeItem("primecollege_payment_setup");
+  }, []);
 
   if (items.length === 0) {
     return (
       <div className="py-20 text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-4">Your Cart is Empty</h1>
-        <p className="text-muted-foreground mb-6">Browse our qualifications to find your ideal course.</p>
-        <Link to="/qualifications" className="bg-primary text-primary-foreground px-6 py-3 rounded font-semibold hover:opacity-90">
-          View All Qualifications
+        <h1 className="mb-4 text-3xl font-bold text-foreground">Your Basket Is Empty</h1>
+        <p className="mb-6 text-muted-foreground">Add a qualification before starting secure checkout.</p>
+        <Link
+          to="/qualifications"
+          className="rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground hover:opacity-90"
+        >
+          View qualifications
         </Link>
       </div>
     );
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const selectedUpsellItem = items.find((item) => item.isUpsell && (item.bundleDiscountTotal || 0) > 0);
+  const subtotal = selectedUpsellItem?.bundleOriginalPrice || items.reduce((sum, item) => sum + item.priceValue, 0);
+  const discountTotal = selectedUpsellItem?.bundleDiscountTotal || 0;
+  const estimatedTotal = subtotal - discountTotal;
+  const currency = items[0]?.currency || "GBP";
+  const inputsLocked = Boolean(paymentSetup);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-    setTimeout(() => {
-      navigate("/checkout/success");
-    }, 2000);
+  const handlePreparePayment = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    try {
+      const response = await checkoutOnline({
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        phone: form.phone,
+        billing_address: form.address,
+        city: form.city,
+        postcode: form.postcode,
+        country: form.country,
+        items: items.map((item) => ({
+          qualification_id: item.qualificationId,
+          qualification_session_id: item.qualificationSessionId || undefined,
+          is_upsell: item.isUpsell || false,
+          pricing_note: item.pricingNote || "",
+        })),
+      }).unwrap();
+
+      sessionStorage.setItem(
+        "primecollege_pending_checkout",
+        JSON.stringify({
+          orderNumber: response.data.order.order_number,
+          subtotal: response.data.order.subtotal,
+          discountTotal: response.data.order.discount_total,
+          grandTotal: response.data.order.grand_total,
+          currency: response.data.order.currency,
+          items,
+          customer: {
+            firstName: form.firstName,
+            lastName: form.lastName,
+            email: form.email,
+          },
+        }),
+      );
+
+      setPaymentSetup({
+        clientSecret: response.data.payment_intent_client_secret,
+        publishableKey: response.data.stripe_publishable_key,
+        orderNumber: response.data.order.order_number,
+      });
+
+      toast({
+        title: "Payment ready",
+        description: "Enter your card details below to complete the payment on this page.",
+      });
+
+      // Scroll to payment step
+      setTimeout(() => {
+        paymentStepRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } catch (error: any) {
+      const description = extractErrorMessage(error?.data?.detail || error?.data?.data || error?.data)
+        || "Unable to prepare secure payment. Please review your details and try again.";
+      toast({
+        title: "Checkout failed",
+        description,
+        variant: "destructive",
+      });
+    }
   };
 
-  const bundleDiscount = items.length >= 2 ? 0.1 : 0;
-  const registrationFee = 50;
-  const discountAmount = totalPrice * bundleDiscount;
-  const finalTotal = totalPrice - discountAmount + registrationFee;
-
-  const inputClass = "w-full border border-border rounded px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none";
+  const inputClass =
+    "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-70";
 
   return (
-    <div className="bg-muted min-h-screen">
-      {/* Top Bar */}
-      <div className="bg-primary text-primary-foreground py-3">
-        <div className="container mx-auto px-4 flex items-center justify-between">
+    <div className="min-h-screen bg-muted">
+      <div className="bg-primary py-3 text-primary-foreground">
+        <div className="container mx-auto flex items-center justify-between px-4">
           <Link to="/qualifications" className="flex items-center gap-2 text-sm hover:opacity-80">
-            <ChevronLeft className="w-4 h-4" />
-            Back to Courses
+            <ChevronLeft className="h-4 w-4" />
+            Back to qualifications
           </Link>
           <div className="flex items-center gap-2 text-sm">
-            <Lock className="w-4 h-4" />
-            Secure Checkout
+            <Lock className="h-4 w-4" />
+            Secure Stripe payment
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-10">
-        {/* Steps */}
-        <div className="flex items-center justify-center gap-2 mb-10 text-sm">
-          <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full font-semibold text-xs">1</span>
-          <span className="font-semibold text-foreground">Courses Selected</span>
-          <span className="w-8 h-px bg-border" />
-          <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full font-semibold text-xs">2</span>
-          <span className="font-semibold text-foreground">Your Details</span>
-          <span className="w-8 h-px bg-border" />
-          <span className="bg-muted-foreground/30 text-muted-foreground px-3 py-1 rounded-full font-semibold text-xs">3</span>
-          <span className="text-muted-foreground">Confirmation</span>
+        <div className="mb-10 flex items-center justify-center gap-2 text-sm">
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">1</span>
+          <span className="font-semibold text-foreground">Basket</span>
+          <span className="h-px w-8 bg-border" />
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">2</span>
+          <span className="font-semibold text-foreground">Your details</span>
+          <span className="h-px w-8 bg-border" />
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">3</span>
+          <span className="font-semibold text-foreground">Payment</span>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Form */}
-          <form id="checkout-form" onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
-            {/* Personal Details */}
-            <div className="bg-card border border-border rounded p-6">
-              <h2 className="text-lg font-bold text-foreground mb-4">Personal Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-8 lg:grid-cols-3">
+          <form id="checkout-form" onSubmit={handlePreparePayment} className="space-y-6 lg:col-span-2">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-foreground">Learner details</h2>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">First Name *</label>
-                  <input name="firstName" value={form.firstName} onChange={handleChange} required className={inputClass} />
+                  <label className="mb-1 block text-sm font-medium text-foreground">First name *</label>
+                  <input name="firstName" value={form.firstName} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Last Name *</label>
-                  <input name="lastName" value={form.lastName} onChange={handleChange} required className={inputClass} />
+                  <label className="mb-1 block text-sm font-medium text-foreground">Last name *</label>
+                  <input name="lastName" value={form.lastName} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Email Address *</label>
-                  <input name="email" type="email" value={form.email} onChange={handleChange} required className={inputClass} />
+                  <label className="mb-1 block text-sm font-medium text-foreground">Email address *</label>
+                  <input name="email" type="email" value={form.email} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Phone Number *</label>
-                  <input name="phone" type="tel" value={form.phone} onChange={handleChange} required className={inputClass} />
+                  <label className="mb-1 block text-sm font-medium text-foreground">Phone number *</label>
+                  <input name="phone" type="tel" value={form.phone} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                 </div>
               </div>
             </div>
 
-            {/* Billing Address */}
-            <div className="bg-card border border-border rounded p-6">
-              <h2 className="text-lg font-bold text-foreground mb-4">Billing Address</h2>
-              <div className="space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-foreground">Billing address</h2>
+              <div className="mt-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Street Address *</label>
-                  <input name="address" value={form.address} onChange={handleChange} required className={inputClass} />
+                  <label className="mb-1 block text-sm font-medium text-foreground">Street address *</label>
+                  <input name="address" value={form.address} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">City *</label>
-                    <input name="city" value={form.city} onChange={handleChange} required className={inputClass} />
+                    <label className="mb-1 block text-sm font-medium text-foreground">City *</label>
+                    <input name="city" value={form.city} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Postcode *</label>
-                    <input name="postcode" value={form.postcode} onChange={handleChange} required className={inputClass} />
+                    <label className="mb-1 block text-sm font-medium text-foreground">Postcode *</label>
+                    <input name="postcode" value={form.postcode} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                   </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Country *</label>
+                  <input name="country" value={form.country} onChange={handleChange} required className={inputClass} disabled={inputsLocked} />
                 </div>
               </div>
             </div>
 
-            {/* Payment */}
-            <div className="bg-card border border-border rounded p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <CreditCard className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">Payment Details</h2>
+            <div ref={paymentStepRef} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">Payment step</h2>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Name on Card *</label>
-                  <input name="cardName" value={form.cardName} onChange={handleChange} required className={inputClass} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Card Number *</label>
-                  <input name="cardNumber" value={form.cardNumber} onChange={handleChange} required placeholder="1234 5678 9012 3456" className={inputClass} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Expiry *</label>
-                    <input name="expiry" value={form.expiry} onChange={handleChange} required placeholder="MM/YY" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">CVV *</label>
-                    <input name="cvv" value={form.cvv} onChange={handleChange} required placeholder="123" className={inputClass} />
-                  </div>
-                </div>
-              </div>
+              {!paymentSetup ? (
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  Confirm your basket and details first. Stripe’s secure Payment Element will then appear here on the same page.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground text-primary font-medium">
+                    Please enter your card details and complete payment below.
+                  </p>
+                  <PaymentElementSection
+                    clientSecret={paymentSetup.clientSecret}
+                    publishableKey={paymentSetup.publishableKey}
+                    form={form}
+                    orderNumber={paymentSetup.orderNumber}
+                    submitButtonRef={sidebarSubmitRef}
+                  />
+                </>
+              )}
             </div>
           </form>
 
-          {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-card border border-border rounded p-6 sticky top-6">
-              <h2 className="text-lg font-bold text-foreground mb-4">
-                Order Summary ({items.length} course{items.length !== 1 ? "s" : ""})
+            <div className="sticky top-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-foreground">
+                Order summary ({items.length} qualification{items.length !== 1 ? "s" : ""})
               </h2>
 
-              <div className="space-y-3 border-b border-border pb-4 mb-4">
+              <div className="mb-4 mt-5 space-y-3 border-b border-border pb-4">
                 {items.map((item) => (
-                  <div key={item.slug} className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-foreground leading-tight">{item.title}</h3>
-                      <div className="flex gap-2 mt-1">
-                        <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded">{item.category}</span>
-                        <span className="text-xs text-muted-foreground">{item.level}</span>
+                  <div key={item.slug} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold leading-tight text-foreground">{item.title}</h3>
+                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        {item.category ? <span>{item.category}</span> : null}
+                        {item.level ? <span>• {item.level}</span> : null}
+                        {item.qualificationSessionTitle ? <span>• {item.qualificationSessionTitle}</span> : null}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="ml-3 flex shrink-0 items-center gap-2">
                       <span className="text-sm font-bold text-foreground">{item.price}</span>
-                      {items.length > 1 && (
-                        <button
-                          onClick={() => removeItem(item.slug)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.slug)}
+                        disabled={inputsLocked}
+                        className="text-muted-foreground hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-2 text-sm border-b border-border pb-4 mb-4">
+              <div className="mb-4 space-y-2 border-b border-border pb-4 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-foreground">£{totalPrice.toLocaleString()}</span>
+                  <span className="text-muted-foreground">Estimated subtotal</span>
+                  <span className="text-foreground">{formatMoney(subtotal, currency)}</span>
                 </div>
-                {bundleDiscount > 0 && (
-                  <div className="flex justify-between text-secondary-foreground">
-                    <span>Bundle Discount (10%)</span>
-                    <span>-£{discountAmount.toLocaleString()}</span>
+                {discountTotal > 0 ? (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Discount</span>
+                    <span className="text-primary">-{formatMoney(discountTotal, currency)}</span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Registration Fee</span>
-                  <span className="text-foreground">£{registrationFee}</span>
-                </div>
+                ) : null}
               </div>
 
-              <div className="flex justify-between text-base font-bold mb-4">
-                <span className="text-foreground">Total</span>
-                <span className="text-primary">£{finalTotal.toLocaleString()}</span>
+              <div className="mb-4 flex justify-between text-base font-bold">
+                <span className="text-foreground">Estimated total</span>
+                <span className="text-primary">{formatMoney(estimatedTotal, currency)}</span>
               </div>
 
-              {items.length >= 2 && (
-                <div className="mb-4 bg-secondary/10 border border-secondary/20 rounded p-3 text-center">
-                  <p className="text-xs font-semibold text-secondary-foreground">
-                    🎉 You're saving £{discountAmount.toLocaleString()} with bundle discount!
-                  </p>
-                </div>
-              )}
+              <div className="rounded-xl bg-muted/50 p-4 text-xs leading-5 text-muted-foreground">
+                {paymentSetup
+                  ? "Payment has been prepared for this basket. To change items or learner details, go back to qualifications and start a fresh checkout."
+                  : "Your card details will be handled securely by Stripe within this checkout page."}
+              </div>
 
-              <button
-                type="submit"
-                form="checkout-form"
-                disabled={isProcessing}
-                className="w-full bg-secondary text-secondary-foreground py-3 rounded font-bold text-sm hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin" />
-                    Processing Payment...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    Complete Enrollment — £{finalTotal.toLocaleString()}
-                  </>
-                )}
-              </button>
-
-              <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground mt-3">
+              <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  SSL Encrypted
+                  <ShieldCheck className="h-3 w-3" />
+                  SSL encrypted
                 </div>
-                <span>•</span>
-                <span>Secure Payment</span>
+                <div className="flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Stripe secured
+                </div>
               </div>
+
+              {!paymentSetup ? (
+                <button
+                  type="submit"
+                  form="checkout-form"
+                  disabled={isPreparingPayment}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-4 text-sm font-bold text-secondary-foreground transition hover:opacity-90 disabled:opacity-60"
+                >
+                  {isPreparingPayment ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-secondary-foreground/30 border-t-secondary-foreground" />
+                      Preparing payment...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      Continue to payment
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  ref={sidebarSubmitRef}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-4 text-sm font-bold text-secondary-foreground transition hover:opacity-90 disabled:opacity-60"
+                >
+                  <Lock className="h-4 w-4" />
+                  Pay {formatMoney(estimatedTotal, currency)} Now
+                </button>
+              )}
             </div>
           </div>
         </div>

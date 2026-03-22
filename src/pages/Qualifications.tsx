@@ -1,185 +1,215 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Breadcrumb from "@/components/Breadcrumb";
-import { fetchContent } from "@/lib/api";
-import Section from "@/components/Section";
-import QualificationCard from "@/components/QualificationCard";
 import CTASection from "@/components/CTASection";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import QualificationCard from "@/components/QualificationCard";
+import Section from "@/components/Section";
+import { useGetQualificationsQuery } from "@/redux/apis/qualificationApi";
 import qualificationsBanner from "@/assets/qualifications-banner.jpg";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { BookOpen } from "lucide-react";
-
-interface Qualification {
-  id: string;
-  title: string;
-  category: string;
-  level: string;
-  duration: string;
-  price: string;
-  description: string;
-}
-
-interface CategoryInfo {
-  headline: string;
-  description: string;
-  progressionTitle: string;
-}
-
-interface QualData {
-  title: string;
-  intro: string;
-  categories: string[];
-  categoryInfo: Record<string, CategoryInfo>;
-  qualifications: Qualification[];
-}
+import { useDebounce } from "@/hooks/use-debounce";
 
 const Qualifications = () => {
-  const [data, setData] = useState<QualData | null>(null);
-  const [searchParams] = useSearchParams();
-  const categoryParam = searchParams.get("category") || "All";
-  const [activeCategory, setActiveCategory] = useState(categoryParam);
-  const [activeLevel, setActiveLevel] = useState("All");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const debouncedSearch = useDebounce(search, 500);
+
+  const filters = {
+    search: searchParams.get("search") || undefined,
+    category: searchParams.get("category") || undefined,
+    level: searchParams.get("level") || undefined,
+    ordering: searchParams.get("ordering") || undefined,
+    delivery_mode: searchParams.get("delivery_mode") || undefined,
+  };
+
+  const hasActiveFilters = Boolean(
+    filters.search || filters.category || filters.level || filters.ordering || filters.delivery_mode,
+  );
+
+  const resetFilters = () => {
+    setSearchParams({});
+    setSearch("");
+  };
+
+  const { data, isLoading, isFetching } = useGetQualificationsQuery(filters);
+  const { data: allQualifications } = useGetQualificationsQuery();
+
+  const results = data?.data?.results ?? [];
+  const optionSource = allQualifications?.data?.results ?? results;
+
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          optionSource
+            .filter((item) => item.category?.slug)
+            .map((item) => [item.category!.slug!, item.category!]),
+        ).values(),
+      ),
+    [optionSource],
+  );
+
+  const levels = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          optionSource
+            .filter((item) => item.level?.slug)
+            .map((item) => [item.level!.slug!, item.level!]),
+        ).values(),
+      ),
+    [optionSource],
+  );
+
+
+
+  const updateFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) {
+      next.set(key, value);
+    } else {
+      next.delete(key);
+    }
+    setSearchParams(next);
+  };
 
   useEffect(() => {
-    fetchContent<QualData>("qualifications").then(setData);
-  }, []);
+    if (debouncedSearch !== (searchParams.get("search") || "")) {
+      updateFilter("search", debouncedSearch.trim());
+    }
+  }, [debouncedSearch]);
 
-  // Sync category from URL params
-  useEffect(() => {
-    setActiveCategory(categoryParam);
-  }, [categoryParam]);
+  const handleSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+  };
 
-  if (!data) return <LoadingSpinner />;
-
-  const levels = ["All", ...Array.from(new Set(data.qualifications.map((q) => q.level))).sort()];
-
-  const filtered = data.qualifications.filter((q) => {
-    const catMatch = activeCategory === "All" || q.category === activeCategory;
-    const lvlMatch = activeLevel === "All" || q.level === activeLevel;
-    return catMatch && lvlMatch;
-  });
-
-  const pageTitle = activeCategory !== "All" ? `${activeCategory} Courses` : data.title;
-  const pageIntro = activeCategory !== "All"
-    ? `Browse our ${activeCategory.toLowerCase()} courses and find the right qualification for your career.`
-    : data.intro;
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div>
       <div className="relative">
-        <img src={qualificationsBanner} alt={pageTitle} className="w-full h-[300px] md:h-[400px] object-cover" />
+        <img src={qualificationsBanner} alt="Qualifications" className="h-[300px] w-full object-cover md:h-[400px]" />
         <div className="absolute inset-0 bg-primary/75" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center px-4">
-            <h1 className="text-4xl font-bold text-primary-foreground mb-4">{pageTitle}</h1>
-            <p className="text-primary-foreground/80 max-w-2xl mx-auto">{pageIntro}</p>
+          <div className="px-4 text-center">
+            <h1 className="mb-4 text-4xl font-bold text-primary-foreground">Qualifications</h1>
+            <p className="mx-auto max-w-2xl text-primary-foreground/80">
+              Browse our active qualifications and find the right course for your role, sector, and progression route.
+            </p>
           </div>
         </div>
       </div>
-      <Breadcrumb items={activeCategory !== "All" ? [{ label: "Qualifications", href: "/qualifications" }, { label: activeCategory }] : [{ label: "Qualifications" }]} />
 
-      {/* Category Info Section */}
-      {activeCategory !== "All" && data.categoryInfo[activeCategory] && (
-        <section className="bg-primary text-primary-foreground py-16 px-4">
-          <div className="container mx-auto max-w-4xl">
-            <h2 className="text-3xl font-bold text-center mb-8">
-              What is a Training Programme?
-            </h2>
-            <div className="bg-primary-foreground/10 border border-primary-foreground/20 rounded-xl p-6 mb-6">
-              <p className="text-primary-foreground text-lg leading-relaxed">
-                {data.categoryInfo[activeCategory].headline}
-              </p>
-            </div>
-            <p className="text-primary-foreground/80 text-center leading-relaxed">
-              {data.categoryInfo[activeCategory].description}
-            </p>
+      <Breadcrumb items={[{ label: "Qualifications" }]} />
+
+      <Section title="">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-1 flex-wrap items-end gap-3">
+            <form onSubmit={handleSearchSubmit} className="w-full max-w-md">
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search qualifications..."
+                className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </form>
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
-        </section>
-      )}
 
-      <Section title={activeCategory !== "All" && data.categoryInfo[activeCategory] ? data.categoryInfo[activeCategory].progressionTitle : ""}>
-        {/* Dropdown Filters */}
-        <div className="flex flex-wrap justify-end gap-3 mb-8">
-          <select
-            value={activeCategory}
-            onChange={(e) => setActiveCategory(e.target.value)}
-            className="bg-card border border-border text-foreground text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-          >
-            {data.categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat === "All" ? "All Categories" : cat}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap justify-end gap-3">
+            <select
+              value={filters.category || ""}
+              onChange={(event) => updateFilter("category", event.target.value)}
+              className="cursor-pointer rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.slug}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
 
-          <select
-            value={activeLevel}
-            onChange={(e) => setActiveLevel(e.target.value)}
-            className="bg-card border border-border text-foreground text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-          >
-            {levels.map((lvl) => (
-              <option key={lvl} value={lvl}>
-                {lvl === "All" ? "All Levels" : lvl}
-              </option>
-            ))}
-          </select>
+            <select
+              value={filters.level || ""}
+              onChange={(event) => updateFilter("level", event.target.value)}
+              className="cursor-pointer rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">All Levels</option>
+              {levels.map((level) => (
+                <option key={level.id} value={level.slug}>
+                  {level.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filters.ordering || ""}
+              onChange={(event) => updateFilter("ordering", event.target.value)}
+              className="cursor-pointer rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Sort By</option>
+              <option value="-latest">Newest First</option>
+              <option value="latest">Oldest First</option>
+              <option value="price">Price: Low to High</option>
+              <option value="-price">Price: High to Low</option>
+              <option value="title">Title: A to Z</option>
+              <option value="-title">Title: Z to A</option>
+            </select>
+          </div>
         </div>
 
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((q) => (
-              <QualificationCard key={q.id} {...q} />
+        <p className="mb-8 text-right text-sm text-muted-foreground">
+          {isFetching ? "Refreshing results..." : `${data?.data?.count ?? 0} qualification(s) found`}
+        </p>
+
+        {results.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {results.map((qualification) => (
+              <QualificationCard
+                key={qualification.id}
+                id={qualification.id}
+                slug={qualification.slug}
+                title={qualification.title}
+                category={qualification.category?.name || null}
+                level={qualification.level?.name || null}
+                duration={qualification.course_duration}
+                price={
+                  qualification.current_price
+                    ? new Intl.NumberFormat("en-GB", {
+                        style: "currency",
+                        currency: qualification.currency || "GBP",
+                      }).format(Number(qualification.current_price))
+                    : "Contact us"
+                }
+                description={qualification.excerpt}
+                imageUrl={
+                  qualification.featured_image?.card ||
+                  qualification.featured_image?.hero_mobile ||
+                  qualification.featured_image?.original ||
+                  null
+                }
+              />
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg">No courses found matching your filters.</p>
-            <Link to="/qualifications" className="text-primary font-medium mt-2 inline-block hover:underline">
+          <div className="py-16 text-center">
+            <p className="text-lg text-muted-foreground">No courses found matching your filters.</p>
+            <Link to="/qualifications" className="mt-2 inline-block font-medium text-primary hover:underline">
               View all qualifications
             </Link>
           </div>
         )}
-
-        {/* Brochure Button */}
-        <div className="text-center mt-10">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="default" size="lg" className="gap-2">
-                <BookOpen className="w-5 h-5" />
-                View Our Brochure
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0">
-              <iframe
-                src="https://online.fliphtml5.com/nghfk/fkpv/"
-                className="w-full h-full rounded-lg"
-                allowFullScreen
-                title="The Prime College Brochure"
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
       </Section>
-
-      {/* More Than One Course Section */}
-      <section className="bg-primary/5 py-16 px-4">
-        <div className="container mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
-            More Than One Qualification?
-          </h2>
-          <p className="text-muted-foreground leading-relaxed mb-8">
-            If you are looking to upskill your team in management and leadership, we will offer you comprehensive and flexible solutions. We are excited to discuss how we can support your training objectives by providing customised course packages.
-          </p>
-          <Link
-            to="/contact"
-            className="inline-block bg-secondary text-secondary-foreground px-8 py-3 font-semibold rounded-full hover:opacity-90 text-sm"
-          >
-            Get A Quote
-          </Link>
-        </div>
-      </section>
 
       <CTASection />
     </div>

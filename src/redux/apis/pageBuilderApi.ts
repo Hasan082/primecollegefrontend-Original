@@ -48,7 +48,7 @@ const pageBuilderApi = api.injectEndpoints({
     getPage: builder.query({
       providesTags: (_result, _error, slug) => [{ type: "Pages", id: slug }],
       query: (slug) => ({
-        url: `/api/cms/pages/${slug}`,
+        url: `/api/cms/pages/${slug}/`,
         method: "GET",
       }),
     }),

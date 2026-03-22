@@ -42,9 +42,9 @@ const baseQueryWithRefreshToken: BaseQueryFn<
 
   if (result?.error?.status === 401) {
     const refreshCookie = getRefreshToken();
-    // if (!refreshCookie) {
-    //   return result;
-    // }
+    if (!refreshCookie) {
+      return result;
+    }
 
     try {
       const refreshHeaders: HeadersInit = {
@@ -62,6 +62,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<
           method: "POST",
           credentials: "include",
           headers: refreshHeaders,
+          body: JSON.stringify({ refresh: refreshCookie }),
         },
       );
 
@@ -83,6 +84,6 @@ const baseQueryWithRefreshToken: BaseQueryFn<
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithRefreshToken,
-  tagTypes: ["User", "Pages"],
+  tagTypes: ["User", "Pages", "Qualifications"],
   endpoints: () => ({}),
 });

@@ -2,6 +2,7 @@
 
 export type BlockType =
   | "hero"
+  | "qualification_hero"
   | "text"
   | "image"
   | "image-text"
@@ -48,6 +49,11 @@ export interface HeroBlock extends BlockBase {
     ctaHref?: string;
     badges?: string[];
   };
+}
+
+export interface QualificationHeroBlock extends BlockBase {
+  type: "qualification_hero";
+  data: Record<string, unknown>;
 }
 
 export interface TextBlock extends BlockBase {
@@ -164,6 +170,7 @@ export interface PricingBlock extends BlockBase {
 
 export type ContentBlock =
   | HeroBlock
+  | QualificationHeroBlock
   | TextBlock
   | ImageBlock
   | ImageTextBlock
