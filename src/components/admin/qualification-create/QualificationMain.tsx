@@ -33,10 +33,18 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   useCreateQualificationMainMutation,
+  useGetQualificationMainQuery,
   useUpdateQualificationMainMutation,
 } from "@/redux/apis/qualification/qualificationMainApi";
 import { handleResponse } from "@/utils/handleResponse";
 import { TryCatch } from "@/utils/apiTryCatch";
+import {
+  useGetAwardingBodiesQuery,
+  useGetCategoriesQuery,
+  useGetDeliveryModesQuery,
+  useGetLevelsQuery,
+  useGetTypesQuery,
+} from "@/redux/apis/qualification/qualificationSupportApi";
 
 // ─── Slug helper ──────────────────────────────────────────────────────────────
 
@@ -64,6 +72,25 @@ const qualificationMainSchema = z.object({
       /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/,
       "Slug may only contain lowercase letters, numbers, hyphens, and underscores",
     ),
+  category: z
+    .string({ required_error: "Category is required" })
+    .uuid("Invalid category ID"),
+
+  level: z
+    .string({ required_error: "Level is required" })
+    .uuid("Invalid level ID"),
+
+  awarding_body: z
+    .string({ required_error: "Awarding body is required" })
+    .uuid("Invalid awarding body ID"),
+
+  qualification_type: z
+    .string({ required_error: "Qualification type is required" })
+    .uuid("Invalid qualification type ID"),
+
+  delivery_mode: z
+    .string({ required_error: "Delivery mode is required" })
+    .uuid("Invalid delivery mode ID"),
 
   featured_image: z
     .instanceof(File, { message: "Please upload a valid image file" })
@@ -248,10 +275,17 @@ const QualificationMain = () => {
   const isEditMode = Boolean(qualificationId);
   const [createQualificationMain] = useCreateQualificationMainMutation();
   const [updateQualificationMain] = useUpdateQualificationMainMutation();
+
+  const { data: awardingBodiesData } = useGetAwardingBodiesQuery(null);
+  const { data: categories } = useGetCategoriesQuery(null);
+  const { data: deliveryModes } = useGetDeliveryModesQuery(null);
+  const { data: levels } = useGetLevelsQuery(null);
+  const { data: types } = useGetTypesQuery(null);
   const navigate = useNavigate();
-  // TODO: Replace with your actual Redux selector
-  // const existingData = useSelector(selectQualificationMain);
-  const existingData = null;
+
+  const { data, isLoading } = useGetQualificationMainQuery(qualificationId, {
+    skip: !qualificationId,
+  });
 
   // Holds the existing image URL string from the API (edit mode only)
   const [existingImageUrl, setExistingImageUrl] = useState<string | undefined>(
@@ -282,13 +316,13 @@ const QualificationMain = () => {
 
   // ── Populate form in edit mode ────────────────────────────────────────────
   useEffect(() => {
-    if (isEditMode && existingData) {
-      const { featured_image, ...rest } = existingData as any;
+    if (isEditMode && data?.data) {
+      const { featured_image, ...rest } = data?.data as any;
       // Keep the existing image URL for preview; don't put it in the File field
       setExistingImageUrl(featured_image ?? undefined);
       form.reset({ ...rest, featured_image: null });
     }
-  }, [isEditMode, existingData, form]);
+  }, [isEditMode, data?.data, form]);
 
   // ── Build FormData ────────────────────────────────────────────────────────
   const buildFormData = (values: QualificationMainFormValues): FormData => {
@@ -316,9 +350,6 @@ const QualificationMain = () => {
       const formData = buildFormData(values);
 
       if (isEditMode) {
-        // TODO: dispatch(updateQualificationMain({ id: qualificationId, formData }));
-
-        formData.forEach((v, k) => console.log(` ${k}:`, v));
         const [data, error] = await TryCatch(
           updateQualificationMain(formData).unwrap(),
         );
@@ -351,7 +382,9 @@ const QualificationMain = () => {
           description: result.message,
           variant: result.type === "error" ? "destructive" : "default",
         });
-        // if (result.type === "success") navigate(`/admin/qualifications/${}/edit`);
+        console.log({ data });
+        if (result.type === "success")
+          navigate(`/admin/qualifications/${data?.data?.id}/edit?step=2`);
       }
     } catch {
       toast({
@@ -487,6 +520,141 @@ const QualificationMain = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
+
+                    <SelectContent>
+                      {categories?.data?.map((item: any) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="awarding_body"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Awarding Body</FormLabel>
+
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select awarding body" />
+                      </SelectTrigger>
+                    </FormControl>
+
+                    <SelectContent>
+                      {awardingBodiesData?.data?.map((item: any) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Level</FormLabel>
+
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                    </FormControl>
+
+                    <SelectContent>
+                      {levels?.data?.map((item: any) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="qualification_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Qualification Type</FormLabel>
+
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+
+                    <SelectContent>
+                      {types?.data?.map((item: any) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="delivery_mode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Delivery Mode</FormLabel>
+
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select delivery mode" />
+                      </SelectTrigger>
+                    </FormControl>
+
+                    <SelectContent>
+                      {deliveryModes?.data?.map((item: any) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
                   <FormMessage />
                 </FormItem>
               )}
