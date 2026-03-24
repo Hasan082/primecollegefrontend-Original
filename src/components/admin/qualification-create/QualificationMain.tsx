@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { ImagePlus, Loader2, RefreshCw, X } from "lucide-react";
 
@@ -30,6 +31,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import {
+  useCreateQualificationMainMutation,
+  useUpdateQualificationMainMutation,
+} from "@/redux/apis/qualification/qualificationMainApi";
+import { handleResponse } from "@/utils/handleResponse";
+import { TryCatch } from "@/utils/apiTryCatch";
 
 // ─── Slug helper ──────────────────────────────────────────────────────────────
 
@@ -58,7 +65,15 @@ const qualificationMainSchema = z.object({
       "Slug may only contain lowercase letters, numbers, hyphens, and underscores",
     ),
 
-  featured_image: z.string().optional(),
+  featured_image: z
+    .instanceof(File, { message: "Please upload a valid image file" })
+    .refine((f) => f.size <= 5 * 1024 * 1024, "Image must be under 5MB")
+    .refine(
+      (f) => ["image/jpeg", "image/png", "image/webp"].includes(f.type),
+      "Only JPG, PNG, or WEBP allowed",
+    )
+    .optional()
+    .nullable(),
 
   short_description: z
     .string()
@@ -92,7 +107,7 @@ const qualificationMainSchema = z.object({
     .min(0, "Cannot be negative")
     .max(32767, "Exceeds maximum allowed value"),
 
-  status: z.enum(["draft", "published", "archived"], {
+  status: z.enum(["draft", "active", "inactive", "archived"], {
     required_error: "Please select a status",
   }),
 
@@ -112,14 +127,10 @@ const STATUS_OPTIONS: {
   color: string;
 }[] = [
   { value: "draft", label: "Draft", color: "bg-yellow-100 text-yellow-800" },
-  {
-    value: "published",
-    label: "Published",
-    color: "bg-green-100 text-green-800",
-  },
+  { value: "active", label: "Active", color: "bg-green-100 text-green-800" },
+  { value: "inactive", label: "Inactive", color: "bg-red-100 text-red-800" },
   { value: "archived", label: "Archived", color: "bg-gray-100 text-gray-700" },
 ];
-
 const BOOLEAN_FIELDS: {
   name: "is_session" | "is_active";
   label: string;
@@ -142,7 +153,7 @@ const BOOLEAN_FIELDS: {
 const defaultValues: Partial<QualificationMainFormValues> = {
   title: "",
   slug: "",
-  featured_image: "",
+  featured_image: null,
   short_description: "",
   excerpt: "",
   course_duration_text: "",
@@ -157,26 +168,26 @@ const defaultValues: Partial<QualificationMainFormValues> = {
 // ─── Image Upload Preview ─────────────────────────────────────────────────────
 
 interface ImageUploadProps {
-  value: string | undefined;
-  onChange: (url: string) => void;
-  onClear: () => void;
+  value: File | null | undefined;
+  onChange: (file: File | null) => void;
+  existingUrl?: string; // URL string from API in edit mode
 }
 
-const ImageUpload = ({ value, onChange, onClear }: ImageUploadProps) => {
+const ImageUpload = ({ value, onChange, existingUrl }: ImageUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(value ?? null);
 
-  useEffect(() => {
-    setPreview(value ?? null);
-  }, [value]);
+  // Derive preview: new File takes priority, then existing URL from API
+  const preview = value ? URL.createObjectURL(value) : (existingUrl ?? null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    // TODO: upload to your storage and call onChange(uploadedUrl)
-    onChange(url);
+    onChange(file);
+  };
+
+  const handleClear = () => {
+    onChange(null);
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   return (
@@ -190,15 +201,16 @@ const ImageUpload = ({ value, onChange, onClear }: ImageUploadProps) => {
           />
           <button
             type="button"
-            onClick={() => {
-              setPreview(null);
-              onClear();
-              if (inputRef.current) inputRef.current.value = "";
-            }}
+            onClick={handleClear}
             className="absolute top-2 right-2 rounded-full bg-black/60 hover:bg-black/80 text-white p-1 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
+          {value && (
+            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md max-w-[80%] truncate">
+              {value.name} ({(value.size / 1024).toFixed(1)} KB)
+            </div>
+          )}
         </div>
       ) : (
         <button
@@ -219,7 +231,7 @@ const ImageUpload = ({ value, onChange, onClear }: ImageUploadProps) => {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         className="hidden"
         onChange={handleFile}
       />
@@ -234,10 +246,17 @@ const QualificationMain = () => {
   const { qualificationId } = useParams();
   const { toast } = useToast();
   const isEditMode = Boolean(qualificationId);
-
+  const [createQualificationMain] = useCreateQualificationMainMutation();
+  const [updateQualificationMain] = useUpdateQualificationMainMutation();
+  const navigate = useNavigate();
   // TODO: Replace with your actual Redux selector
   // const existingData = useSelector(selectQualificationMain);
   const existingData = null;
+
+  // Holds the existing image URL string from the API (edit mode only)
+  const [existingImageUrl, setExistingImageUrl] = useState<string | undefined>(
+    undefined,
+  );
 
   const form = useForm<QualificationMainFormValues>({
     resolver: zodResolver(qualificationMainSchema),
@@ -252,7 +271,6 @@ const QualificationMain = () => {
   } = form;
 
   const titleValue = watch("title");
-  const slugValue = watch("slug");
   const statusValue = watch("status");
 
   // ── Auto-generate slug from title (create mode only) ─────────────────────
@@ -265,21 +283,75 @@ const QualificationMain = () => {
   // ── Populate form in edit mode ────────────────────────────────────────────
   useEffect(() => {
     if (isEditMode && existingData) {
-      form.reset(existingData);
+      const { featured_image, ...rest } = existingData as any;
+      // Keep the existing image URL for preview; don't put it in the File field
+      setExistingImageUrl(featured_image ?? undefined);
+      form.reset({ ...rest, featured_image: null });
     }
   }, [isEditMode, existingData, form]);
+
+  // ── Build FormData ────────────────────────────────────────────────────────
+  const buildFormData = (values: QualificationMainFormValues): FormData => {
+    const fd = new FormData();
+
+    // Append the image file only when a new one was selected
+    if (values.featured_image instanceof File) {
+      fd.append("featured_image", values.featured_image);
+    }
+
+    // Append all other scalar fields
+    const { featured_image, ...rest } = values;
+
+    (Object.entries(rest) as [string, unknown][]).forEach(([key, val]) => {
+      if (val === undefined || val === null) return;
+      fd.append(key, String(val));
+    });
+
+    return fd;
+  };
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const onSubmit = async (values: QualificationMainFormValues) => {
     try {
+      const formData = buildFormData(values);
+
       if (isEditMode) {
-        // TODO: dispatch(updateQualificationMain({ id: qualificationId, ...values }));
-        console.log("UPDATE payload:", values);
+        // TODO: dispatch(updateQualificationMain({ id: qualificationId, formData }));
+
+        formData.forEach((v, k) => console.log(` ${k}:`, v));
+        const [data, error] = await TryCatch(
+          updateQualificationMain(formData).unwrap(),
+        );
+
+        const result = handleResponse({
+          data,
+          error,
+          successMessage: "Qualification updated successfully",
+        });
+
+        toast({
+          title: result.type === "success" ? "Success" : "Error",
+          description: result.message,
+          variant: result.type === "error" ? "destructive" : "default",
+        });
         toast({ title: "Qualification updated successfully" });
       } else {
-        // TODO: dispatch(createQualificationMain(values));
-        console.log("CREATE payload:", values);
-        toast({ title: "Qualification created successfully" });
+        const [data, error] = await TryCatch(
+          createQualificationMain(formData).unwrap(),
+        );
+
+        const result = handleResponse({
+          data,
+          error,
+          successMessage: "Qualification main create Successfully",
+        });
+
+        toast({
+          title: result.type === "success" ? "Success" : "Error",
+          description: result.message,
+          variant: result.type === "error" ? "destructive" : "default",
+        });
+        // if (result.type === "success") navigate(`/admin/qualifications/${}/edit`);
       }
     } catch {
       toast({
@@ -504,7 +576,7 @@ const QualificationMain = () => {
                     <ImageUpload
                       value={field.value}
                       onChange={field.onChange}
-                      onClear={() => field.onChange("")}
+                      existingUrl={existingImageUrl}
                     />
                   </FormControl>
                   <FormMessage />
