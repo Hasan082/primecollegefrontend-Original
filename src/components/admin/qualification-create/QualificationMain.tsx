@@ -346,52 +346,47 @@ const QualificationMain = () => {
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const onSubmit = async (values: QualificationMainFormValues) => {
-    try {
-      const formData = buildFormData(values);
+    const formData = buildFormData(values);
 
-      if (isEditMode) {
-        const [data, error] = await TryCatch(
-          updateQualificationMain(formData).unwrap(),
-        );
+    if (isEditMode) {
+      const [data, error] = await TryCatch(
+        updateQualificationMain({
+          id: qualificationId,
+          payload: formData,
+        }).unwrap(),
+      );
 
-        const result = handleResponse({
-          data,
-          error,
-          successMessage: "Qualification updated successfully",
-        });
-
-        toast({
-          title: result.type === "success" ? "Success" : "Error",
-          description: result.message,
-          variant: result.type === "error" ? "destructive" : "default",
-        });
-        toast({ title: "Qualification updated successfully" });
-      } else {
-        const [data, error] = await TryCatch(
-          createQualificationMain(formData).unwrap(),
-        );
-
-        const result = handleResponse({
-          data,
-          error,
-          successMessage: "Qualification main create Successfully",
-        });
-
-        toast({
-          title: result.type === "success" ? "Success" : "Error",
-          description: result.message,
-          variant: result.type === "error" ? "destructive" : "default",
-        });
-        console.log({ data });
-        if (result.type === "success")
-          navigate(`/admin/qualifications/${data?.data?.id}/edit?step=2`);
-      }
-    } catch {
-      toast({
-        title: "Something went wrong",
-        description: "Please try again.",
-        variant: "destructive",
+      const result = handleResponse({
+        data,
+        error,
+        successMessage: "Qualification updated successfully",
       });
+
+      toast({
+        title: result.type === "success" ? "Success" : "Error",
+        description: result.message,
+        variant: result.type === "error" ? "destructive" : "default",
+      });
+      toast({ title: "Qualification updated successfully" });
+    } else {
+      const [data, error] = await TryCatch(
+        createQualificationMain(formData).unwrap(),
+      );
+
+      const result = handleResponse({
+        data,
+        error,
+        successMessage: "Qualification main create Successfully",
+      });
+
+      toast({
+        title: result.type === "success" ? "Success" : "Error",
+        description: result.message,
+        variant: result.type === "error" ? "destructive" : "default",
+      });
+
+      if (result.type === "success")
+        navigate(`/admin/qualifications/${data?.data?.id}/edit?step=2`);
     }
   };
 

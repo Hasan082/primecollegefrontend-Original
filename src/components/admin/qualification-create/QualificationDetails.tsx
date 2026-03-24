@@ -1,17 +1,16 @@
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import { format, setHours, setMinutes } from "date-fns";
 import { CalendarIcon, Clock, Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -21,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -33,9 +33,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import {
+  useCreateQualificationDetailsMutation,
+  useGetQualificationDetailsQuery,
+  useUpdateQualificationDetailsMutation,
+} from "@/redux/apis/qualification/qualificationDetailsApi";
+import { TryCatch } from "@/utils/apiTryCatch";
+import { handleResponse } from "@/utils/handleResponse";
 
 // ─── Zod Schema ────────────────────────────────────────────────────────────────
 
@@ -73,7 +80,7 @@ const qualificationDetailsSchema = z
 
     retake_policy: z.string().min(1, "Retake policy is required"),
 
-    certificate_provider: z.enum(["none", "cpd", "custom"], {
+    certificate_provider: z.enum(["none", "prime_college", "awarding_body"], {
       required_error: "Please select a certificate provider",
     }),
 
@@ -242,11 +249,15 @@ const QualificationDetails = () => {
   const dispatch = useDispatch();
   const { qualificationId } = useParams();
   const { toast } = useToast();
-  const isEditMode = Boolean(qualificationId);
 
-  // TODO: Replace with your actual Redux selector
-  // const existingData = useSelector(selectQualificationDetails);
-  const existingData = null; // placeholder
+  const [createQualificationDetails] = useCreateQualificationDetailsMutation();
+  const [updateQualificationDetails] = useUpdateQualificationDetailsMutation();
+  const navigate = useNavigate();
+  const { data } = useGetQualificationDetailsQuery(qualificationId, {
+    skip: !qualificationId,
+  });
+  const isEditMode = Boolean(data?.data);
+  console.log({ isEditMode, data: data?.data });
 
   const form = useForm<QualificationDetailsFormValues>({
     resolver: zodResolver(qualificationDetailsSchema),
@@ -263,43 +274,66 @@ const QualificationDetails = () => {
 
   // ── Populate form in edit mode ──────────────────────────────────────────
   useEffect(() => {
-    if (isEditMode && existingData) {
+    if (isEditMode && data?.data) {
       form.reset({
-        ...existingData,
-        scheduled_start_at: existingData.scheduled_start_at
-          ? new Date(existingData.scheduled_start_at)
+        ...data?.data,
+        scheduled_start_at: data?.data?.scheduled_start_at
+          ? new Date(data?.data?.scheduled_start_at)
           : undefined,
-        scheduled_end_at: existingData.scheduled_end_at
-          ? new Date(existingData.scheduled_end_at)
+        scheduled_end_at: data?.data?.scheduled_end_at
+          ? new Date(data?.data?.scheduled_end_at)
           : undefined,
       });
     }
-  }, [isEditMode, existingData, form]);
+  }, [isEditMode, data?.data, form]);
 
   // ── Submit ──────────────────────────────────────────────────────────────
   const onSubmit = async (values: QualificationDetailsFormValues) => {
-    try {
-      const payload = {
-        ...values,
-        scheduled_start_at: values.scheduled_start_at.toISOString(),
-        scheduled_end_at: values.scheduled_end_at.toISOString(),
-      };
+    const payload = {
+      ...values,
+      scheduled_start_at: values.scheduled_start_at.toISOString(),
+      scheduled_end_at: values.scheduled_end_at.toISOString(),
+    };
 
-      if (isEditMode) {
-        // TODO: dispatch(updateQualificationDetails({ id: qualificationId, ...payload }));
-        console.log("UPDATE payload:", payload);
-        toast({ title: "Qualification updated successfully" });
-      } else {
-        // TODO: dispatch(createQualificationDetails(payload));
-        console.log("CREATE payload:", payload);
-        toast({ title: "Qualification created successfully" });
-      }
-    } catch (error) {
-      toast({
-        title: "Something went wrong",
-        description: "Please try again.",
-        variant: "destructive",
+    if (isEditMode) {
+      const [data, error] = await TryCatch(
+        updateQualificationDetails({
+          id: qualificationId,
+          payload,
+        }).unwrap(),
+      );
+
+      const result = handleResponse({
+        data,
+        error,
+        successMessage: "Qualification updated successfully",
       });
+
+      toast({
+        title: result.type === "success" ? "Success" : "Error",
+        description: result.message,
+        variant: result.type === "error" ? "destructive" : "default",
+      });
+      toast({ title: "Qualification updated successfully" });
+    } else {
+      const [data, error] = await TryCatch(
+        createQualificationDetails({ id: qualificationId, payload }).unwrap(),
+      );
+
+      const result = handleResponse({
+        data,
+        error,
+        successMessage: "Qualification main create Successfully",
+      });
+
+      toast({
+        title: result.type === "success" ? "Success" : "Error",
+        description: result.message,
+        variant: result.type === "error" ? "destructive" : "default",
+      });
+
+      if (result.type === "success")
+        navigate(`/admin/qualifications/${qualificationId}/edit?step=3`);
     }
   };
 
@@ -497,21 +531,23 @@ const QualificationDetails = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Certificate Provider</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select provider" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="cpd">CPD</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectItem value="none">No Certificate</SelectItem>
+                      <SelectItem value="prime_college">
+                        Prime College
+                      </SelectItem>
+                      <SelectItem value="awarding_body">
+                        Awarding Body
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+
                   <FormMessage />
                 </FormItem>
               )}
