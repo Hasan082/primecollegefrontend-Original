@@ -15,6 +15,7 @@ const qualificationSessionLocationDate = api.injectEndpoints({
         method: "POST",
         body: payload,
       }),
+      invalidatesTags: ["SessionLocationDates"],
     }),
     updateQualificationSessionLocationDate: builder.mutation({
       query: ({ dateId, payload }) => ({
@@ -22,12 +23,21 @@ const qualificationSessionLocationDate = api.injectEndpoints({
         method: "PATCH",
         body: payload,
       }),
+      invalidatesTags: ["SessionLocationDates"],
+    }),
+    deleteQualificationSessionLocationDate: builder.mutation({
+      query: (id) => ({
+        url: `/api/qualification/admin/dates/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SessionLocationDates"],
     }),
     getQualificationSessionLocationDate: builder.query({
       query: (locationId) => ({
         url: `/api/qualification/admin/session-locations/${locationId}/dates/`,
         method: "GET",
       }),
+      providesTags: ["SessionLocationDates"],
     }),
   }),
 });
@@ -35,5 +45,6 @@ const qualificationSessionLocationDate = api.injectEndpoints({
 export const {
   useCreateQualificationSessionLocationDateMutation,
   useUpdateQualificationSessionLocationDateMutation,
+  useDeleteQualificationSessionLocationDateMutation,
   useGetQualificationSessionLocationDateQuery,
 } = qualificationSessionLocationDate;

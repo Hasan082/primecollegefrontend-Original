@@ -19,6 +19,7 @@ import {
   CalendarDays,
   Check,
   X,
+  Edit,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -56,21 +57,32 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TryCatch } from "@/utils/apiTryCatch";
 import {
-  useCreateQualificationSessionLocationMutation,
-  useUpdateQualificationSessionLocationMutation,
-} from "@/redux/apis/qualification/qualificationSessionLocationApi";
-import { handleResponse } from "@/utils/handleResponse";
-import {
   useCreateQualificationSessionLocationDateMutation,
   useGetQualificationSessionLocationDateQuery,
   useUpdateQualificationSessionLocationDateMutation,
+  useDeleteQualificationSessionLocationDateMutation,
 } from "@/redux/apis/qualification/qualificationSessionLocationDate";
+import {
+  useCreateQualificationSessionLocationMutation,
+  useUpdateQualificationSessionLocationMutation,
+  useDeleteQualificationSessionLocationMutation,
+  useGetQualificationSessionLocationQuery,
+} from "@/redux/apis/qualification/qualificationSessionLocationApi";
+import { handleResponse } from "@/utils/handleResponse";
 
 // ─── DateTimePicker ───────────────────────────────────────────────────────────
 
@@ -676,14 +688,24 @@ const SavedDateRow = ({ item, index, onEdit, onDelete }: SavedDateRowProps) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const QualificationSessions = () => {
-  const dispatch = useDispatch();
   const { qualificationId } = useParams();
   const [searchParams] = useSearchParams();
   const locationId = searchParams?.get("location");
   const { toast } = useToast();
+  
+  //* get apis
+  const { data: locationsData } = useGetQualificationSessionLocationQuery(qualificationId, {
+    skip: !qualificationId,
+  });
+
+  const { data: sessionDateData, refetch } =
+    useGetQualificationSessionLocationDateQuery(locationId, {
+      skip: !locationId,
+    });
+
   const [createQualificationSessionLocation, { isLoading: isLocationLoading }] =
     useCreateQualificationSessionLocationMutation();
-  const [updateQualificationSessionLocation] =
+  const [updateQualificationSessionLocation, { isLoading: isUpdatingLocation }] =
     useUpdateQualificationSessionLocationMutation();
   const [
     createQualificationSessionLocationDate,
@@ -694,32 +716,22 @@ const QualificationSessions = () => {
     { isLoading: isUpdatingDate },
   ] = useUpdateQualificationSessionLocationDateMutation();
 
-  //* get apis
-  const { data: sessionDateData, refetch } =
-    useGetQualificationSessionLocationDateQuery(locationId, {
-      skip: !locationId,
-    });
-
-  // const isEditMode = Boolean(qualificationId);
+  const [deleteQualificationSessionLocation] = useDeleteQualificationSessionLocationMutation();
+  const [deleteQualificationSessionLocationDate] = useDeleteQualificationSessionLocationDateMutation();
 
   const navigate = useNavigate();
-  const isEditMode = false;
 
-  // ── Location ──────────────────────────────────────────────────────────────
-  // TODO: const existingLocation = useSelector(selectQualificationLocation);
-  const existingLocation = null;
-
-  // const [locationId, setLocationId] = useState<string | null>(
-  //   isEditMode ? (qualificationId ?? null) : null,
-  // );
-  const [isLocationSaving, setIsLocationSaving] = useState(false);
-
-  // ── Session dates ─────────────────────────────────────────────────────────
-  // TODO: const savedDates = useSelector(selectSessionDates); + fetch on mount
-  const [savedDates, setSavedDates] = useState<SavedSessionDate[]>([]);
+  // ── Local state ──
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [isSavingDate, setIsSavingDate] = useState(false);
+  const [isFormView, setIsFormView] = useState(Boolean(locationId));
+
+  // Sync isFormView with locationId from URL
+  useEffect(() => {
+    if (locationId) {
+      setIsFormView(true);
+    }
+  }, [locationId]);
 
   // ── Location form ─────────────────────────────────────────────────────────
   const locationForm = useForm<LocationFormValues>({
@@ -733,16 +745,31 @@ const QualificationSessions = () => {
   });
 
   useEffect(() => {
-    if (isEditMode && existingLocation) {
-      locationForm.reset(existingLocation as any);
+    if (locationId && locationsData?.data?.results) {
+      const currentLoc = locationsData.data.results.find((l: any) => l.id === locationId);
+      if (currentLoc) {
+        locationForm.reset({
+          name: currentLoc.name,
+          venue_address: currentLoc.venue_address,
+          sort_order: currentLoc.sort_order,
+          is_active: currentLoc.is_active,
+        });
+      }
+    } else {
+      locationForm.reset({
+        name: "",
+        venue_address: "",
+        sort_order: 0,
+        is_active: true,
+      });
     }
-  }, [isEditMode, existingLocation, locationForm]);
+  }, [locationId, locationsData, locationForm]);
 
   const onLocationSubmit = async (payload: LocationFormValues) => {
-    if (isEditMode) {
+    if (locationId) {
       const [data, error] = await TryCatch(
         updateQualificationSessionLocation({
-          id: qualificationId,
+          id: locationId,
           payload,
         }).unwrap(),
       );
@@ -750,7 +777,7 @@ const QualificationSessions = () => {
       const result = handleResponse({
         data,
         error,
-        successMessage: "Price updated successfully",
+        successMessage: "Location updated successfully",
       });
 
       toast({
@@ -758,7 +785,6 @@ const QualificationSessions = () => {
         description: result.message,
         variant: result.type === "error" ? "destructive" : "default",
       });
-      toast({ title: "Qualification Price updated successfully" });
     } else {
       const [data, error] = await TryCatch(
         createQualificationSessionLocation({
@@ -770,7 +796,7 @@ const QualificationSessions = () => {
       const result = handleResponse({
         data,
         error,
-        successMessage: "Qualification main create Successfully",
+        successMessage: "Location created successfully",
       });
 
       toast({
@@ -808,7 +834,7 @@ const QualificationSessions = () => {
     const result = handleResponse({
       data,
       error,
-      successMessage: "location Date create Successfully",
+      successMessage: "Session date created",
     });
 
     toast({
@@ -816,7 +842,10 @@ const QualificationSessions = () => {
       description: result.message,
       variant: result.type === "error" ? "destructive" : "default",
     });
-    if (data?.success) refetch();
+    if (data?.success) {
+      refetch();
+      setShowAddForm(false);
+    }
   };
 
   // ── Edit date ─────────────────────────────────────────────────────────────
@@ -856,303 +885,523 @@ const QualificationSessions = () => {
     }
   };
 
+  const handleUpdateDate = handleEditDate;
+
   // ── Delete date ───────────────────────────────────────────────────────────
   const handleDeleteDate = async (id: string) => {
-    try {
-      // TODO: await dispatch(deleteSessionDate(id)).unwrap();
-      setSavedDates((prev) => prev.filter((d) => d.id !== id));
-      console.log("DELETE session date:", id);
-      toast({ title: "Session date removed" });
-    } catch {
-      toast({ title: "Failed to delete session date", variant: "destructive" });
+    const [data, error] = await TryCatch(
+      deleteQualificationSessionLocationDate(id).unwrap(),
+    );
+    const result = handleResponse({
+      data,
+      error,
+      successMessage: "Session date deleted",
+    });
+
+    toast({
+      title: result.type === "success" ? "Success" : "Error",
+      description: result.message,
+      variant: result.type === "error" ? "destructive" : "default",
+    });
+
+    if (result.type === "success") {
+      refetch();
+    }
+  };
+
+  const handleDeleteLocationRecord = async (id: string) => {
+    const [data, error] = await TryCatch(
+      deleteQualificationSessionLocation(id).unwrap(),
+    );
+    const result = handleResponse({
+      data,
+      error,
+      successMessage: "Location deleted successfully",
+    });
+
+    toast({
+      title: result.type === "success" ? "Success" : "Error",
+      description: result.message,
+      variant: result.type === "error" ? "destructive" : "default",
+    });
+
+    if (result.type === "success") {
+      if (locationId === id) {
+        navigate(`/admin/qualifications/${qualificationId}/edit?step=4`);
+        setIsFormView(false);
+      }
     }
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      {/* ── Location Card ── */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base font-semibold">
-              Session Location
-            </CardTitle>
-            {locationId && (
-              <Badge variant="secondary" className="text-xs ml-auto">
-                Saved
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Form {...locationForm}>
-            <form
-              onSubmit={locationForm.handleSubmit(onLocationSubmit)}
-              className="grid grid-cols-1 md:grid-cols-2 gap-5"
-            >
-              <FormField
-                control={locationForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g. London Training Centre"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={locationForm.control}
-                name="sort_order"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sort Order</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={32767}
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="md:col-span-2">
-                <FormField
-                  control={locationForm.control}
-                  name="venue_address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Venue Address</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g. 10 Downing St, London, SW1A 2AA"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <FormField
-                  control={locationForm.control}
-                  name="is_active"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="cursor-pointer">
-                          Active Location
-                        </FormLabel>
-                        <FormDescription>
-                          Inactive locations and their sessions are hidden from
-                          learners
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="md:col-span-2 flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={isLocationLoading}
-                  className="min-w-36"
-                >
-                  {isLocationLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {isLocationLoading
-                    ? isEditMode
-                      ? "Updating…"
-                      : "Saving…"
-                    : isEditMode
-                      ? "Update Location"
-                      : "Save Location"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-
-      {/* ── Session Dates Card ── */}
-      <Card>
-        <CardHeader>
+      {isFormView && (
+        /* ── Form & Dates View ── */
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base font-semibold">
-                Session Dates
-              </CardTitle>
-              {sessionDateData?.data?.results?.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {sessionDateData?.data?.results?.length}{" "}
-                  {sessionDateData?.data?.results?.length === 1
-                    ? "date"
-                    : "dates"}
-                </Badge>
-              )}
-            </div>
-            {!showAddForm && !editingId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigate(`/admin/qualifications/${qualificationId}/edit?step=4`);
+                setIsFormView(false);
+              }}
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              Cancel / Close Form
+            </Button>
+
+            {locationId && (
               <Button
-                type="button"
-                variant="outline"
+                variant="default"
                 size="sm"
-                disabled={!locationId}
-                onClick={() => setShowAddForm(true)}
-                className="gap-1.5"
+                onClick={() => {
+                  navigate(
+                    `/admin/qualifications/${qualificationId}/edit?step=4`,
+                  );
+                }}
+                className="gap-2 border-dashed"
               >
-                <Plus className="h-4 w-4" />
-                Add Date
+                <Plus className="h-3.5 w-3.5" />
+                Add New Location
               </Button>
             )}
           </div>
-          {!locationId && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Save the location above before adding session dates.
-            </p>
-          )}
-        </CardHeader>
 
-        <CardContent className="space-y-3">
-          {/* Empty state */}
-          {sessionDateData?.data?.results?.length === 0 && !showAddForm && (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-xl gap-2">
-              <CalendarDays className="h-8 w-8 opacity-40" />
-              <p className="text-sm">No session dates added yet</p>
-              {locationId && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowAddForm(true)}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add First Date
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Saved dates */}
-          {sessionDateData?.data?.results?.map((item, index) =>
-            editingId === item.id ? (
-              // Inline edit form
-              <div key={item.id} className="rounded-xl border bg-card">
-                <div className="px-4 py-3 flex items-center gap-3 border-b">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
-                    {index + 1}
-                  </div>
-                  <p className="text-sm font-medium flex-1">
-                    Editing:{" "}
-                    <span className="text-muted-foreground">
-                      {item.title || `Session Date ${index + 1}`}
-                    </span>
-                  </p>
-                  <Badge variant="outline" className="text-xs">
+          {/* ── Location Card ── */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base font-semibold">
+                  {locationId ? "Edit Session Location" : "Add Session Location"}
+                </CardTitle>
+                {locationId ? (
+                  <Badge variant="secondary" className="text-xs ml-auto">
                     Editing
                   </Badge>
-                </div>
-                <SessionDateForm
-                  locationId={locationId!}
-                  initial={{
-                    ...item,
-                    start_at:
-                      item.start_at instanceof Date
-                        ? item.start_at
-                        : new Date(item.start_at),
-                    end_at:
-                      item.end_at instanceof Date
-                        ? item.end_at
-                        : new Date(item.end_at),
-                    booking_deadline:
-                      item.booking_deadline instanceof Date
-                        ? item.booking_deadline
-                        : new Date(item.booking_deadline),
-                  }}
-                  onSave={(values) => handleEditDate(item.id, values)}
-                  onCancel={() => setEditingId(null)}
-                  isSaving={isCreatingDate || isUpdatingDate}
-                />
+                ) : (
+                  <Badge variant="secondary" className="text-xs ml-auto">
+                    New Location
+                  </Badge>
+                )}
               </div>
-            ) : (
-              // Read-only row
-              <SavedDateRow
-                key={item.id}
-                item={item}
-                index={index}
-                onEdit={() => {
-                  setShowAddForm(false);
-                  setEditingId(item.id);
-                }}
-                onDelete={() => handleDeleteDate(item.id)}
-              />
-            ),
-          )}
+            </CardHeader>
+            <CardContent>
+              <Form {...locationForm}>
+                <form
+                  onSubmit={locationForm.handleSubmit(onLocationSubmit)}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-5"
+                >
+                  <FormField
+                    control={locationForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. London Training Centre"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-          {/* Add new form */}
-          {showAddForm && (
-            <div className="rounded-xl border bg-card">
-              <div className="px-4 py-3 flex items-center gap-3 border-b">
-                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
-                  {sessionDateData?.data?.results?.length + 1}
+                  <FormField
+                    control={locationForm.control}
+                    name="sort_order"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sort Order</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={32767}
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="md:col-span-2">
+                    <FormField
+                      control={locationForm.control}
+                      name="venue_address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Venue Address</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. 10 Downing St, London, SW1A 2AA"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <FormField
+                      control={locationForm.control}
+                      name="is_active"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-4 bg-muted/50">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="cursor-pointer">
+                              Active Location
+                            </FormLabel>
+                            <FormDescription>
+                              Inactive locations and their sessions are hidden
+                              from learners
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 flex justify-end gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        navigate(
+                          `/admin/qualifications/${qualificationId}/edit?step=4`,
+                        );
+                        setIsFormView(false);
+                      }}
+                      disabled={isLocationLoading || isUpdatingLocation}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isLocationLoading || isUpdatingLocation}
+                      className="min-w-36"
+                    >
+                      {(isLocationLoading || isUpdatingLocation) && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      {locationId ? "Update Location" : "Save Location"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          {/* ── Session Dates Card ── */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base font-semibold">
+                    Session Dates
+                  </CardTitle>
+                  {sessionDateData?.data?.results?.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {sessionDateData?.data?.results?.length}{" "}
+                      {sessionDateData?.data?.results?.length === 1
+                        ? "date"
+                        : "dates"}
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground flex-1">
-                  New Session Date
-                </p>
-                <Badge variant="outline" className="text-xs">
-                  New
-                </Badge>
+                {!showAddForm && !editingId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!locationId}
+                    onClick={() => setShowAddForm(true)}
+                    className="gap-1.5"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Date
+                  </Button>
+                )}
               </div>
-              <SessionDateForm
-                locationId={locationId!}
-                onSave={handleAddDate}
-                onCancel={() => setShowAddForm(false)}
-                isSaving={isSavingDate}
-              />
+              {!locationId && (
+                <p className="text-xs text-muted-foreground mt-1 text-center py-2 bg-muted/50 rounded-md">
+                  Save the location above before adding session dates.
+                </p>
+              )}
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+              {/* Empty state */}
+              {sessionDateData?.data?.results?.length === 0 && !showAddForm && (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-xl gap-2">
+                  <CalendarDays className="h-8 w-8 opacity-40" />
+                  <p className="text-sm">No session dates added yet</p>
+                  {locationId && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowAddForm(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add First Date
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Saved dates */}
+              <div className="space-y-3">
+                {sessionDateData?.data?.results?.map((item: any, index: number) =>
+                  editingId === item.id ? (
+                    // Inline edit form
+                    <div key={item.id} className="rounded-xl border bg-muted/30">
+                      <div className="px-4 py-3 flex items-center gap-3 border-b">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                          {index + 1}
+                        </div>
+                        <p className="text-sm font-medium flex-1">
+                          Editing:{" "}
+                          <span className="text-muted-foreground">
+                            {item.title || `Session Date ${index + 1}`}
+                          </span>
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          Editing
+                        </Badge>
+                      </div>
+                      <SessionDateForm
+                        locationId={locationId!}
+                        initial={{
+                          ...item,
+                          start_at:
+                            item.start_at instanceof Date
+                              ? item.start_at
+                              : new Date(item.start_at),
+                          end_at:
+                            item.end_at instanceof Date
+                              ? item.end_at
+                              : new Date(item.end_at),
+                          booking_deadline:
+                            item.booking_deadline instanceof Date
+                              ? item.booking_deadline
+                              : new Date(item.booking_deadline),
+                        }}
+                        onSave={(values) => handleUpdateDate(item.id, values)}
+                        onCancel={() => setEditingId(null)}
+                        isSaving={isCreatingDate || isUpdatingDate}
+                      />
+                    </div>
+                  ) : (
+                    // Read-only row
+                    <SavedDateRow
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      onEdit={() => {
+                        setShowAddForm(false);
+                        setEditingId(item.id);
+                      }}
+                      onDelete={() => handleDeleteDate(item.id)}
+                    />
+                  ),
+                )}
+              </div>
+
+              {/* Add new form */}
+              {showAddForm && (
+                <div className="rounded-xl border bg-muted/30">
+                  <div className="px-4 py-3 flex items-center gap-3 border-b">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                      {(sessionDateData?.data?.results?.length || 0) + 1}
+                    </div>
+                    <p className="text-sm text-muted-foreground flex-1">
+                      New Session Date
+                    </p>
+                    <Badge variant="outline" className="text-xs">
+                      New
+                    </Badge>
+                  </div>
+                  <SessionDateForm
+                    locationId={locationId!}
+                    onSave={handleAddDate}
+                    onCancel={() => setShowAddForm(false)}
+                    isSaving={isCreatingDate}
+                  />
+                </div>
+              )}
+
+              {/* Add another bottom button */}
+              {sessionDateData?.data?.results?.length > 0 &&
+                !showAddForm &&
+                !editingId &&
+                locationId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2 border-dashed"
+                    onClick={() => setShowAddForm(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Another Date
+                  </Button>
+                )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Locations Table View (Always visible at bottom when list exists) ── */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle className="text-base font-semibold">
+              Location History
+            </CardTitle>
+            <CardDescription>
+              Manage locations and their associated session dates.
+            </CardDescription>
+          </div>
+          {!isFormView && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                navigate(`/admin/qualifications/${qualificationId}/edit?step=4`);
+                setIsFormView(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add New Location
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {locationsData?.data?.results?.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Location Name</TableHead>
+                    <TableHead>Venue Address</TableHead>
+                    <TableHead>Sort Order</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {locationsData.data.results.map((loc: any) => (
+                    <TableRow key={loc.id} className={cn(locationId === loc.id && "bg-muted/50")}>
+                      <TableCell className="font-medium">{loc.name}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {loc.venue_address}
+                      </TableCell>
+                      <TableCell>{loc.sort_order}</TableCell>
+                      <TableCell>
+                        {loc.is_active ? (
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              navigate(
+                                `/admin/qualifications/${qualificationId}/edit?step=4&location=${loc.id}`,
+                              );
+                              setIsFormView(true);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                            title="Edit Location"
+                          >
+                            <Edit className="h-4 w-4 text-blue-600" />
+                          </Button>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete Location"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you absolutely sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will
+                                  permanently delete the location "{loc.name}"
+                                  and all its associated session dates.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => {
+                                    handleDeleteLocationRecord(loc.id);
+                                  }}
+                                  className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+              <MapPin className="h-8 w-8 mx-auto mb-3 opacity-20" />
+              <p>No locations added yet.</p>
+              {!isFormView && (
+                <Button
+                  variant="link"
+                  onClick={() => setIsFormView(true)}
+                  className="mt-2"
+                >
+                  Create your first location
+                </Button>
+              )}
             </div>
           )}
-
-          {/* Add another */}
-          {savedDates.length > 0 &&
-            !showAddForm &&
-            !editingId &&
-            locationId && (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full gap-2 border-dashed"
-                onClick={() => setShowAddForm(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Add Another Date
-              </Button>
-            )}
         </CardContent>
       </Card>
+
     </div>
   );
 };
