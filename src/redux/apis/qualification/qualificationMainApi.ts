@@ -8,6 +8,7 @@ const qualificationMainApi = api.injectEndpoints({
         method: "POST",
         body: payload,
       }),
+      invalidatesTags: ["Qualifications"],
     }),
     updateQualificationMain: builder.mutation({
       query: ({ id, payload }) => ({
@@ -15,12 +16,14 @@ const qualificationMainApi = api.injectEndpoints({
         method: "PATCH",
         body: payload,
       }),
+      invalidatesTags: ["Qualifications"],
     }),
     getQualificationMain: builder.query({
       query: (id) => ({
         url: "/api/qualification/admin/" + id,
         method: "GET",
       }),
+      providesTags: ["Qualifications"],
     }),
   }),
 });

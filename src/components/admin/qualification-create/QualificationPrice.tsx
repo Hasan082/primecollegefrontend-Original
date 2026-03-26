@@ -75,6 +75,7 @@ import {
   useUpdateQualificationPriceMutation,
   useDeleteQualificationPriceMutation,
 } from "@/redux/apis/qualification/qualificationPriceApi";
+import { useGetQualificationMainQuery } from "@/redux/apis/qualification/qualificationMainApi";
 import { handleResponse } from "@/utils/handleResponse";
 import { TryCatch } from "@/utils/apiTryCatch";
 
@@ -107,11 +108,11 @@ const qualificationPriceSchema = z
       required_error: "Effective from date is required",
     }),
 
-    effective_to: z.date({ required_error: "Effective to date is required" }),
+    effective_to: z.date().optional(),
 
     is_active: z.boolean().default(true),
   })
-  .refine((data) => data.effective_to > data.effective_from, {
+  .refine((data) => !data.effective_to || data.effective_to > data.effective_from, {
     message: "Effective to must be after effective from",
     path: ["effective_to"],
   });
@@ -227,10 +228,14 @@ const QualificationPrice = () => {
     useGetQualificationPricesQuery(qualificationId, {
       skip: !qualificationId,
     });
+  const { data: qualificationMainData } = useGetQualificationMainQuery(qualificationId, {
+    skip: !qualificationId,
+  });
 
   const [createQualificationPrice] = useCreateQualificationPriceMutation();
   const [updateQualificationPrice] = useUpdateQualificationPriceMutation();
   const [deleteQualificationPrice] = useDeleteQualificationPriceMutation();
+  const isSessionBased = Boolean(qualificationMainData?.data?.is_session);
 
   const form = useForm<QualificationPriceFormValues>({
     resolver: zodResolver(qualificationPriceSchema),
@@ -251,7 +256,7 @@ const QualificationPrice = () => {
       amount: String(price.amount),
       currency: price.currency,
       effective_from: new Date(price.effective_from),
-      effective_to: new Date(price.effective_to),
+      effective_to: price.effective_to ? new Date(price.effective_to) : undefined,
       is_active: price.is_active,
     });
     setIsFormOpen(true);
@@ -280,11 +285,14 @@ const QualificationPrice = () => {
   };
 
   const onSubmit = async (values: QualificationPriceFormValues) => {
-    const payload = {
+    const payload: Record<string, unknown> = {
       ...values,
       effective_from: values.effective_from.toISOString(),
-      effective_to: values.effective_to.toISOString(),
     };
+
+    if (values.effective_to) {
+      payload.effective_to = values.effective_to.toISOString();
+    }
 
     if (editingPriceId) {
       const [data, error] = await TryCatch(
@@ -348,7 +356,7 @@ const QualificationPrice = () => {
       </div>
 
       {isFormOpen && (
-        <Card className="border-primary/20 shadow-md">
+      <Card className="border-primary/20 shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle className="text-base font-semibold">
@@ -458,9 +466,12 @@ const QualificationPrice = () => {
                           <DateTimePicker
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="Pick end date & time"
+                            placeholder="Optional end date & time"
                           />
                         </FormControl>
+                        <FormDescription>
+                          Leave blank to keep this price active until a newer price replaces it.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -559,7 +570,9 @@ const QualificationPrice = () => {
                           {format(new Date(price.effective_from), "PPP, HH:mm")}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(price.effective_to), "PPP, HH:mm")}
+                          {price.effective_to
+                            ? format(new Date(price.effective_to), "PPP, HH:mm")
+                            : "Until replaced"}
                         </TableCell>
                         <TableCell>
                           {price.is_active ? (
@@ -633,17 +646,19 @@ const QualificationPrice = () => {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end pt-4">
-        <Button
-          variant="outline"
-          onClick={() =>
-            navigate(`/admin/qualifications/${qualificationId}/edit?step=4`)
-          }
-          className="min-w-36"
-        >
-          Continue to Next Step
-        </Button>
-      </div>
+      {isSessionBased ? (
+        <div className="flex justify-end pt-4">
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate(`/admin/qualifications/${qualificationId}/edit?step=4`)
+            }
+            className="min-w-36"
+          >
+            Continue to Sessions
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 };

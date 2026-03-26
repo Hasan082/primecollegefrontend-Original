@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { ImagePlus, Loader2, RefreshCw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -117,12 +116,6 @@ const qualificationMainSchema = z.object({
     .max(100, "Duration text must be under 100 characters")
     .optional(),
 
-  access_duration_months: z
-    .number({ invalid_type_error: "Must be a number" })
-    .int("Must be a whole number")
-    .min(1, "Must be at least 1 month")
-    .max(32767, "Exceeds maximum allowed value"),
-
   qualification_code: z
     .string()
     .min(1, "Qualification code is required")
@@ -184,7 +177,6 @@ const defaultValues: Partial<QualificationMainFormValues> = {
   short_description: "",
   excerpt: "",
   course_duration_text: "",
-  access_duration_months: 12,
   qualification_code: "",
   total_units: 0,
   status: "draft",
@@ -269,7 +261,6 @@ const ImageUpload = ({ value, onChange, existingUrl }: ImageUploadProps) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const QualificationMain = () => {
-  const dispatch = useDispatch();
   const { qualificationId } = useParams();
   const { toast } = useToast();
   const isEditMode = Boolean(qualificationId);
@@ -455,8 +446,7 @@ const QualificationMain = () => {
                       </div>
                     </FormControl>
                     <FormDescription>
-                      Auto-generated from title. Click{" "}
-                      <RefreshCw className="inline h-3 w-3" /> to regenerate.
+                      Auto-generated from the title. Only update this if a specific URL slug is required.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -650,28 +640,6 @@ const QualificationMain = () => {
                     </SelectContent>
                   </Select>
 
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Access Duration */}
-            <FormField
-              control={form.control}
-              name="access_duration_months"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Access Duration (months)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={32767}
-                      placeholder="e.g. 12"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

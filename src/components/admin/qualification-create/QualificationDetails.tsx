@@ -1,14 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, setHours, setMinutes } from "date-fns";
-import { CalendarIcon, Clock, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -22,11 +19,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -35,12 +27,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import {
   useCreateQualificationDetailsMutation,
   useGetQualificationDetailsQuery,
   useUpdateQualificationDetailsMutation,
 } from "@/redux/apis/qualification/qualificationDetailsApi";
+import { useGetQualificationMainQuery } from "@/redux/apis/qualification/qualificationMainApi";
 import { TryCatch } from "@/utils/apiTryCatch";
 import { handleResponse } from "@/utils/handleResponse";
 
@@ -59,18 +51,15 @@ const qualificationDetailsSchema = z
       .min(1, "Must be at least 1 month")
       .max(32767, "Exceeds maximum allowed value"),
 
-    scheduled_start_at: z.date({ required_error: "Start date is required" }),
-
-    scheduled_end_at: z.date({ required_error: "End date is required" }),
-
-    cpd_reference_number: z.string().min(1, "CPD reference number is required"),
+    cpd_reference_number: z.string().optional(),
 
     cpd_hours: z
       .string()
       .regex(
         /^-?\d+(\.\d{1,2})?$/,
         "Must be a valid number (e.g. 1.5 or -0.74)",
-      ),
+      )
+      .optional(),
 
     pass_mark: z
       .number({ invalid_type_error: "Must be a number" })
@@ -93,10 +82,6 @@ const qualificationDetailsSchema = z
     requires_learner_declaration: z.boolean().default(false),
     requires_course_evaluation: z.boolean().default(false),
     issues_certificate: z.boolean().default(false),
-  })
-  .refine((data) => data.scheduled_end_at > data.scheduled_start_at, {
-    message: "End date must be after start date",
-    path: ["scheduled_end_at"],
   });
 
 export type QualificationDetailsFormValues = z.infer<
@@ -161,92 +146,9 @@ const booleanFields: {
   },
 ];
 
-// ─── DateTimePicker Helper ────────────────────────────────────────────────────
-
-interface DateTimePickerProps {
-  value: Date | undefined;
-  onChange: (date: Date | undefined) => void;
-  placeholder?: string;
-}
-
-const DateTimePicker = ({
-  value,
-  onChange,
-  placeholder = "Pick date & time",
-}: DateTimePickerProps) => {
-  const handleDateSelect = (day: Date | undefined) => {
-    if (!day) return onChange(undefined);
-    // Preserve existing time when changing date
-    const hours = value ? value.getHours() : 0;
-    const minutes = value ? value.getMinutes() : 0;
-    onChange(setMinutes(setHours(day, hours), minutes));
-  };
-
-  const handleTimeChange = (type: "hours" | "minutes", raw: string) => {
-    const num = parseInt(raw, 10);
-    if (isNaN(num)) return;
-    const base = value ?? new Date();
-    if (type === "hours")
-      onChange(setHours(base, Math.min(23, Math.max(0, num))));
-    else onChange(setMinutes(base, Math.min(59, Math.max(0, num))));
-  };
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full pl-3 text-left font-normal",
-            !value && "text-muted-foreground",
-          )}
-        >
-          {value ? format(value, "PPP, HH:mm") : placeholder}
-          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={value}
-          onSelect={handleDateSelect}
-          initialFocus
-        />
-        {/* Time row */}
-        <div className="border-t p-3 flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="flex items-center gap-1.5 flex-1">
-            <Input
-              type="number"
-              min={0}
-              max={23}
-              placeholder="HH"
-              value={value ? String(value.getHours()).padStart(2, "0") : ""}
-              onChange={(e) => handleTimeChange("hours", e.target.value)}
-              className="w-16 text-center tabular-nums"
-            />
-            <span className="text-muted-foreground font-semibold">:</span>
-            <Input
-              type="number"
-              min={0}
-              max={59}
-              placeholder="MM"
-              value={value ? String(value.getMinutes()).padStart(2, "0") : ""}
-              onChange={(e) => handleTimeChange("minutes", e.target.value)}
-              className="w-16 text-center tabular-nums"
-            />
-          </div>
-          <span className="text-xs text-muted-foreground">24h</span>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-};
-
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const QualificationDetails = () => {
-  const dispatch = useDispatch();
   const { qualificationId } = useParams();
   const { toast } = useToast();
 
@@ -256,8 +158,12 @@ const QualificationDetails = () => {
   const { data } = useGetQualificationDetailsQuery(qualificationId, {
     skip: !qualificationId,
   });
+  const { data: qualificationMainData } = useGetQualificationMainQuery(qualificationId, {
+    skip: !qualificationId,
+  });
   const isEditMode = Boolean(data?.data);
-  console.log({ isEditMode, data: data?.data });
+  const isCpd =
+    qualificationMainData?.data?.qualification_type_detail?.slug === "cpd";
 
   const form = useForm<QualificationDetailsFormValues>({
     resolver: zodResolver(qualificationDetailsSchema),
@@ -267,7 +173,8 @@ const QualificationDetails = () => {
   const {
     handleSubmit,
     watch,
-    formState: { isSubmitting, isDirty },
+    setValue,
+    formState: { isSubmitting },
   } = form;
 
   const issuesCertificate = watch("issues_certificate");
@@ -275,24 +182,25 @@ const QualificationDetails = () => {
   // ── Populate form in edit mode ──────────────────────────────────────────
   useEffect(() => {
     if (isEditMode && data?.data) {
-      form.reset({
-        ...data?.data,
-        scheduled_start_at: data?.data?.scheduled_start_at
-          ? new Date(data?.data?.scheduled_start_at)
-          : undefined,
-        scheduled_end_at: data?.data?.scheduled_end_at
-          ? new Date(data?.data?.scheduled_end_at)
-          : undefined,
-      });
+      form.reset(data?.data);
     }
   }, [isEditMode, data?.data, form]);
+
+  useEffect(() => {
+    if (!isCpd) {
+      setValue("cpd_reference_number", "");
+      setValue("cpd_hours", "0");
+      setValue("cpd_branding_clean", false);
+    }
+  }, [isCpd, setValue]);
 
   // ── Submit ──────────────────────────────────────────────────────────────
   const onSubmit = async (values: QualificationDetailsFormValues) => {
     const payload = {
       ...values,
-      scheduled_start_at: values.scheduled_start_at.toISOString(),
-      scheduled_end_at: values.scheduled_end_at.toISOString(),
+      cpd_reference_number: isCpd ? values.cpd_reference_number || "" : "",
+      cpd_hours: isCpd ? values.cpd_hours || "0" : "0",
+      cpd_branding_clean: isCpd ? values.cpd_branding_clean : false,
     };
 
     if (isEditMode) {
@@ -391,57 +299,25 @@ const QualificationDetails = () => {
             />
 
             {/* CPD Reference Number */}
-            <FormField
-              control={form.control}
-              name="cpd_reference_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CPD Reference Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. CPD-2024-001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Scheduled Start */}
-            <FormField
-              control={form.control}
-              name="scheduled_start_at"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Scheduled Start Date &amp; Time</FormLabel>
-                  <FormControl>
-                    <DateTimePicker
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Pick start date & time"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Scheduled End */}
-            <FormField
-              control={form.control}
-              name="scheduled_end_at"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Scheduled End Date &amp; Time</FormLabel>
-                  <FormControl>
-                    <DateTimePicker
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Pick end date & time"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isCpd ? (
+              <FormField
+                control={form.control}
+                name="cpd_reference_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPD Reference Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. CPD-2024-001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                CPD-only fields appear here when the qualification type is set to CPD.
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -454,22 +330,28 @@ const QualificationDetails = () => {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* CPD Hours */}
-            <FormField
-              control={form.control}
-              name="cpd_hours"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CPD Hours</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 1.5" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Use negative value for deductions (e.g. -0.74)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isCpd ? (
+              <FormField
+                control={form.control}
+                name="cpd_hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPD Hours</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 1.5" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Total CPD hours awarded for this qualification.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                Assessment rules apply to all qualifications. CPD hours are hidden for non-CPD types.
+              </div>
+            )}
 
             {/* Pass Mark */}
             <FormField
