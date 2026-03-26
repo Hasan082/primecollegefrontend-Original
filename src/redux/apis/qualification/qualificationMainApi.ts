@@ -30,6 +30,7 @@ const qualificationMainApi = api.injectEndpoints({
         url: `/api/qualification/admin/${id}/quick-view/`,
         method: "GET",
       }),
+      transformResponse: (response: { data: any }) => response.data,
       providesTags: ["Qualifications"],
     }),
   }),

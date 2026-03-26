@@ -4,11 +4,10 @@ import { CartItem, useCart } from "@/contexts/CartContext";
 import { QualificationUpsellItem } from "@/redux/apis/qualificationApi";
 
 const formatMoney = (value: string | number, currency = "GBP") =>
-  new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency,
+  `${currency} ${Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+  })}`;
 
 interface UpsellModalProps {
   currentItem: CartItem;

@@ -15,11 +15,10 @@ import { safeParseBlocks } from "@/utils/pageBuilder";
 import { ContentBlock } from "@/types/pageBuilder";
 
 const formatMoney = (value: string | number | null | undefined, currency = "GBP") =>
-  new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency,
+  `${currency} ${Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+  })}`;
 
 const formatDateRange = (startAt: string, endAt: string) => {
   const start = new Date(startAt);

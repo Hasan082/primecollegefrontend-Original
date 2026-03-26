@@ -185,10 +185,7 @@ const Qualifications = () => {
                 duration={qualification.course_duration}
                 price={
                   qualification.current_price
-                    ? new Intl.NumberFormat("en-GB", {
-                        style: "currency",
-                        currency: qualification.currency || "GBP",
-                      }).format(Number(qualification.current_price))
+                    ? `${qualification.currency || "GBP"} ${Number(qualification.current_price).toLocaleString()}`
                     : "Contact us"
                 }
                 description={qualification.excerpt}

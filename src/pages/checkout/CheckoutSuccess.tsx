@@ -92,21 +92,21 @@ const CheckoutSuccess = () => {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="text-foreground">
-                {new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(subtotal)}
+                {currency} {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             {discountTotal > 0 ? (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Discount</span>
                 <span className="text-primary">
-                  -{new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(discountTotal)}
+                  -{currency} {discountTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             ) : null}
             <div className="flex justify-between border-t border-border pt-3 text-2xl font-bold">
               <span className="text-foreground">Total Paid</span>
               <span className="text-primary">
-                {new Intl.NumberFormat("en-GB", { style: "currency", currency }).format(totalPaid)}
+                {currency} {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>

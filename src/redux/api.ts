@@ -90,6 +90,9 @@ export const api = createApi({
     "QualificationPrices",
     "SessionLocations",
     "SessionLocationDates",
+    "QualificationUnits",
+    "UnitResources",
+    "UnitCpdConfig",
   ],
   endpoints: () => ({}),
 });

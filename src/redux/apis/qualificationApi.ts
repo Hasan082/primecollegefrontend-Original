@@ -72,6 +72,7 @@ export interface QualificationUpsellItem {
   discount_percent: string;
   current_price: string | null;
   currency: string;
+  featured_image: QualificationImageSet | null;
   bundle_original_price: string;
   bundle_discount_total: string;
   final_price: string;
@@ -109,7 +110,7 @@ const qualificationApi = api.injectEndpoints({
       query: (params) => ({
         url: "/api/qualification/",
         method: "GET",
-        params,
+        params: params || {},
       }),
       providesTags: (result) => {
         const qualificationTags =

@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useGetQualificationsAdminQuery } from "@/redux/apis/qualification/qualificationApi";
 import { useUpdateQualificationMainMutation } from "@/redux/apis/qualification/qualificationMainApi";
+import { cn, formatPrice } from "@/lib/utils";
 
 type AdminQualificationRow = {
   id: string;
@@ -73,11 +74,11 @@ const QualificationManagement = () => {
         id: q.id,
         title: q.title,
         qualification_code: q.qualification_code,
-        level: q.level_detail?.name || "",
-        category: q.category_detail?.name || "",
+        level: q.level_detail?.name || q.level || "",
+        category: q.category_detail?.name || q.category || "Uncategorised",
         current_price: q.current_price,
         currency: q.currency || "GBP",
-        awarding_body: q.awarding_body_detail?.name || "Not set",
+        awarding_body: q.awarding_body_detail?.name || q.awarding_body || "Not set",
         access_duration: q.course_duration_text || "Not set",
         total_units: q.total_units || 0,
         active_enrolments_count: q.active_enrolments_count || 0,
@@ -203,13 +204,15 @@ const QualificationManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {qualificationsData?.data?.results?.map((q) => (
+              {filtered
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((q) => (
                 <TableRow key={q.id}>
                   <TableCell>
                     <div>
                       <p className="font-medium text-sm">{q.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {q.awarding_body_detail?.name || "Not set"} • {q.total_units} units
+                        {q.awarding_body} • {q.total_units} units
                       </p>
                     </div>
                   </TableCell>
@@ -217,10 +220,10 @@ const QualificationManagement = () => {
                     {q.qualification_code}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    <Badge variant="outline">{q.category_detail?.name || "Uncategorised"}</Badge>
+                    <Badge variant="outline">{q.category}</Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-sm">
-                    {q.current_price ? `${q.currency || "GBP"} ${q.current_price}` : "No active price"}
+                    {formatPrice(q.current_price, q.currency)}
                   </TableCell>
                   <TableCell className="text-sm">
                     {q.active_enrolments_count}
@@ -236,7 +239,7 @@ const QualificationManagement = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button asChild variant="ghost" size="icon" title="Assessment Config">
+                      <Button asChild variant="ghost" size="icon" title="Unit Config">
                         <Link to={`/admin/qualifications/${q.id}`}>
                           <Settings2 className="w-4 h-4" />
                         </Link>

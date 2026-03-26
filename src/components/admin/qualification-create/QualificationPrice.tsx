@@ -398,8 +398,8 @@ const QualificationPrice = () => {
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
-                              $
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px] font-bold select-none">
+                              {form.watch("currency") || "CUR"}
                             </span>
                             <Input
                               placeholder="0.00"
@@ -568,10 +568,10 @@ const QualificationPrice = () => {
                   {pricesData.data?.results?.map(
                     (price: QualificationPriceData) => (
                       <TableRow key={price.id}>
-                        <TableCell className="font-medium">
-                          {price.amount}
+                        <TableCell className="font-bold text-primary">
+                          {price.currency} {Number(price.amount).toLocaleString()}
                         </TableCell>
-                        <TableCell>{price.currency}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{price.currency}</TableCell>
                         <TableCell>
                           {format(new Date(price.effective_from), "PPP, HH:mm")}
                         </TableCell>
