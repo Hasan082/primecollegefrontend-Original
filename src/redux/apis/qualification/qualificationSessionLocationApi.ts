@@ -1,6 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { api } from "../../api";
 
+export interface QualificationSessionRow {
+  id: string;
+  qualification: string;
+  location: string | null;
+  title: string;
+  location_name: string;
+  venue_address: string;
+  date: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 const footerApi = api.injectEndpoints({
   endpoints: (builder) => ({
     createQualificationSessionLocation: builder.mutation({
@@ -33,6 +47,15 @@ const footerApi = api.injectEndpoints({
       }),
       providesTags: ["SessionLocations"],
     }),
+    getQualificationSessions: builder.query<QualificationSessionRow[], string>({
+      query: (id) => ({
+        url: `/api/qualification/admin/${id}/sessions/`,
+        method: "GET",
+      }),
+      transformResponse: (response: { data: any }) => 
+        Array.isArray(response.data) ? response.data : (response?.data?.results || []),
+      providesTags: ["SessionLocations"], // Using SessionLocations tag for simplicity, or could add Sessions
+    }),
   }),
 });
 
@@ -41,4 +64,5 @@ export const {
   useUpdateQualificationSessionLocationMutation,
   useDeleteQualificationSessionLocationMutation,
   useGetQualificationSessionLocationQuery,
+  useGetQualificationSessionsQuery,
 } = footerApi;
