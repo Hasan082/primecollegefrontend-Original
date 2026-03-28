@@ -377,7 +377,7 @@ const AdminQuestionBankEditor = () => {
                           </Label>
                           <p className="text-[11px] text-muted-foreground">Show results immediately after the assessment.</p>
                         </div>
-                        <Switch checked={localConfig.show_results_immediately} onCheckedChange={(value) => setLocalConfig({ ...localConfig, show_results_immediately: value })} />
+                        <Switch checked={localConfig.show_results} onCheckedChange={(value) => setLocalConfig({ ...localConfig, show_results: value })} />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
@@ -386,7 +386,7 @@ const AdminQuestionBankEditor = () => {
                           </Label>
                           <p className="text-[11px] text-muted-foreground">Show correct answers after the assessment.</p>
                         </div>
-                        <Switch checked={localConfig.show_correct_answers_after} onCheckedChange={(value) => setLocalConfig({ ...localConfig, show_correct_answers_after: value })} />
+                        <Switch checked={localConfig.show_correct_answers} onCheckedChange={(value) => setLocalConfig({ ...localConfig, show_correct_answers: value })} />
                       </div>
                       <div className="flex flex-col items-start justify-between gap-2">
                         <div>
