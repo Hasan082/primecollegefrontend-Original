@@ -15,6 +15,7 @@ import {
   Loader2,
   AlertCircle,
   RotateCcw,
+  Activity
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ import {
   useDeleteCPDFinalAssessmentQuestionMutation,
   useGetCPDFinalAssessmentStatsQuery,
 } from "@/redux/apis/quiz/quizApi";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const AdminCPDFinalAssessmentEditor = () => {
   const { qualificationId } = useParams();
@@ -74,7 +76,7 @@ const AdminCPDFinalAssessmentEditor = () => {
 
   const qualificationTitle = assessment?.qualification_title || assessmentSummary?.qualification_title || "CPD Final Assessment";
   const qualificationCode = assessment?.qualification_code || assessmentSummary?.qualification_code || "CPD";
-  const activeQuestionCount = questions.filter((question) => question?.is_active).length;
+  const activeQuestionCount = assessment?.questions_per_assessment || 0;
   const requiredQuestionCount = localSettings?.questions_per_assessment ?? stats?.questions_per_assessment ?? 25;
   const timeLimit = localSettings?.time_limit_minutes ?? assessmentSummary?.time_limit_minutes ?? 60;
   const passMark = localSettings?.pass_mark ?? assessmentSummary?.pass_mark ?? 70;
@@ -556,6 +558,24 @@ const AdminCPDFinalAssessmentEditor = () => {
                         </div>
                         <Switch checked={localSettings.show_correct_answers_after} onCheckedChange={(value) => setLocalSettings({ ...localSettings, show_correct_answers_after: value })} />
                       </div>
+                      <div className="flex flex-col items-start justify-between gap-2">
+                        <div>
+                          <Label className="font-bold flex items-center gap-2">
+                            <Activity className="w-4 h-4 text-primary" />
+                            Status
+                          </Label>
+                        </div>
+                        <Select value={localSettings.status} onValueChange={(value) => setLocalSettings({ ...localSettings, status: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="published">Published</SelectItem>
+                            <SelectItem value="archived">Archived</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <div className="flex justify-end pt-4">
@@ -596,7 +616,7 @@ const AdminCPDFinalAssessmentEditor = () => {
                 <span className="font-mono font-bold">{questions.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Active Pool</span>
+                <span className="text-muted-foreground">Questions per Assessment</span>
                 <span className="font-mono font-bold text-green-600">{activeQuestionCount}</span>
               </div>
               <div className="flex items-center justify-between">

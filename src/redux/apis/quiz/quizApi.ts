@@ -452,6 +452,7 @@ const quizApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { id, qualificationId }) => [
         { type: "Quizzes", id: `CPD_CONFIG_${qualificationId}` },
         { type: "Quizzes", id: `CPD_DETAIL_${id}` },
+        { type: "Quizzes", id: `CPD_STATS_${id}` },
       ],
     }),
 
