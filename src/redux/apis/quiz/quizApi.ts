@@ -253,7 +253,10 @@ const quizApi = api.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: (result, _error, { unitId }) => [{ type: "Quizzes", id: `CONFIG_${unitId}` }],
+      invalidatesTags: (result, _error, { unitId }) => [
+        { type: "Quizzes", id: `CONFIG_${unitId}` },
+        { type: "QualificationUnits", id: `LIST` },
+      ],
     }),
 
     getQuestions: builder.query<Question[], string>({
@@ -303,7 +306,10 @@ const quizApi = api.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: (result, _error, { unitId }) => [{ type: "Quizzes", id: `WA_${unitId}` }],
+      invalidatesTags: (result, _error, { unitId }) => [
+        { type: "Quizzes", id: `WA_${unitId}` },
+        { type: "QualificationUnits", id: `LIST` },
+      ],
     }),
 
     // Learner Quiz Flow

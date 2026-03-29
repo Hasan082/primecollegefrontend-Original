@@ -53,6 +53,8 @@ const QualificationDetail = () => {
   const summary = summaryData;
   const units = Array.isArray(unitsData) ? unitsData : [];
 
+  console.log("units", units);
+
   const [createUnit] = useCreateUnitMutation();
   const [deleteUnit] = useDeleteUnitMutation();
   const [updateUnit] = useUpdateUnitMutation();
