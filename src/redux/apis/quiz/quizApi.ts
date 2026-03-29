@@ -253,7 +253,18 @@ const quizApi = api.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: (result, _error, { unitId }) => [{ type: "Quizzes", id: `CONFIG_${unitId}` }],
+      invalidatesTags: (result, _error, { unitId }) => [
+        { type: "Quizzes", id: `CONFIG_${unitId}` },
+        { type: "QualificationUnits", id: `LIST` },
+      ],
+    }),
+    updatePortfolioConfig: builder.mutation<any, { unitId: string; payload: any }>({
+      query: ({ unitId, payload }) => ({
+        url: `/api/quizzes/units/${unitId}/portfolio-config/`,
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, { unitId }) => [{ type: "QualificationUnits", id: unitId }],
     }),
 
     getQuestions: builder.query<Question[], string>({
@@ -303,7 +314,10 @@ const quizApi = api.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: (result, _error, { unitId }) => [{ type: "Quizzes", id: `WA_${unitId}` }],
+      invalidatesTags: (result, _error, { unitId }) => [
+        { type: "Quizzes", id: `WA_${unitId}` },
+        { type: "QualificationUnits", id: `LIST` },
+      ],
     }),
 
     // Learner Quiz Flow
@@ -513,6 +527,7 @@ export const {
   useGetQuestionBankUnitsQuery,
   useGetQuizConfigQuery,
   useUpdateQuizConfigMutation,
+  useUpdatePortfolioConfigMutation,
   useGetQuestionsQuery,
   useCreateQuestionMutation,
   useDeleteQuestionMutation,

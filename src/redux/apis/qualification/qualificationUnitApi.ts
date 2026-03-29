@@ -89,9 +89,9 @@ const qualificationUnitApi = api.injectEndpoints({
         Array.isArray(result)
           ? [
             ...result.map(({ id }) => ({ type: "QualificationUnits" as const, id })),
-            { type: "QualificationUnits", id: `LIST-${qualificationId}` }
+            { type: "QualificationUnits", id: `LIST` }
           ]
-          : [{ type: "QualificationUnits", id: `LIST-${qualificationId}` }],
+          : [{ type: "QualificationUnits", id: `LIST` }],
     }),
 
     createUnit: builder.mutation<UnitRow, { qualificationId: string; payload: Partial<UnitRow> }>({
