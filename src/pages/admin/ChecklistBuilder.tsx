@@ -36,7 +36,6 @@ import { adminQualifications } from "@/data/adminMockData";
 import {
   useGetChecklistTemplatesQuery,
   useGetQualificationOptionsQuery,
-  useLazyGetUnitOptionsByQualificationQuery,
 } from "@/redux/apis/qualification/qualificationApi";
 import {
   type CheckResponseType,
@@ -50,13 +49,6 @@ import ChecklistViewModal from "../../components/iqa/checkLists/ChecklistViewMod
 type QualificationOption = {
   id: string;
   title: string;
-};
-
-type UnitOption = {
-  id: string;
-  qualification_id: string;
-  title: string;
-  unit_code: string;
 };
 
 type ChecklistRow = ChecklistTemplate & {
@@ -89,10 +81,6 @@ const ChecklistBuilder = () => {
     })),
   );
   const [qualFilter, setQualFilter] = useState("all");
-  const [unitLookup, setUnitLookup] = useState<Record<string, UnitOption>>({});
-  const [loadedQualificationIds, setLoadedQualificationIds] = useState<
-    string[]
-  >([]);
 
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -106,8 +94,6 @@ const ChecklistBuilder = () => {
     null,
   );
 
-  const [triggerGetUnits] = useLazyGetUnitOptionsByQualificationQuery();
-
   const { data: qualificationOptionsResponse } =
     useGetQualificationOptionsQuery(undefined);
   const { data: checklistTemplatesResponse } =
@@ -117,18 +103,6 @@ const ChecklistBuilder = () => {
     qualificationOptionsResponse?.data?.length
       ? qualificationOptionsResponse.data
       : adminQualifications;
-
-  const mergeUnits = (units: UnitOption[] = []) => {
-    if (!units.length) return;
-
-    setUnitLookup((prev) => {
-      const next = { ...prev };
-      units.forEach((unit) => {
-        next[unit.id] = unit;
-      });
-      return next;
-    });
-  };
 
   useEffect(() => {
     const apiTemplates = checklistTemplatesResponse?.data?.results?.map(
@@ -167,30 +141,6 @@ const ChecklistBuilder = () => {
     }
   }, [checklistTemplatesResponse]);
 
-  useEffect(() => {
-    const qualificationIds = [
-      ...new Set(
-        templates.map((template) => template.qualificationId).filter(Boolean),
-      ),
-    ];
-    const missingQualificationIds = qualificationIds.filter(
-      (qualificationId) => !loadedQualificationIds.includes(qualificationId),
-    );
-
-    if (!missingQualificationIds.length) return;
-
-    setLoadedQualificationIds((prev) => [...prev, ...missingQualificationIds]);
-
-    missingQualificationIds.forEach(async (qualificationId) => {
-      try {
-        const response = await triggerGetUnits(qualificationId).unwrap();
-        mergeUnits(response?.data);
-      } catch {
-        // Keep table usable even if unit label prefetch fails.
-      }
-    });
-  }, [loadedQualificationIds, templates, triggerGetUnits]);
-
   const filtered = templates.filter(
     (template) =>
       qualFilter === "all" || template.qualificationId === qualFilter,
@@ -203,11 +153,7 @@ const ChecklistBuilder = () => {
 
   const getUnitLabel = (unitId: string | null) => {
     if (!unitId) return "Qualification-level";
-
-    const unit = unitLookup[unitId];
-    if (!unit) return unitId;
-
-    return `${unit.unit_code} — ${unit.title}`;
+    return unitId;
   };
 
   const startEdit = (template: ChecklistRow) => {
