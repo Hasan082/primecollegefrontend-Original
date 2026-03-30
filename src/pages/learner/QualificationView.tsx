@@ -24,7 +24,7 @@ const QualificationView = () => {
   const [showDeclaration, setShowDeclaration] = useState(false);
   const [showEvaluation, setShowEvaluation] = useState(false);
   
-  const { data: enrolmentResponse, isLoading, error } = useGetEnrolmentContentQuery(id || "");
+  const { data: enrolmentResponse, isLoading, error, refetch } = useGetEnrolmentContentQuery(id || "");
   const enrolment = enrolmentResponse?.data;
   const qualification = enrolment?.qualification;
   const units = enrolment?.units || [];
@@ -54,6 +54,10 @@ const QualificationView = () => {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const allUnitsDone = total > 0 && completed === total;
   const isCpd = qualification.is_cpd;
+
+  // Default true if undefined to maintain backward compatibility with hardcoded behavior if backend isn't sending it yet
+  const requiresDeclaration = qualification.requires_learner_declaration !== false;
+  const requiresEvaluation = qualification.requires_course_evaluation !== false;
 
   return (
     <div>
@@ -113,52 +117,56 @@ const QualificationView = () => {
             </div>
           )}
 
-          {/* Learner Declaration (For all when units are done, or after CPD assessment) */}
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <FileCheck className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-base font-bold text-primary mb-1">Learner Declaration</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Please complete the learner declaration to finalize your qualification.
-                </p>
-                <Button 
-                  size="sm" 
-                  className="gap-2" 
-                  onClick={() => setShowDeclaration(true)}
-                >
-                  <FileCheck className="w-4 h-4" /> 
-                  Complete Declaration
-                </Button>
+          {/* Learner Declaration */}
+          {requiresDeclaration && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <FileCheck className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-primary mb-1">Learner Declaration</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Please complete the learner declaration to finalize your qualification.
+                  </p>
+                  <Button 
+                    size="sm" 
+                    className="gap-2" 
+                    onClick={() => setShowDeclaration(true)}
+                  >
+                    <FileCheck className="w-4 h-4" /> 
+                    Complete Declaration
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Course Evaluation */}
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <ClipboardList className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-base font-bold text-primary mb-1">Course Evaluation</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  We value your feedback! Please complete the course evaluation.
-                </p>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="gap-2" 
-                  onClick={() => setShowEvaluation(true)}
-                >
-                  <ClipboardList className="w-4 h-4" /> 
-                  Complete Evaluation
-                </Button>
+          {requiresEvaluation && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <ClipboardList className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-primary mb-1">Course Evaluation</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    We value your feedback! Please complete the course evaluation.
+                  </p>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="gap-2" 
+                    onClick={() => setShowEvaluation(true)}
+                  >
+                    <ClipboardList className="w-4 h-4" /> 
+                    Complete Evaluation
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -170,7 +178,11 @@ const QualificationView = () => {
           onSubmitted={(result) => {
             if (result.passed) {
               setShowAssessment(false);
-              setShowDeclaration(true);
+              if (requiresDeclaration) {
+                setShowDeclaration(true);
+              } else if (requiresEvaluation) {
+                setShowEvaluation(true);
+              }
             }
           }}
         />
@@ -183,7 +195,10 @@ const QualificationView = () => {
           onClose={() => setShowDeclaration(false)}
           onSuccess={() => {
             setShowDeclaration(false);
-            setShowEvaluation(true);
+            refetch(); // Update enrolment status
+            if (requiresEvaluation) {
+              setShowEvaluation(true);
+            }
           }}
         />
       )}
@@ -195,6 +210,7 @@ const QualificationView = () => {
           onClose={() => setShowEvaluation(false)}
           onSuccess={() => {
             setShowEvaluation(false);
+            refetch(); // Update enrolment status
           }}
         />
       )}

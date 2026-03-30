@@ -70,6 +70,8 @@ export interface EnrolmentContent {
     slug: string;
     is_cpd: boolean;
     code: string;
+    requires_learner_declaration?: boolean;
+    requires_course_evaluation?: boolean;
   };
   units: {
     id: string;
