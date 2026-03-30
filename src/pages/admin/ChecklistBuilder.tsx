@@ -39,6 +39,7 @@ import {
   useGetChecklistTemplatesQuery,
   useGetQualificationOptionsQuery,
   useGetUnitOptionsByQualificationQuery,
+  useUpdateChecklistTemplateMutation,
 } from "@/redux/apis/qualification/qualificationApi";
 import {
   type ChecklistTemplate,
@@ -103,6 +104,8 @@ const ChecklistBuilder = () => {
   const [editItemType, setEditItemType] = useState<CheckResponseType>("yes-no");
   const [createChecklistTemplate, { isLoading: isCreatingChecklist }] =
     useCreateChecklistTemplateMutation();
+  const [updateChecklistTemplate, { isLoading: isUpdatingChecklist }] =
+    useUpdateChecklistTemplateMutation();
 
   const { data: qualificationOptionsResponse } =
     useGetQualificationOptionsQuery(undefined);
@@ -250,28 +253,34 @@ const ChecklistBuilder = () => {
   const removeEditItem = (id: string) =>
     setEditItems((prev) => prev.filter((i) => i.id !== id));
 
-  const saveEdit = () => {
-    if (!editTitle.trim() || editItems.length === 0) {
+  const saveEdit = async () => {
+    if (!editingId || !editTitle.trim() || editItems.length === 0) {
       toast({
         title: "Title and at least one item required",
         variant: "destructive",
       });
       return;
     }
-    persist(
-      templates.map((t) =>
-        t.id === editingId
-          ? {
-              ...t,
-              title: editTitle.trim(),
-              items: editItems,
-              updatedDate: new Date().toLocaleDateString("en-GB"),
-            }
-          : t,
-      ),
-    );
-    setEditingId(null);
-    toast({ title: "Checklist updated" });
+
+    try {
+      await updateChecklistTemplate({
+        id: editingId,
+        title: editTitle.trim(),
+        items: editItems.map((item, index) => ({
+          label: item.label,
+          response_type: serializeResponseType(item.responseType),
+          order: index + 1,
+        })),
+      }).unwrap();
+
+      setEditingId(null);
+      toast({ title: "Checklist updated" });
+    } catch {
+      toast({
+        title: "Failed to update checklist",
+        variant: "destructive",
+      });
+    }
   };
 
   const deleteTemplate = (id: string) => {
@@ -456,8 +465,15 @@ const ChecklistBuilder = () => {
                             >
                               <X className="w-3 h-3 mr-1" /> Cancel
                             </Button>
-                            <Button size="sm" onClick={saveEdit}>
-                              <Save className="w-3 h-3 mr-1" /> Save Changes
+                            <Button
+                              size="sm"
+                              onClick={saveEdit}
+                              disabled={isUpdatingChecklist}
+                            >
+                              <Save className="w-3 h-3 mr-1" />
+                              {isUpdatingChecklist
+                                ? "Saving..."
+                                : "Save Changes"}
                             </Button>
                           </div>
                         </div>
