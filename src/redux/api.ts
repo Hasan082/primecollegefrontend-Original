@@ -95,6 +95,7 @@ export const api = createApi({
     "UnitCpdConfig",
     "Quizzes",
     "Enrolments",
+    "ChecklistTemplates",
   ],
   endpoints: () => ({}),
 });
