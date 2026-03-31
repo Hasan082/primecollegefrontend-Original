@@ -35,6 +35,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/checkout/CheckoutSuccess"));
 const CheckoutCancel = lazy(() => import("./pages/checkout/CheckoutCancel"));
+const CheckoutFailed = lazy(() => import("./pages/checkout/CheckoutFailed"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const StaffLogin = lazy(() => import("./pages/StaffLogin"));
 const Blog = lazy(() => import("./pages/Blog"));
@@ -101,6 +102,9 @@ const AdminCPDFinalAssessmentEditor = lazy(
 );
 const HeaderSettings = lazy(() => import("./pages/admin/HeaderSettings"));
 const FooterSettings = lazy(() => import("./pages/admin/FooterSettings"));
+const EmailDeliveryMonitor = lazy(
+  () => import("./pages/admin/settings/EmailDeliveryMonitor"),
+);
 
 // iqa dashboard
 const IQADashboard = lazy(() => import("./pages/iqa/Dashboard"));
@@ -162,6 +166,7 @@ const App = () => {
                     element={<CheckoutSuccess />}
                   />
                   <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+                  <Route path="/checkout/failed" element={<CheckoutFailed />} />
                   <Route path="/set-password" element={<SetPassword />} />
                   <Route path="/learner" element={<LearnerLayout />}>
                     <Route path="dashboard" element={<Dashboard />} />
@@ -233,6 +238,11 @@ const App = () => {
                     <Route path="pages/:pageId" element={<PageEditor />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
                     <Route path="settings/header" element={<HeaderSettings />} />
+                    <Route path="settings/footer" element={<FooterSettings />} />
+                    <Route
+                      path="settings/email-delivery-monitor"
+                      element={<EmailDeliveryMonitor />}
+                    />
 
                   </Route>
                   <Route path="/iqa" element={<IQALayout />}>
