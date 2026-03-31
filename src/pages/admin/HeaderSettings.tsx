@@ -20,7 +20,13 @@ const HeaderSettings = () => {
   const [updateNavbar, { isLoading: isUpdating }] = useUpdateNavbarSettingsMutation();
   const [createNavbar, { isLoading: isCreating }] = useCreateNavbarSettingsMutation();
 
-  const [settings, setSettings] = useState<NavbarSettings>({
+  const [settings, setSettings] = useState<{
+    id?: string;
+    dynamicNavLinks: NavLinkItem[];
+    header_logo: string | File | null;
+    header_logo_alt_text: string;
+    is_active: boolean;
+  }>({
     dynamicNavLinks: [],
     header_logo: null,
     header_logo_alt_text: "Prime College",
@@ -42,7 +48,7 @@ const HeaderSettings = () => {
     }
   }, [navbarResponse]);
 
-  const handleUpdateLogo = (field: string, value: string) => {
+  const handleUpdateLogo = (field: string, value: string | File | null) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -75,17 +81,28 @@ const HeaderSettings = () => {
 
   const handleSaveAll = async () => {
     try {
-      const payload = {
-        ...settings,
-        // Ensure dynamicNavLinks is sent correctly. 
-        // Based on API logs, some backends might prefer stringified JSON if it's a JSONField.
-        // But we'll try sending the object first as per standard REST.
-      };
+      const formData = new FormData();
+      if (settings.id) formData.append("id", settings.id);
+      
+      // Append logo only if it is a File (new upload) or if we want to send the existing path
+      if (settings.header_logo instanceof File) {
+        formData.append("header_logo", settings.header_logo);
+      } else if (typeof settings.header_logo === "string") {
+        // If it's a string, it's the existing path. 
+        // Some backends might not need this if patching, but we'll include it for completeness.
+        formData.append("header_logo", settings.header_logo);
+      }
+      
+      formData.append("header_logo_alt_text", settings.header_logo_alt_text);
+      formData.append("is_active", String(settings.is_active));
+      
+      // Stringify complex objects for FormData
+      formData.append("dynamicNavLinks", JSON.stringify(settings.dynamicNavLinks));
 
       if (settings.id) {
-        await updateNavbar(payload).unwrap();
+        await updateNavbar(formData).unwrap();
       } else {
-        await createNavbar(payload).unwrap();
+        await createNavbar(formData).unwrap();
       }
 
       toast({ title: "Header settings saved successfully!" });

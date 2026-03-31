@@ -27,7 +27,7 @@ const navbarApi = api.injectEndpoints({
       }),
       providesTags: ["NavbarSettings"],
     }),
-    updateNavbarSettings: builder.mutation<any, Partial<NavbarSettings>>({
+    updateNavbarSettings: builder.mutation<any, FormData | Partial<NavbarSettings>>({
       query: (data) => ({
         url: "/api/settings/navigation/",
         method: "PATCH",
@@ -35,7 +35,7 @@ const navbarApi = api.injectEndpoints({
       }),
       invalidatesTags: ["NavbarSettings"],
     }),
-    createNavbarSettings: builder.mutation<any, NavbarSettings>({
+    createNavbarSettings: builder.mutation<any, FormData | NavbarSettings>({
       query: (data) => ({
         url: "/api/settings/navigation/",
         method: "POST",
