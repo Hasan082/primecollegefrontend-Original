@@ -1,4 +1,4 @@
-import { LayoutDashboard, GraduationCap, Users, UserCheck, BarChart3, FileText, Blocks, BookOpen, ClipboardCheck, Download, Shield, ClipboardList } from "lucide-react";
+import { LayoutDashboard, GraduationCap, Users, UserCheck, BarChart3, FileText, Blocks, BookOpen, ClipboardCheck, Download, Shield, ClipboardList, PanelTop, PanelBottom } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -34,6 +34,11 @@ const toolsNavItems = [
   { title: "Page Builder", url: "/admin/pages", icon: Blocks },
 ];
 
+const siteSettingsItems = [
+  { title: "Header", url: "/admin/settings/header", icon: PanelTop },
+  { title: "Footer", url: "/admin/settings/footer", icon: PanelBottom },
+];
+
 const AdminSidebar = () => {
   const location = useLocation();
 
@@ -61,6 +66,7 @@ const AdminSidebar = () => {
     <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border top-14">
       <SidebarContent>
         <SidebarGroup className="pt-4">
+          <SidebarGroupLabel>General Routes</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {renderNavItems(mainNavItems)}
@@ -86,6 +92,17 @@ const AdminSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               {renderNavItems(toolsNavItems)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Site Setting</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {renderNavItems(siteSettingsItems)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
