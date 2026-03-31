@@ -233,7 +233,7 @@ const App = () => {
                     <Route path="pages/:pageId" element={<PageEditor />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
                     <Route path="settings/header" element={<HeaderSettings />} />
-                    <Route path="settings/footer" element={<FooterSettings />} />
+
                   </Route>
                   <Route path="/iqa" element={<IQALayout />}>
                     <Route path="dashboard" element={<IQADashboard />} />
