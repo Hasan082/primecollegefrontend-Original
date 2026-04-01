@@ -57,6 +57,28 @@ const extractErrorMessage = (error: any, fallback: string) => {
   return fallback;
 };
 
+const getSetPasswordUrl = (log: EmailLog): string | null => {
+  if (log.template_key !== "account_setup") return null;
+
+  const metadata = (log.metadata || {}) as Record<string, unknown>;
+  const candidateKeys = [
+    "set_password_url",
+    "set_password_link",
+    "password_setup_url",
+    "reset_url",
+    "action_url",
+    "setPasswordUrl",
+    "setPasswordLink",
+  ];
+
+  for (const key of candidateKeys) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+
+  return null;
+};
+
 const EmailDeliveryMonitor = () => {
   const { toast } = useToast();
 
@@ -217,11 +239,14 @@ const EmailDeliveryMonitor = () => {
                   <TableHead>Error Message</TableHead>
                   <TableHead>Created At</TableHead>
                   <TableHead>Sent At</TableHead>
+                  <TableHead>Set Password</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {logs.map((log) => (
+                {logs.map((log) => {
+                  const setPasswordUrl = getSetPasswordUrl(log);
+                  return (
                   <TableRow key={log.id}>
                     <TableCell className="font-medium">{log.recipient_email}</TableCell>
                     <TableCell>{log.template_key}</TableCell>
@@ -247,8 +272,23 @@ const EmailDeliveryMonitor = () => {
                     </TableCell>
                     <TableCell>{formatDateTime(log.created_at)}</TableCell>
                     <TableCell>{formatDateTime(log.sent_at)}</TableCell>
+                    <TableCell>
+                      {setPasswordUrl ? (
+                        <a
+                          href={setPasswordUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button size="sm" variant="outline">
+                            Set Password
+                          </Button>
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
-                      {log.status === "failed" ? (
+                      {log.status === "failed" && log.can_resend ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -258,12 +298,15 @@ const EmailDeliveryMonitor = () => {
                           <Send className="w-3.5 h-3.5 mr-1.5" />
                           {resendingId === log.id ? "Resending..." : "Resend"}
                         </Button>
+                      ) : log.status === "failed" && log.resend_block_reason ? (
+                        <span className="text-xs text-muted-foreground">{log.resend_block_reason}</span>
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}

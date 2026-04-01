@@ -1,6 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CheckCircle2, Home, Mail, PackageOpen } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Home,
+  Mail,
+  PackageOpen,
+} from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 const STORAGE_KEY = "primecollege_pending_checkout";
@@ -43,7 +49,9 @@ const CheckoutSuccess = () => {
   }, [clearCart]);
 
   const currency = checkoutSummary?.currency || "GBP";
-  const subtotal = Number(checkoutSummary?.subtotal || checkoutSummary?.grandTotal || 0);
+  const subtotal = Number(
+    checkoutSummary?.subtotal || checkoutSummary?.grandTotal || 0,
+  );
   const discountTotal = Number(checkoutSummary?.discountTotal || 0);
   const totalPaid = Number(checkoutSummary?.grandTotal || 0);
 
@@ -54,37 +62,58 @@ const CheckoutSuccess = () => {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/8">
             <CheckCircle2 className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold text-foreground">Enrollment Successful!</h1>
+          <h1 className="text-4xl font-bold text-foreground">
+            Enrollment Successful!
+          </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
-            Thank you for enrolling with The Prime College. A confirmation email has been sent to your inbox.
+            Thank you for enrolling with The Prime College. A confirmation email
+            has been sent to your inbox.
           </p>
         </section>
 
         <section className="rounded-md border border-border bg-card p-6 shadow-sm md:p-8">
-          <h2 className="text-2xl font-bold text-foreground">Enrollment Details</h2>
+          <h2 className="text-2xl font-bold text-foreground">
+            Enrollment Details
+          </h2>
 
           <div className="mt-6 flex items-center justify-between border-b border-border pb-4 text-sm">
             <span className="text-muted-foreground">Order ID</span>
-            <span className="font-semibold text-foreground">{checkoutSummary?.orderNumber || "Pending"}</span>
+            <span className="font-semibold text-foreground">
+              {checkoutSummary?.orderNumber || "Pending"}
+            </span>
           </div>
 
           <div className="mt-4 border-b border-border pb-5">
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Enrolled Courses</p>
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Enrolled Courses
+            </p>
             <div className="space-y-4">
               {checkoutSummary?.items?.map((item) => (
-                <div key={item.slug} className="flex items-start justify-between gap-4">
+                <div
+                  key={item.slug}
+                  className="flex items-start justify-between gap-4"
+                >
                   <div>
-                    <p className="font-semibold text-foreground">{item.title}</p>
+                    <p className="font-semibold text-foreground">
+                      {item.title}
+                    </p>
                     <div className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
                       {item.level ? <span>{item.level}</span> : null}
                       {item.duration ? <span>• {item.duration}</span> : null}
-                      {item.qualificationSessionTitle ? <span>• {item.qualificationSessionTitle}</span> : null}
+                      {item.qualificationSessionTitle ? (
+                        <span>• {item.qualificationSessionTitle}</span>
+                      ) : null}
                     </div>
                   </div>
-                  <span className="shrink-0 font-semibold text-foreground">{item.price}</span>
+                  <span className="shrink-0 font-semibold text-foreground">
+                    {item.price}
+                  </span>
                 </div>
               )) || (
-                <p className="text-sm text-muted-foreground">Your enrolled courses will appear here once payment confirmation is available.</p>
+                <p className="text-sm text-muted-foreground">
+                  Your enrolled courses will appear here once payment
+                  confirmation is available.
+                </p>
               )}
             </div>
           </div>
@@ -93,28 +122,42 @@ const CheckoutSuccess = () => {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="text-foreground">
-                {currency} {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currency}{" "}
+                {subtotal.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </span>
             </div>
             {discountTotal > 0 ? (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Discount</span>
                 <span className="text-primary">
-                  -{currency} {discountTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  -{currency}{" "}
+                  {discountTotal.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </span>
               </div>
             ) : null}
             <div className="flex justify-between border-t border-border pt-3 text-2xl font-bold">
               <span className="text-foreground">Total Paid</span>
               <span className="text-primary">
-                {currency} {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currency}{" "}
+                {totalPaid.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </span>
             </div>
           </div>
         </section>
 
         <section className="rounded-md border border-border bg-card p-6 shadow-sm md:p-8">
-          <h2 className="text-2xl font-bold text-foreground">What Happens Next?</h2>
+          <h2 className="text-2xl font-bold text-foreground">
+            What Happens Next?
+          </h2>
 
           <div className="mt-6 space-y-5">
             <SuccessStep
@@ -165,10 +208,14 @@ const SuccessStep = ({
   description: string;
 }) => (
   <div className="flex gap-4">
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/8">{icon}</div>
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/8">
+      {icon}
+    </div>
     <div>
       <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        {description}
+      </p>
     </div>
   </div>
 );
