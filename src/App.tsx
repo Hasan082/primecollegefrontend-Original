@@ -66,6 +66,10 @@ const QuestionBank = lazy(() => import("./pages/trainer/QuestionBank"));
 const QuestionBankEditor = lazy(
   () => import("./pages/trainer/QuestionBankEditor"),
 );
+const TrainerProfile = lazy(() => import("./pages/trainer/Profile"));
+const TrainerChangePassword = lazy(
+  () => import("./pages/trainer/ChangePassword"),
+);
 
 // admin dashboard
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -119,6 +123,8 @@ const VerificationChecklists = lazy(
 const QualificationTreeView = lazy(
   () => import("./pages/iqa/QualificationTreeView"),
 );
+const IQAProfile = lazy(() => import("./pages/iqa/Profile"));
+const IQAChangePassword = lazy(() => import("./pages/iqa/ChangePassword"));
 
 const queryClient = new QueryClient();
 
@@ -263,6 +269,11 @@ const App = () => {
                       path="checklists"
                       element={<VerificationChecklists />}
                     />
+                    <Route path="profile" element={<IQAProfile />} />
+                    <Route
+                      path="change-password"
+                      element={<IQAChangePassword />}
+                    />
                   </Route>
                   <Route path="/trainer" element={<TrainerLayout />}>
                     <Route path="dashboard" element={<TrainerDashboard />} />
@@ -279,6 +290,11 @@ const App = () => {
                     <Route
                       path="question-bank/:qualificationId/:unitCode"
                       element={<QuestionBankEditor />}
+                    />
+                    <Route path="profile" element={<TrainerProfile />} />
+                    <Route
+                      path="change-password"
+                      element={<TrainerChangePassword />}
                     />
                   </Route>
                   <Route

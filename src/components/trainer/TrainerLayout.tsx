@@ -10,7 +10,7 @@ import {
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetMeQuery } from "@/redux/apis/authApi";
-import { ChevronDown, LogOut, User, UserCircle } from "lucide-react";
+import { User, UserCircle, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import { useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import LoadingSpinner from "../LoadingSpinner";
@@ -81,6 +81,15 @@ const TrainerLayout = () => {
                     >
                       <UserCircle className="h-4 w-4" />
                       My Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/trainer/change-password"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      Change Password
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

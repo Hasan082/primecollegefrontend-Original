@@ -63,7 +63,7 @@ const Profile = () => {
           </div>
           <div>
             <p className="font-semibold text-foreground text-lg">{fullName || 'User'}</p>
-            <p className="text-sm text-muted-foreground">Learner</p>
+            <p className="text-sm text-muted-foreground">IQA</p>
           </div>
         </div>
 

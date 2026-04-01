@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateMeMutation, useGetMeQuery } from "@/redux/apis/authApi";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -63,7 +63,7 @@ const Profile = () => {
           </div>
           <div>
             <p className="font-semibold text-foreground text-lg">{fullName || 'User'}</p>
-            <p className="text-sm text-muted-foreground">Learner</p>
+            <p className="text-sm text-muted-foreground">Trainer</p>
           </div>
         </div>
 

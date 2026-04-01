@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, UserCircle, LogOut, ChevronDown } from "lucide-react";
+import { User, UserCircle, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import logo from "@/assets/prime-logo-white-notext.png";
 import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -76,11 +76,20 @@ const IQALayout = () => {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem asChild>
                     <Link
-                      to="/iqa/dashboard"
+                      to="/iqa/profile"
                       className="flex items-center gap-2 cursor-pointer"
                     >
                       <UserCircle className="h-4 w-4" />
-                      Dashboard
+                      My Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/iqa/change-password"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      Change Password
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
