@@ -62,10 +62,6 @@ const AssessmentHistory = lazy(
 const AssessmentRecord = lazy(() => import("./pages/trainer/AssessmentRecord"));
 const LearnerDetail = lazy(() => import("./pages/trainer/LearnerDetail"));
 const UnitManagement = lazy(() => import("./pages/trainer/UnitManagement"));
-const QuestionBank = lazy(() => import("./pages/trainer/QuestionBank"));
-const QuestionBankEditor = lazy(
-  () => import("./pages/trainer/QuestionBankEditor"),
-);
 
 // admin dashboard
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -275,10 +271,21 @@ const App = () => {
                       path="learner/:learnerId/unit/:unitCode"
                       element={<UnitManagement />}
                     />
-                    <Route path="question-bank" element={<QuestionBank />} />
+                    <Route
+                      path="qualifications/:qualificationId/final-assessment"
+                      element={<AdminCPDFinalAssessmentEditor />}
+                    />
+                    <Route
+                      path="question-bank"
+                      element={<AdminQuestionBank />}
+                    />
                     <Route
                       path="question-bank/:qualificationId/:unitCode"
-                      element={<QuestionBankEditor />}
+                      element={<AdminQuestionBankEditor />}
+                    />
+                    <Route
+                      path="final-assessments"
+                      element={<FinalAssessments />}
                     />
                   </Route>
                   <Route
