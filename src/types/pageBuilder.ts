@@ -14,7 +14,12 @@ export type BlockType =
   | "logos"
   | "blog"
   | "why-us"
-  | "pricing";
+  | "pricing"
+  | "about-split"
+  | "popular-qualifications"
+  | "features"
+  | "contact-form"
+  | "map";
 
 export type TextAlignment = "left" | "center" | "right";
 
@@ -37,6 +42,8 @@ export interface BlockBase {
   label: string;
   alignment?: TextAlignment;
   style?: BlockStyle;
+  isLocked?: boolean; // Cannot be deleted
+  isFixed?: boolean;  // Cannot be reordered
 }
 
 export interface HeroBlock extends BlockBase {
@@ -48,6 +55,13 @@ export interface HeroBlock extends BlockBase {
     ctaLabel?: string;
     ctaHref?: string;
     badges?: string[];
+    slides?: Array<{
+      category: string;
+      title: string;
+      price: string;
+      cta: string;
+      image: string;
+    }>;
   };
 }
 
@@ -108,7 +122,12 @@ export interface StatsBlock extends BlockBase {
   data: {
     title?: string;
     subtitle?: string;
-    items: { title: string; value: string; description?: string }[];
+    content?: string;
+    items: {
+      title: string;
+      value: string;
+      description?: string;
+    }[];
   };
 }
 
@@ -168,6 +187,57 @@ export interface PricingBlock extends BlockBase {
   };
 }
 
+export interface AboutSplitBlock extends BlockBase {
+  type: "about-split";
+  data: {
+    headline: string;
+    paragraphs: string[];
+    ctaLabel?: string;
+    ctaHref?: string;
+  };
+}
+
+export interface PopularQualificationsBlock extends BlockBase {
+  type: "popular-qualifications";
+  data: {
+    title: string;
+    items: any[];
+  };
+}
+
+export interface FeaturesBlock extends BlockBase {
+  type: "features";
+  data: {
+    title: string;
+    items: { title: string; description: string }[];
+  };
+}
+
+export interface ContactFormBlock extends BlockBase {
+  type: "contact-form";
+  data: {
+    title: string;
+    address: string;
+    email: string;
+    phone: string;
+    hours: string;
+    formFields: Array<{
+      name: string;
+      label: string;
+      type: string;
+      required: boolean;
+    }>;
+  };
+}
+
+export interface MapBlock extends BlockBase {
+  type: "map";
+  data: {
+    title: string;
+    iframeUrl: string;
+  };
+}
+
 export type ContentBlock =
   | HeroBlock
   | QualificationHeroBlock
@@ -182,7 +252,12 @@ export type ContentBlock =
   | LogosBlock
   | BlogBlock
   | WhyUsBlock
-  | PricingBlock;
+  | PricingBlock
+  | AboutSplitBlock
+  | PopularQualificationsBlock
+  | FeaturesBlock
+  | ContactFormBlock
+  | MapBlock;
 
 export interface PageConfig {
   id: string;
@@ -223,6 +298,12 @@ export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   blog: "Blog / News",
   "why-us": "Why Choose Us",
   pricing: "Pricing",
+  qualification_hero: "Qualification Hero",
+  "about-split": "About Split",
+  "popular-qualifications": "Popular Qualifications",
+  features: "Features Grid",
+  "contact-form": "Contact Form",
+  map: "Google Map",
 };
 
 export const getDefaultBlockData = (type: BlockType): ContentBlock => {
@@ -243,6 +324,33 @@ export const getDefaultBlockData = (type: BlockType): ContentBlock => {
     blog: () => ({ id, type: "blog", label, data: { title: "Latest News", items: [] } }),
     "why-us": () => ({ id, type: "why-us", label, data: { title: "Why Choose Us", items: [{ title: "Feature", description: "Description" }] } }),
     pricing: () => ({ id, type: "pricing", label, data: { price: "£0", duration: "12 months" } }),
+    qualification_hero: () => ({ id, type: "qualification_hero", label, data: {} }),
+    "about-split": () => ({ id, type: "about-split", label, data: { headline: "Headline", paragraphs: ["Paragraph 1", "Paragraph 2"], ctaLabel: "About Us", ctaHref: "/about" } }),
+    "popular-qualifications": () => ({ id, type: "popular-qualifications", label, data: { title: "Popular Qualifications", items: [] } }),
+    features: () => ({ id, type: "features", label, data: { title: "Features", items: [{ title: "Feature", description: "Description" }] } }),
+    "contact-form": () => ({ 
+      id, type: "contact-form", label, 
+      data: { 
+        title: "Get in Touch", 
+        address: "13 Lanark Square, London E14 9QD", 
+        email: "info@primecollege.uk", 
+        phone: "+44 20 1234 5678", 
+        hours: "Mon - Fri: 9:00 AM - 5:00 PM",
+        formFields: [
+          { name: "name", label: "Full Name", type: "text", required: true },
+          { name: "email", label: "Email Address", type: "email", required: true },
+          { name: "subject", label: "Subject", type: "text", required: false },
+          { name: "message", label: "Message", type: "textarea", required: true },
+        ]
+      } 
+    }),
+    map: () => ({ 
+      id, type: "map", label, 
+      data: { 
+        title: "Find Us", 
+        iframeUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2483.234!2d-0.0175!3d51.5075!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x487602d64e0e8b7f%3A0x1234567890abcdef!2s13%20Lanark%20Square%2C%20London%20E14%209QD!5e0!3m2!1sen!2suk!4v1700000000000" 
+      } 
+    }),
   };
 
   return defaults[type]();

@@ -100,6 +100,7 @@ const AdminQualificationDetail = lazy(
 );
 const IQAManagement = lazy(() => import("./pages/admin/IQAManagement"));
 const ChecklistBuilder = lazy(() => import("./pages/admin/ChecklistBuilder"));
+const Enrollments = lazy(() => import("./pages/admin/Enrollments"));
 
 const AdminCPDFinalAssessmentEditor = lazy(
   () => import("./pages/admin/AdminCPDFinalAssessmentEditor"),
@@ -249,7 +250,7 @@ const App = () => {
                       path="settings/email-delivery-monitor"
                       element={<EmailDeliveryMonitor />}
                     />
-
+                    <Route path="enrollments" element={<Enrollments />} />
                   </Route>
                   <Route path="/iqa" element={<IQALayout />}>
                     <Route path="dashboard" element={<IQADashboard />} />

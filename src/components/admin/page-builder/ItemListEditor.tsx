@@ -1,114 +1,19 @@
-import { useState, useRef, lazy, Suspense } from "react";
-import { Plus, Trash2, ChevronDown, ChevronRight, GripVertical, Upload, ImageIcon, Smile } from "lucide-react";
+import { useState } from "react";
+import { Plus, Trash2, ChevronDown, ChevronRight, GripVertical, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Image } from "@/components/Image";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import type { BlockType } from "@/types/pageBuilder";
-import dynamicIconImports from "lucide-react/dynamicIconImports";
 
-type AnyItem = Record<string, any>;
+import { ITEM_FIELDS, MEDIA_ENABLED_BLOCKS } from "./ItemFieldDefs";
+import { DynamicIcon, MediaPicker } from "./MediaPicker";
 
-interface ItemField {
-  key: string;
-  label: string;
-  type: "input" | "textarea";
-  placeholder?: string;
-}
-
-// Block types that support a media picker (icon or image upload)
-const MEDIA_ENABLED_BLOCKS: BlockType[] = ["cards", "why-us", "blog", "logos"];
-
-const ITEM_FIELDS: Partial<Record<BlockType, ItemField[]>> = {
-  modules: [
-    { key: "title", label: "Title", type: "input", placeholder: "Module title" },
-    { key: "description", label: "Description", type: "textarea", placeholder: "Module description" },
-  ],
-  faq: [
-    { key: "question", label: "Question", type: "input", placeholder: "Enter question" },
-    { key: "answer", label: "Answer", type: "textarea", placeholder: "Enter answer" },
-  ],
-  stats: [
-    { key: "title", label: "Label", type: "input", placeholder: "e.g. Students" },
-    { key: "value", label: "Value", type: "input", placeholder: "e.g. 500+" },
-    { key: "description", label: "Description", type: "input", placeholder: "Short description" },
-  ],
-  cards: [
-    { key: "title", label: "Title", type: "input", placeholder: "Card title" },
-    { key: "category", label: "Category", type: "input", placeholder: "e.g. Business" },
-    { key: "level", label: "Level", type: "input", placeholder: "e.g. Level 5" },
-    { key: "price", label: "Price", type: "input", placeholder: "e.g. £1,200" },
-  ],
-  logos: [
-    { key: "title", label: "Name", type: "input", placeholder: "Partner name" },
-  ],
-  blog: [
-    { key: "title", label: "Title", type: "input", placeholder: "Post title" },
-    { key: "description", label: "Description", type: "textarea", placeholder: "Short summary" },
-    { key: "date", label: "Date", type: "input", placeholder: "e.g. 2025-01-15" },
-    { key: "category", label: "Category", type: "input", placeholder: "e.g. News" },
-  ],
-  "why-us": [
-    { key: "title", label: "Title", type: "input", placeholder: "Feature title" },
-    { key: "description", label: "Description", type: "textarea", placeholder: "Feature description" },
-  ],
-};
-
-// Icon name mapping: PascalCase display → kebab-case key for dynamicIconImports
-const ICON_PRESETS: { name: string; key: keyof typeof dynamicIconImports }[] = [
-  { name: "Users", key: "users" },
-  { name: "Shield", key: "shield" },
-  { name: "Award", key: "award" },
-  { name: "BookOpen", key: "book-open" },
-  { name: "Target", key: "target" },
-  { name: "Heart", key: "heart" },
-  { name: "Star", key: "star" },
-  { name: "Lightbulb", key: "lightbulb" },
-  { name: "TrendingUp", key: "trending-up" },
-  { name: "CheckCircle", key: "circle-check" },
-  { name: "Globe", key: "globe" },
-  { name: "Zap", key: "zap" },
-  { name: "Clock", key: "clock" },
-  { name: "ThumbsUp", key: "thumbs-up" },
-  { name: "Layers", key: "layers" },
-  { name: "Briefcase", key: "briefcase" },
-  { name: "GraduationCap", key: "graduation-cap" },
-  { name: "Building", key: "building" },
-  { name: "Rocket", key: "rocket" },
-  { name: "Megaphone", key: "megaphone" },
-];
-
-// Cache lazy components to avoid recreating on every render
-const lazyIconCache: Record<string, React.LazyExoticComponent<React.ComponentType<{ size?: number; className?: string }>>> = {};
-
-const getLazyIcon = (kebab: string) => {
-  if (!lazyIconCache[kebab]) {
-    const importFn = dynamicIconImports[kebab as keyof typeof dynamicIconImports];
-    if (!importFn) return null;
-    lazyIconCache[kebab] = lazy(importFn) as React.LazyExoticComponent<React.ComponentType<{ size?: number; className?: string }>>;
-  }
-  return lazyIconCache[kebab];
-};
-
-// Dynamic icon component with lazy loading
-const DynamicIcon = ({ iconKey, size = 16, className }: { iconKey: string; size?: number; className?: string }) => {
-  const kebab = ICON_PRESETS.find((p) => p.name === iconKey)?.key || iconKey.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-  const LazyIcon = getLazyIcon(kebab);
-  if (!LazyIcon) return <Smile size={size} className={className} />;
-  return (
-    <Suspense fallback={<div className="rounded bg-muted" style={{ width: size, height: size }} />}>
-      <LazyIcon size={size} className={className} />
-    </Suspense>
-  );
-};
-
-const getNewItem = (blockType: BlockType): AnyItem => {
+const getNewItem = (blockType: BlockType): any => {
   const fields = ITEM_FIELDS[blockType];
-  if (!fields) return { title: "" };
-  const item: AnyItem = {};
-  fields.forEach((f) => { item[f.key] = ""; });
+  const item: any = {};
+  fields?.forEach((f) => { item[f.key] = ""; });
   if (MEDIA_ENABLED_BLOCKS.includes(blockType)) {
     item.mediaType = "icon";
     item.icon = "Star";
@@ -117,296 +22,61 @@ const getNewItem = (blockType: BlockType): AnyItem => {
   return item;
 };
 
-const getItemLabel = (item: AnyItem): string =>
-  item.title || item.question || item.name || "Untitled";
-
-// ─── Media Picker (Icon or Image) ───
-const MediaPicker = ({
-  item,
-  onUpdate,
-  onImageUpload,
-  isUploading,
-}: {
-  item: AnyItem;
-  onUpdate: (key: string, value: any) => void;
-  onImageUpload: (file: File, key: string) => void;
-  isUploading: boolean;
-}) => {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const mediaType = item.mediaType || "icon";
-  const iconName = item.icon || "";
-  const imageSrc = item.image || "";
-  const imageSize = item.imageSize || "icon";
-
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    onImageUpload(file, "image");
-    onUpdate("mediaType", "image");
-  };
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-xs text-muted-foreground">Media</Label>
-      {/* Toggle: Icon or Image */}
-      <div className="flex gap-1.5">
-        <Button
-          type="button"
-          variant={mediaType === "icon" ? "default" : "outline"}
-          size="sm"
-          className="flex-1 h-8 text-xs"
-          onClick={() => onUpdate("mediaType", "icon")}
-        >
-          <Smile className="h-3 w-3 mr-1" /> Icon
-        </Button>
-        <Button
-          type="button"
-          variant={mediaType === "image" ? "default" : "outline"}
-          size="sm"
-          className="flex-1 h-8 text-xs"
-          onClick={() => onUpdate("mediaType", "image")}
-        >
-          <ImageIcon className="h-3 w-3 mr-1" /> Image
-        </Button>
-      </div>
-
-      {mediaType === "icon" && (
-        <div>
-          <Label className="text-[10px] text-muted-foreground mb-1 block">Choose icon</Label>
-          <div className="grid grid-cols-5 gap-1">
-            {ICON_PRESETS.map((preset) => (
-              <Button
-                key={preset.name}
-                type="button"
-                variant={iconName === preset.name ? "default" : "outline"}
-                size="sm"
-                className="h-9 w-full p-0 flex flex-col items-center justify-center gap-0.5"
-                title={preset.name}
-                onClick={() => onUpdate("icon", preset.name)}
-              >
-                <DynamicIcon iconKey={preset.name} size={14} />
-                <span className="text-[7px] leading-none">{preset.name.replace(/([A-Z])/g, " $1").trim().split(" ")[0]}</span>
-              </Button>
-            ))}
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            Selected: <span className="font-medium text-foreground">{iconName || "None"}</span>
-          </p>
-        </div>
-      )}
-
-      {mediaType === "image" && (
-        <div className="space-y-2">
-          {/* Image display size toggle */}
-          <div>
-            <Label className="text-[10px] text-muted-foreground mb-1 block">Display size</Label>
-            <div className="flex gap-1.5">
-              <Button
-                type="button"
-                variant={imageSize === "icon" ? "default" : "outline"}
-                size="sm"
-                className="flex-1 h-7 text-[10px]"
-                onClick={() => onUpdate("imageSize", "icon")}
-              >
-                🔵 Icon Size
-              </Button>
-              <Button
-                type="button"
-                variant={imageSize === "full" ? "default" : "outline"}
-                size="sm"
-                className="flex-1 h-7 text-[10px]"
-                onClick={() => onUpdate("imageSize", "full")}
-              >
-                🖼 Full Width
-              </Button>
-            </div>
-          </div>
-
-          {/* Preview */}
-          {imageSrc && (
-            <div className="rounded-md border border-border overflow-hidden bg-muted/30 flex items-center justify-center p-2">
-              {imageSize === "icon" ? (
-                typeof imageSrc === "string" ? (
-                  <img src={imageSrc} alt="Item" className="h-10 w-10 rounded-full object-cover border border-border" />
-                ) : (
-                  <Image image={imageSrc} className="h-10 w-10 rounded-full object-cover border border-border" />
-                )
-              ) : (
-                typeof imageSrc === "string" ? (
-                  <img src={imageSrc} alt="Item" className="w-full h-20 object-cover rounded" />
-                ) : (
-                  <Image image={imageSrc} className="w-full h-20 object-cover rounded" />
-                )
-              )}
-            </div>
-          )}
-
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full h-8 text-xs"
-            onClick={() => fileRef.current?.click()}
-            disabled={isUploading}
-          >
-            <Upload className="h-3 w-3 mr-1.5" /> 
-            {isUploading ? "Uploading..." : imageSrc ? "Change Image" : "Upload Image"}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── Main Editor ───
-interface ItemListEditorProps {
-  blockType: BlockType;
-  items: AnyItem[];
-  onChange: (items: AnyItem[]) => void;
-  onImageUpload: (file: File, key: string) => void;
-  isUploading: boolean;
-}
-
-const ItemListEditor = ({ blockType, items, onChange, onImageUpload, isUploading }: ItemListEditorProps) => {
+const ItemListEditor = ({ blockType, items, onChange, onImageUpload, isUploading }: any) => {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const fields = ITEM_FIELDS[blockType];
   const hasMedia = MEDIA_ENABLED_BLOCKS.includes(blockType);
 
-  if (!fields) {
-    return (
-      <p className="text-xs text-muted-foreground italic">
-        Item editing is not available for this block type.
-      </p>
-    );
-  }
+  if (!fields) return <p className="text-xs text-muted-foreground italic">Item editing is not available for this block type.</p>;
 
-  const toggle = (i: number) => setExpandedIdx(expandedIdx === i ? null : i);
-
-  const updateItem = (idx: number, key: string, value: string) => {
-    const next = items.map((item, i) =>
-      i === idx ? { ...item, [key]: value } : item
-    );
-    onChange(next);
+  const updateItem = (idx: number, key: string, value: any) => {
+    onChange(items.map((item: any, i: number) => i === idx ? { ...item, [key]: value } : item));
   };
 
   const addItem = () => {
     const next = [...items, getNewItem(blockType)];
-    onChange(next);
-    setExpandedIdx(next.length - 1);
-  };
-
-  const removeItem = (idx: number) => {
-    onChange(items.filter((_, i) => i !== idx));
-    if (expandedIdx === idx) setExpandedIdx(null);
-  };
-
-  const moveItem = (from: number, to: number) => {
-    if (to < 0 || to >= items.length) return;
-    const next = [...items];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    onChange(next);
-    setExpandedIdx(to);
+    onChange(next); setExpandedIdx(next.length - 1);
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <Label>Items ({items.length})</Label>
-        <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addItem}>
-          <Plus className="h-3 w-3 mr-1" /> Add
-        </Button>
+        <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> Add Item</Button>
       </div>
 
-      <div className="border border-border rounded-md overflow-hidden bg-muted/20">
-        {items.length === 0 && (
-          <p className="text-xs text-muted-foreground italic p-3 text-center">
-            No items yet — click Add to create one
-          </p>
-        )}
-
-        <div className="max-h-[400px] overflow-y-auto divide-y divide-border">
-          {items.map((item, i) => {
-            const isOpen = expandedIdx === i;
-            const mediaType = item.mediaType || "icon";
-            return (
-              <div key={i} className="bg-background">
-                {/* Header row */}
-                <div
-                  className="flex items-center gap-1.5 px-2 py-1.5 cursor-pointer hover:bg-muted/40 transition-colors"
-                  onClick={() => toggle(i)}
-                >
-                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                  {/* Thumbnail preview */}
-                  {hasMedia && item.image && mediaType === "image" ? (
-                    typeof item.image === "string" ? (
-                      <img src={item.image} alt="" className="h-5 w-5 rounded object-cover shrink-0 border border-border" />
-                    ) : (
-                      <Image image={item.image} className="h-5 w-5 rounded object-cover shrink-0 border border-border" />
-                    )
-                  ) : (
-                    <Badge variant="outline" className="shrink-0 text-[10px] h-5 w-5 p-0 flex items-center justify-center">
-                      {i + 1}
-                    </Badge>
-                  )}
-                  {isOpen ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  )}
-                  <span className="text-sm truncate flex-1">{getItemLabel(item) || "Untitled"}</span>
-                  <div className="flex gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" disabled={i === 0} onClick={() => moveItem(i, i - 1)}>↑</Button>
-                    <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" disabled={i === items.length - 1} onClick={() => moveItem(i, i + 1)}>↓</Button>
-                    <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => removeItem(i)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Expanded editor */}
-                {isOpen && (
-                  <div className="px-3 pb-3 pt-1 space-y-2.5 border-t border-border/50 bg-muted/10">
-                    {/* Media picker at top for supported blocks */}
-                    {hasMedia && (
-                      <MediaPicker
-                        item={item}
-                        onUpdate={(key, value) => updateItem(i, key, value)}
-                        onImageUpload={(file, key) => {
-                          onImageUpload(file, `items.${i}.${key}`);
-                        }}
-                        isUploading={isUploading}
-                      />
-                    )}
-
-                    {/* Standard fields */}
-                    {fields.map((field) => (
-                      <div key={field.key}>
-                        <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                        {field.type === "textarea" ? (
-                          <Textarea
-                            value={item[field.key] || ""}
-                            onChange={(e) => updateItem(i, field.key, e.target.value)}
-                            placeholder={field.placeholder}
-                            className="mt-0.5 min-h-[60px] text-sm"
-                          />
-                        ) : (
-                          <Input
-                            value={item[field.key] || ""}
-                            onChange={(e) => updateItem(i, field.key, e.target.value)}
-                            placeholder={field.placeholder}
-                            className="mt-0.5 h-8 text-sm"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+      <div className="border rounded-md divide-y bg-muted/10 max-h-[460px] overflow-y-auto">
+        {items.length === 0 && <p className="p-4 text-center text-xs text-muted-foreground italic">No items yet</p>}
+        {items.map((item: any, i: number) => {
+          const isOpen = expandedIdx === i;
+          return (
+            <div key={i} className="bg-background">
+              <div className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-muted/30" onClick={() => setExpandedIdx(isOpen ? null : i)}>
+                <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30" />
+                <Badge variant="outline" className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">{i + 1}</Badge>
+                {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                <span className="text-sm truncate flex-1 font-medium">{item.title || item.question || item.name || `Item ${i+1}`}</span>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={(e) => { e.stopPropagation(); onChange(items.filter((_: any, idx: number) => idx !== i)); }}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
-            );
-          })}
-        </div>
+
+              {isOpen && (
+                <div className="px-3 pb-3 pt-1 space-y-3 bg-muted/5 border-t border-dashed">
+                  {hasMedia && <MediaPicker item={item} onUpdate={(k: string, v: any) => updateItem(i, k, v)} onImageUpload={(f: File, k: string) => onImageUpload(f, `items.${i}.${k}`)} isUploading={isUploading} />}
+                  {fields.map((f) => (
+                    <div key={f.key}>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-tight">{f.label}</Label>
+                      {f.type === "textarea" ? (
+                        <Textarea value={item[f.key] || ""} onChange={(e) => updateItem(i, f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 text-sm min-h-[70px]" />
+                      ) : (
+                        <Input value={item[f.key] || ""} onChange={(e) => updateItem(i, f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 h-8 text-sm" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
