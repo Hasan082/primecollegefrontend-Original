@@ -12,10 +12,12 @@ import {
   DashboardFilters,
   DashboardOverviewResponse,
   useGetDashboardOverviewQuery,
+  useGetRecentEnrolmentsQuery,
 } from "@/redux/apis/adminDashboardApi";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import TablePagination from "@/components/admin/TablePagination";
 
 // Vibrant color palettes for dashboard charts
 const chartColors = {
@@ -38,8 +40,10 @@ const AdminDashboard = () => {
   const [filters] = useState<DashboardFilters>({
     range: "30d",
   });
+  const [enrollmentPage, setEnrollmentPage] = useState(1);
 
   const { data: dashboardResponse, isLoading, isError, refetch } = useGetDashboardOverviewQuery(filters);
+  const { data: enrollmentResponse, isLoading: isLoadingEnrolments } = useGetRecentEnrolmentsQuery({ page: enrollmentPage });
 
   if (isLoading) {
     return (
@@ -76,7 +80,8 @@ const AdminDashboard = () => {
     monthlyEnrolments: data?.charts?.enrolments_trend_simple || [],
     categoryDistribution: data?.charts?.learners_by_category_simple || [],
     trainerPerformances: data?.trainer_overview || [],
-    recentEnrolments: data?.recent_enrolments || [],
+    recentEnrolments: enrollmentResponse?.data?.results || [],
+    enrolmentsCount: enrollmentResponse?.data?.count || 0,
     recentOrders: data?.recent_orders || [],
     topQualifications: data?.top_qualifications || [],
     statusBreakdown: data?.status_breakdown || [],
@@ -456,6 +461,12 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           </div>
+          <TablePagination
+            currentPage={enrollmentPage}
+            totalItems={stats.enrolmentsCount}
+            itemsPerPage={10}
+            onPageChange={setEnrollmentPage}
+          />
         </CardContent>
       </Card>
 

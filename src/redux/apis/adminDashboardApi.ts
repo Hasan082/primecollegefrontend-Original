@@ -104,6 +104,27 @@ export interface DashboardOverviewResponse {
   };
 }
 
+export interface PaginatedEnrolmentResponse {
+  success: boolean;
+  message: string;
+  data: {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: Array<{
+      id: string;
+      enrolment_number: string;
+      learner_name: string;
+      qualification_title: string;
+      status: string;
+      payment_status: string;
+      amount: string;
+      currency: string;
+      enrolled_at: string;
+    }>;
+  };
+}
+
 export interface ChartDataset {
   label: string;
   data: number[];
@@ -149,7 +170,14 @@ export const adminDashboardApi = api.injectEndpoints({
         params: filters,
       }),
     }),
+    getRecentEnrolments: builder.query<PaginatedEnrolmentResponse, { page?: number }>({
+      query: ({ page = 1 }) => ({
+        url: "/api/admin/dashboard/recent-enrolments/",
+        params: { page },
+      }),
+      providesTags: ["Enrolments"],
+    }),
   }),
 });
 
-export const { useGetDashboardOverviewQuery, useGetDashboardAnalyticsQuery } = adminDashboardApi;
+export const { useGetDashboardOverviewQuery, useGetDashboardAnalyticsQuery, useGetRecentEnrolmentsQuery } = adminDashboardApi;
