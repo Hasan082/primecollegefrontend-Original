@@ -14,7 +14,10 @@ export type BlockType =
   | "logos"
   | "blog"
   | "why-us"
-  | "pricing";
+  | "pricing"
+  | "about-split"
+  | "popular-qualifications"
+  | "features";
 
 export type TextAlignment = "left" | "center" | "right";
 
@@ -37,6 +40,8 @@ export interface BlockBase {
   label: string;
   alignment?: TextAlignment;
   style?: BlockStyle;
+  isLocked?: boolean; // Cannot be deleted
+  isFixed?: boolean;  // Cannot be reordered
 }
 
 export interface HeroBlock extends BlockBase {
@@ -48,6 +53,13 @@ export interface HeroBlock extends BlockBase {
     ctaLabel?: string;
     ctaHref?: string;
     badges?: string[];
+    slides?: Array<{
+      category: string;
+      title: string;
+      price: string;
+      cta: string;
+      image: string;
+    }>;
   };
 }
 
@@ -108,7 +120,12 @@ export interface StatsBlock extends BlockBase {
   data: {
     title?: string;
     subtitle?: string;
-    items: { title: string; value: string; description?: string }[];
+    content?: string;
+    items: {
+      title: string;
+      value: string;
+      description?: string;
+    }[];
   };
 }
 
@@ -168,6 +185,32 @@ export interface PricingBlock extends BlockBase {
   };
 }
 
+export interface AboutSplitBlock extends BlockBase {
+  type: "about-split";
+  data: {
+    headline: string;
+    paragraphs: string[];
+    ctaLabel?: string;
+    ctaHref?: string;
+  };
+}
+
+export interface PopularQualificationsBlock extends BlockBase {
+  type: "popular-qualifications";
+  data: {
+    title: string;
+    items: any[];
+  };
+}
+
+export interface FeaturesBlock extends BlockBase {
+  type: "features";
+  data: {
+    title: string;
+    items: { title: string; description: string }[];
+  };
+}
+
 export type ContentBlock =
   | HeroBlock
   | QualificationHeroBlock
@@ -182,7 +225,10 @@ export type ContentBlock =
   | LogosBlock
   | BlogBlock
   | WhyUsBlock
-  | PricingBlock;
+  | PricingBlock
+  | AboutSplitBlock
+  | PopularQualificationsBlock
+  | FeaturesBlock;
 
 export interface PageConfig {
   id: string;
@@ -223,6 +269,10 @@ export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   blog: "Blog / News",
   "why-us": "Why Choose Us",
   pricing: "Pricing",
+  qualification_hero: "Qualification Hero",
+  "about-split": "About Split",
+  "popular-qualifications": "Popular Qualifications",
+  features: "Features Grid",
 };
 
 export const getDefaultBlockData = (type: BlockType): ContentBlock => {
@@ -243,6 +293,10 @@ export const getDefaultBlockData = (type: BlockType): ContentBlock => {
     blog: () => ({ id, type: "blog", label, data: { title: "Latest News", items: [] } }),
     "why-us": () => ({ id, type: "why-us", label, data: { title: "Why Choose Us", items: [{ title: "Feature", description: "Description" }] } }),
     pricing: () => ({ id, type: "pricing", label, data: { price: "£0", duration: "12 months" } }),
+    qualification_hero: () => ({ id, type: "qualification_hero", label, data: {} }),
+    "about-split": () => ({ id, type: "about-split", label, data: { headline: "Headline", paragraphs: ["Paragraph 1", "Paragraph 2"], ctaLabel: "About Us", ctaHref: "/about" } }),
+    "popular-qualifications": () => ({ id, type: "popular-qualifications", label, data: { title: "Popular Qualifications", items: [] } }),
+    features: () => ({ id, type: "features", label, data: { title: "Features", items: [{ title: "Feature", description: "Description" }] } }),
   };
 
   return defaults[type]();

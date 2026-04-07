@@ -10,6 +10,7 @@ interface SortableBlockProps {
   block: ContentBlock;
   onEdit: () => void;
   onRemove: () => void;
+  isFixed?: boolean;
 }
 
 const getBlockPreview = (block: ContentBlock): string => {
@@ -17,8 +18,11 @@ const getBlockPreview = (block: ContentBlock): string => {
   return (d.title as string) || (d.headline as string) || (d.content as string)?.slice(0, 60) || block.type;
 };
 
-const SortableBlock = ({ block, onEdit, onRemove }: SortableBlockProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+const SortableBlock = ({ block, onEdit, onRemove, isFixed }: SortableBlockProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+    id: block.id,
+    disabled: isFixed || block.isFixed 
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -27,23 +31,34 @@ const SortableBlock = ({ block, onEdit, onRemove }: SortableBlockProps) => {
     zIndex: isDragging ? 50 : undefined,
   };
 
+  const showDragHandle = !isFixed && !block.isFixed;
+  const showDelete = !block.isLocked;
+
   return (
     <Card ref={setNodeRef} style={style} className="group">
       <CardHeader className="py-3 px-4 flex flex-row items-center gap-3">
-        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors">
-          <GripVertical className="h-4 w-4" />
-        </button>
+        <div className={`shrink-0 flex items-center justify-center w-4 h-4 ${showDragHandle ? 'cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground' : 'text-muted-foreground/10'}`}>
+          {showDragHandle ? (
+            <button {...attributes} {...listeners}>
+              <GripVertical className="h-4 w-4" />
+            </button>
+          ) : (
+            <GripVertical className="h-4 w-4" />
+          )}
+        </div>
         <Badge variant="secondary" className="text-xs shrink-0">{block.label}</Badge>
         <div className="flex-1 min-w-0">
           <p className="text-sm text-muted-foreground truncate">{getBlockPreview(block)}</p>
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
             <Eye className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {showDelete && (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </CardHeader>
     </Card>
