@@ -375,7 +375,9 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
         name: header?.learner_name || learner?.name || "",
         email: personalInfo?.email || learner?.email || "",
         phone: personalInfo?.phone || learner?.phone || "",
-        status: ((header?.status || learner?.status || "active") as AdminLearner["status"]),
+        status: (header?.status ||
+          learner?.status ||
+          "active") as AdminLearner["status"],
       });
     }
   }, [header, personalInfo, learner]);
@@ -420,7 +422,8 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
     setIsEditing(false);
     toast({
       title: "Learner update prepared",
-      description: "The form arrangement is ready. You can connect your PATCH API next.",
+      description:
+        "The form arrangement is ready. You can connect your PATCH API next.",
     });
   };
 
@@ -472,7 +475,7 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as LearnerActionTab)}
-          className="mt-2 max-h-[70vh] overflow-y-auto"
+          className="mt-2"
         >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="personal_info" className="text-xs">
@@ -498,7 +501,11 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
                   <div className="flex justify-end gap-2">
                     {isEditing ? (
                       <>
-                        <Button variant="outline" size="sm" onClick={cancelEditing}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={cancelEditing}
+                        >
                           <X className="mr-1 h-3.5 w-3.5" />
                           Cancel
                         </Button>
@@ -508,7 +515,11 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
                         </Button>
                       </>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={startEditing}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={startEditing}
+                      >
                         <Pencil className="mr-1 h-3.5 w-3.5" />
                         Edit
                       </Button>
@@ -587,7 +598,9 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
                           <div className="flex items-center gap-2 text-sm">
                             <Mail className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <p className="text-xs text-muted-foreground">Email</p>
+                              <p className="text-xs text-muted-foreground">
+                                Email
+                              </p>
                               <p className="font-medium">
                                 {personalInfo.email || "N/A"}
                               </p>
@@ -596,7 +609,9 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
                           <div className="flex items-center gap-2 text-sm">
                             <Phone className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <p className="text-xs text-muted-foreground">Phone</p>
+                              <p className="text-xs text-muted-foreground">
+                                Phone
+                              </p>
                               <p className="font-medium">
                                 {personalInfo.phone || "N/A"}
                               </p>
@@ -620,7 +635,10 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
                                 Access Expiry
                               </p>
                               <p className="font-medium">
-                                {formatDate(personalInfo.access_expires_at, true)}
+                                {formatDate(
+                                  personalInfo.access_expires_at,
+                                  true,
+                                )}
                               </p>
                             </div>
                           </div>
@@ -631,54 +649,54 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
 
                   {!isEditing && (
                     <Card>
-                    <CardContent className="space-y-3 p-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Qualification
-                          </p>
-                          <p className="font-medium">
-                            {personalInfo.qualification?.title || "N/A"}
-                          </p>
+                      <CardContent className="space-y-3 p-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Qualification
+                            </p>
+                            <p className="font-medium">
+                              {personalInfo.qualification?.title || "N/A"}
+                            </p>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Assigned Trainer
-                          </p>
-                          <p className="font-medium">
-                            {personalInfo.assigned_trainer?.name ||
-                              "Unassigned"}
-                          </p>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Assigned Trainer
+                            </p>
+                            <p className="font-medium">
+                              {personalInfo.assigned_trainer?.name ||
+                                "Unassigned"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Assigned IQA
+                            </p>
+                            <p className="font-medium">
+                              {personalInfo.assigned_iqa?.name || "Unassigned"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Assigned IQA
-                          </p>
-                          <p className="font-medium">
-                            {personalInfo.assigned_iqa?.name || "Unassigned"}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="mt-3 flex items-center gap-3">
-                        <Progress
-                          value={personalInfo.progress?.progress_percent || 0}
-                          className="h-2 flex-1"
-                        />
-                        <span className="text-sm font-bold">
-                          {personalInfo.progress?.progress_percent || 0}%
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {personalInfo.progress?.completed_units || 0} of{" "}
-                        {personalInfo.progress?.total_units || 0} units
-                        completed
-                      </p>
-                    </CardContent>
+                        <div className="mt-3 flex items-center gap-3">
+                          <Progress
+                            value={personalInfo.progress?.progress_percent || 0}
+                            className="h-2 flex-1"
+                          />
+                          <span className="text-sm font-bold">
+                            {personalInfo.progress?.progress_percent || 0}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {personalInfo.progress?.completed_units || 0} of{" "}
+                          {personalInfo.progress?.total_units || 0} units
+                          completed
+                        </p>
+                      </CardContent>
                     </Card>
                   )}
                 </div>
