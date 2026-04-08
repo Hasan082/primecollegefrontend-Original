@@ -1,6 +1,11 @@
 import { cleanObject } from "@/utils/cleanObject";
 import { api } from "../../api";
 
+export interface QualificationOption {
+  id: string;
+  title: string;
+}
+
 const qualificationApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getQualificationOnlyList: builder.query({
@@ -25,6 +30,14 @@ const qualificationApi = api.injectEndpoints({
         url: "/api/qualification/options/",
         method: "GET",
       })
+    }),
+    getQualificationSliderOptions: builder.query<QualificationOption[], void>({
+      query: () => ({
+        url: "/api/qualification/options/",
+        method: "GET",
+      }),
+      transformResponse: (response: QualificationOption[] | { data?: QualificationOption[] }) =>
+        Array.isArray(response) ? response : response?.data || [],
     }),
     getUnitOptionsByQualification: builder.query({
       query: (qualificationId) => ({
@@ -66,6 +79,7 @@ export const {
   useGetQualificationOnlyListQuery,
   useGetQualificationsAdminQuery,
   useGetQualificationOptionsQuery,
+  useGetQualificationSliderOptionsQuery,
   useGetUnitOptionsByQualificationQuery,
   useLazyGetUnitOptionsByQualificationQuery,
   useGetChecklistTemplatesQuery,
