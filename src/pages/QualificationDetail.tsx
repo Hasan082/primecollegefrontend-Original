@@ -12,7 +12,6 @@ import {
   useGetQualificationDetailQuery,
   useGetUpSalesQuery,
 } from "@/redux/apis/qualificationApi";
-import { useGetPageQuery } from "@/redux/apis/pageBuilderApi";
 import { filterOutSystemBlocks, getRenderableBlocks } from "@/utils/pageBuilder";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -48,9 +47,6 @@ const QualificationDetail = () => {
   const qualification = data?.data;
   const detailPageSlug = qualification?.detail_page?.slug;
   const detailPagePublished = qualification?.detail_page?.is_published;
-  const { data: pageResponse } = useGetPageQuery(detailPageSlug || "", {
-    skip: !detailPageSlug,
-  });
 
   const { addItem, isInCart } = useCart();
 
@@ -192,8 +188,10 @@ const QualificationDetail = () => {
     navigate("/checkout");
   };
 
-  const bodyBlocks = detailPageSlug
-    ? filterOutSystemBlocks(getRenderableBlocks(pageResponse?.data, detailPageSlug))
+  const bodyBlocks = qualification
+    ? filterOutSystemBlocks(getRenderableBlocks({
+        blocks: qualification.body_blocks ?? [],
+      }, detailPageSlug || slug))
     : [];
 
   const hasCmsBody = detailPagePublished !== false && bodyBlocks.length > 0;

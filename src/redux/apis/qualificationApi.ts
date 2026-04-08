@@ -59,6 +59,9 @@ export interface QualificationDetail extends QualificationListItem {
   delivery_mode: QualificationTaxonomy | null;
   hero_mode: "standard" | "session_booking";
   has_sessions: boolean;
+  seo_title: string;
+  seo_description: string;
+  body_blocks: unknown[];
   detail_page: QualificationPageReference | null;
   upcoming_sessions: QualificationSession[];
   is_cpd: boolean;
