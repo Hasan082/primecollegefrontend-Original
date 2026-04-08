@@ -11,6 +11,25 @@ import { useCart } from "@/contexts/CartContext";
 
 const STORAGE_KEY = "primecollege_pending_checkout";
 
+const normalizeCurrencyCode = (currency?: string | null) => {
+  const value = (currency || "").trim();
+
+  if (!value) return "GBP";
+  if (value === "£") return "GBP";
+  if (value === "$") return "USD";
+  if (value === "€") return "EUR";
+  if (/^[A-Z]{3}$/.test(value)) return value;
+
+  return "GBP";
+};
+
+const formatMoney = (value: number, currency = "GBP") =>
+  new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: normalizeCurrencyCode(currency),
+    maximumFractionDigits: 2,
+  }).format(value);
+
 const CheckoutSuccess = () => {
   const { clearCart } = useCart();
 
@@ -121,35 +140,17 @@ const CheckoutSuccess = () => {
           <div className="mt-5 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
-              <span className="text-foreground">
-                {currency}{" "}
-                {subtotal.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </span>
+              <span className="text-foreground">{formatMoney(subtotal, currency)}</span>
             </div>
             {discountTotal > 0 ? (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Discount</span>
-                <span className="text-primary">
-                  -{currency}{" "}
-                  {discountTotal.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </span>
+                <span className="text-primary">-{formatMoney(discountTotal, currency)}</span>
               </div>
             ) : null}
             <div className="flex justify-between border-t border-border pt-3 text-2xl font-bold">
               <span className="text-foreground">Total Paid</span>
-              <span className="text-primary">
-                {currency}{" "}
-                {totalPaid.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </span>
+              <span className="text-primary">{formatMoney(totalPaid, currency)}</span>
             </div>
           </div>
         </section>

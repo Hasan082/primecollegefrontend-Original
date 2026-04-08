@@ -55,6 +55,11 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
+  h1 {
+    font-size: clamp(2rem, 3.8vw, 3.35rem);
+    line-height: 1.05;
+  }
+
   .container {
     padding-inline: 30px !important;
   }

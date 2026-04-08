@@ -1,4 +1,5 @@
 import { api } from "../api";
+import type { ContentBlock } from "@/types/pageBuilder";
 
 export interface QualificationTaxonomy {
   id: string;
@@ -31,6 +32,18 @@ export interface QualificationSession {
   is_featured: boolean;
 }
 
+export interface QualificationSessionLocationDate {
+  id: string;
+  label: string;
+}
+
+export interface QualificationSessionLocation {
+  id: string;
+  name: string;
+  venue_address: string;
+  dates: QualificationSessionLocationDate[];
+}
+
 export interface QualificationListItem {
   id: string;
   title: string;
@@ -58,12 +71,14 @@ export interface QualificationDetail extends QualificationListItem {
   qualification_type: QualificationTaxonomy | null;
   delivery_mode: QualificationTaxonomy | null;
   hero_mode: "standard" | "session_booking";
+  is_session?: boolean;
   has_sessions: boolean;
   seo_title: string;
   seo_description: string;
-  body_blocks: unknown[];
+  body_blocks: ContentBlock[];
   detail_page: QualificationPageReference | null;
   upcoming_sessions: QualificationSession[];
+  session_locations?: QualificationSessionLocation[];
   is_cpd: boolean;
 }
 

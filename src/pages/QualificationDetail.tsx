@@ -8,12 +8,14 @@ import { CMSPageRenderer } from "@/components/cms/CMSBlockRenderer";
 import { useCart } from "@/contexts/CartContext";
 import {
   QualificationSession,
+  QualificationSessionLocation,
   QualificationUpsellItem,
   useGetQualificationDetailQuery,
   useGetUpSalesQuery,
 } from "@/redux/apis/qualificationApi";
 import { filterOutSystemBlocks, getRenderableBlocks } from "@/utils/pageBuilder";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const formatMoney = (value: string | number | null | undefined, currency = "GBP") =>
   `${currency} ${Number(value || 0).toLocaleString(undefined, {
@@ -21,18 +23,33 @@ const formatMoney = (value: string | number | null | undefined, currency = "GBP"
     maximumFractionDigits: 2,
   })}`;
 
-const formatDateRange = (startAt: string, endAt: string) => {
-  const start = new Date(startAt);
-  const end = new Date(endAt);
-  return `${start.toLocaleDateString("en-GB", {
+const formatDate = (value: string) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
-  })} to ${end.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })}`;
+  });
+};
+
+const formatDateRange = (startAt?: string, endAt?: string) => {
+  if (!startAt && !endAt) {
+    return "";
+  }
+
+  if (!startAt || !endAt) {
+    return formatDate(startAt || endAt || "");
+  }
+
+  if (formatDate(startAt) === formatDate(endAt)) {
+    return formatDate(startAt);
+  }
+
+  return `${formatDate(startAt)} to ${formatDate(endAt)}`;
 };
 
 const QualificationDetail = () => {
@@ -47,19 +64,55 @@ const QualificationDetail = () => {
   const qualification = data?.data;
   const detailPageSlug = qualification?.detail_page?.slug;
   const detailPagePublished = qualification?.detail_page?.is_published;
+  const usesSessionBooking =
+    qualification?.hero_mode === "session_booking" || qualification?.has_sessions || qualification?.is_session;
 
   const { addItem, isInCart } = useCart();
 
+  const normalizedUpcomingSessions = useMemo(
+    () => qualification?.upcoming_sessions || [],
+    [qualification?.upcoming_sessions],
+  );
+
   const sessionLocations = useMemo(() => {
+    if (!qualification) {
+      return [] as Array<{
+        id: string;
+        name: string;
+        venueAddress: string;
+        sessions: QualificationSession[];
+      }>;
+    }
+
+    if (qualification.session_locations?.length) {
+      return qualification.session_locations.map((location: QualificationSessionLocation) => ({
+        id: location.id,
+        name: location.name || "Location to be confirmed",
+        venueAddress: location.venue_address || "",
+        sessions: (location.dates || []).map((date) => ({
+          id: date.id,
+          title: date.label,
+          location_name: location.name || "Location to be confirmed",
+          venue_address: location.venue_address || "",
+          start_at: date.label,
+          end_at: date.label,
+          available_seats: null,
+          effective_price: qualification.current_price,
+          is_featured: false,
+        })),
+      }));
+    }
+
     const grouped = new Map<
       string,
-      { name: string; venueAddress: string; sessions: QualificationSession[] }
+      { id: string; name: string; venueAddress: string; sessions: QualificationSession[] }
     >();
 
-    qualification?.upcoming_sessions?.forEach((session) => {
+    normalizedUpcomingSessions.forEach((session) => {
       const key = session.location_name || "Location to be confirmed";
       if (!grouped.has(key)) {
         grouped.set(key, {
+          id: key,
           name: key,
           venueAddress: session.venue_address || "",
           sessions: [],
@@ -70,15 +123,14 @@ const QualificationDetail = () => {
     });
 
     return Array.from(grouped.values());
-  }, [qualification?.upcoming_sessions]);
+  }, [qualification, normalizedUpcomingSessions]);
 
   useEffect(() => {
-    if (!qualification?.has_sessions) {
+    if (!usesSessionBooking) {
       return;
     }
 
-    const firstLocation = sessionLocations[0];
-    if (!firstLocation) {
+    if (!sessionLocations.length) {
       setSelectedLocationName("");
       setSelectedSessionId("");
       return;
@@ -87,20 +139,18 @@ const QualificationDetail = () => {
     setSelectedLocationName((current) =>
       current && sessionLocations.some((location) => location.name === current)
         ? current
-        : firstLocation.name,
+        : "",
     );
-  }, [qualification?.has_sessions, sessionLocations]);
+  }, [sessionLocations, usesSessionBooking]);
 
   const selectedLocation = useMemo(
     () =>
-      sessionLocations.find((location) => location.name === selectedLocationName) ||
-      sessionLocations[0] ||
-      null,
+      sessionLocations.find((location) => location.name === selectedLocationName) || null,
     [selectedLocationName, sessionLocations],
   );
 
   useEffect(() => {
-    if (!qualification?.has_sessions) {
+    if (!usesSessionBooking) {
       return;
     }
 
@@ -112,16 +162,25 @@ const QualificationDetail = () => {
     setSelectedSessionId((current) =>
       current && selectedLocation.sessions.some((session) => session.id === current)
         ? current
-        : selectedLocation.sessions[0].id,
+        : "",
     );
-  }, [qualification?.has_sessions, selectedLocation]);
+  }, [selectedLocation, usesSessionBooking]);
 
   const selectedSession = useMemo(
     () =>
-      qualification?.upcoming_sessions?.find((session) => session.id === selectedSessionId) ||
+      sessionLocations
+        .flatMap((location) => location.sessions)
+        .find((session) => session.id === selectedSessionId) ||
+      normalizedUpcomingSessions.find((session) => session.id === selectedSessionId) ||
       null,
-    [qualification?.upcoming_sessions, selectedSessionId],
+    [normalizedUpcomingSessions, selectedSessionId, sessionLocations],
   );
+
+  const hasSessionDates = sessionLocations.some((location) => location.sessions.length > 0);
+  const enrolmentDisabled = usesSessionBooking && !selectedSession;
+  const disabledMessage = sessionLocations.length
+    ? "No available dates for the selected location yet."
+    : "No available dates for this course yet.";
 
   const heroImage =
     qualification?.featured_image?.hero_desktop ||
@@ -175,7 +234,7 @@ const QualificationDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (qualification.has_sessions && !selectedSession) {
+    if (usesSessionBooking && !selectedSession) {
       return;
     }
 
@@ -189,9 +248,9 @@ const QualificationDetail = () => {
   };
 
   const bodyBlocks = qualification
-    ? filterOutSystemBlocks(getRenderableBlocks({
-        blocks: qualification.body_blocks ?? [],
-      }, detailPageSlug || slug))
+    ? filterOutSystemBlocks(
+        getRenderableBlocks(qualification.body_blocks ?? [], detailPageSlug || slug),
+      )
     : [];
 
   const hasCmsBody = detailPagePublished !== false && bodyBlocks.length > 0;
@@ -199,22 +258,22 @@ const QualificationDetail = () => {
 
   return (
     <div className="bg-background">
-      <section className="relative h-[450px] overflow-hidden md:h-[540px]">
+      <section className="relative h-[500px] overflow-hidden md:h-[620px]">
         {heroImage ? (
           <img src={heroImage} alt={qualification.title} className="absolute inset-0 h-full w-full object-cover" />
         ) : null}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--primary)/0.95)_0%,hsl(var(--primary)/0.88)_25%,hsl(var(--primary)/0.7)_45%,hsl(var(--primary)/0.45)_65%,hsl(var(--primary)/0.2)_85%,hsl(var(--primary)/0.08)_100%)]" />
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4">
-            <div className="max-w-2xl">
-              <h1 className="text-4xl font-bold text-primary-foreground md:text-5xl">
+            <div className="max-w-3xl">
+              <h1 className="max-w-3xl text-4xl font-bold leading-[0.95] text-primary-foreground md:text-5xl">
                 {qualification.title}
               </h1>
-              <p className="mt-4 max-w-xl text-lg leading-relaxed text-primary-foreground/90">
+              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-primary-foreground/90">
                 {qualification.short_description}
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-4 text-sm text-primary-foreground">
+              <div className="mt-7 flex flex-wrap gap-3 text-sm text-primary-foreground">
                 <span className="rounded bg-secondary px-4 py-2 font-bold uppercase text-secondary-foreground">
                   {qualification.category?.name || "Qualification"}
                 </span>
@@ -232,68 +291,91 @@ const QualificationDetail = () => {
                 </span>
               </div>
 
-              {qualification.has_sessions && sessionLocations.length > 0 ? (
-                <div className="mt-8 grid gap-4 rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm md:grid-cols-2">
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-primary-foreground">Location</p>
-                    <Select
-                      value={selectedLocation?.name || ""}
-                      onValueChange={(value) => {
-                        setSelectedLocationName(value);
-                        setSelectedSessionId("");
-                      }}
-                    >
-                      <SelectTrigger className="border-white/60 bg-white text-left text-slate-900 data-[placeholder]:text-slate-500">
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent className="border-slate-200 bg-white text-slate-900">
-                        {sessionLocations.map((location) => (
-                          <SelectItem key={location.name} value={location.name}>
-                            {location.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedLocation?.venueAddress ? (
-                      <p className="text-xs text-primary-foreground/75">
-                        {selectedLocation.venueAddress}
-                      </p>
-                    ) : null}
-                  </div>
+              {usesSessionBooking ? (
+                <div className="mt-8 max-w-[860px]">
+                  <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedLocation?.name || ""}
+                        onValueChange={(value) => {
+                          setSelectedLocationName(value);
+                          setSelectedSessionId("");
+                        }}
+                        disabled={sessionLocations.length === 0}
+                      >
+                        <SelectTrigger className="h-12 rounded-none border-white/60 bg-white px-4 text-left text-sm text-slate-900 data-[placeholder]:text-slate-500">
+                          <SelectValue
+                            placeholder={sessionLocations.length ? "Location" : "No locations available"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="border-slate-200 bg-white text-slate-900">
+                          {sessionLocations.map((location) => (
+                            <SelectItem key={location.id} value={location.name}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-primary-foreground">Date</p>
-                    <Select
-                      value={selectedSessionId}
-                      onValueChange={setSelectedSessionId}
-                      disabled={!selectedLocation}
-                    >
-                      <SelectTrigger className="border-white/60 bg-white text-left text-slate-900 data-[placeholder]:text-slate-500">
-                        <SelectValue placeholder="Select date" />
-                      </SelectTrigger>
-                      <SelectContent className="border-slate-200 bg-white text-slate-900">
-                        {selectedLocation?.sessions.map((session) => (
-                          <SelectItem key={session.id} value={session.id}>
-                            {formatDateRange(session.start_at, session.end_at)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedSessionId}
+                        onValueChange={setSelectedSessionId}
+                        disabled={!selectedLocation || !selectedLocation.sessions.length}
+                      >
+                        <SelectTrigger className="h-12 rounded-none border-white/60 bg-white px-4 text-left text-sm text-slate-900 data-[placeholder]:text-slate-500">
+                          <SelectValue placeholder={hasSessionDates ? "Date" : "No dates available"} />
+                        </SelectTrigger>
+                        <SelectContent className="border-slate-200 bg-white text-slate-900">
+                          {selectedLocation?.sessions.map((session) => (
+                            <SelectItem key={session.id} value={session.id}>
+                              {formatDateRange(session.start_at, session.end_at)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex w-full md:w-auto">
+                            <button
+                              type="button"
+                              onClick={handleAddToCart}
+                              disabled={enrolmentDisabled}
+                              aria-label={enrolmentDisabled ? disabledMessage : undefined}
+                              className="h-12 w-full rounded-none bg-secondary px-6 text-sm font-semibold text-secondary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-secondary/60 disabled:text-secondary-foreground/80 md:min-w-[210px]"
+                            >
+                              Enrol Now - {formatMoney(
+                                selectedSession?.effective_price || qualification.current_price,
+                                qualification.currency,
+                              )}
+                            </button>
+                          </span>
+                        </TooltipTrigger>
+                        {enrolmentDisabled ? (
+                          <TooltipContent className="max-w-xs border-amber-200 bg-amber-50 text-amber-950">
+                            {disabledMessage}
+                          </TooltipContent>
+                        ) : null}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={qualification.has_sessions && !selectedSession}
-                className="mt-8 rounded-md bg-secondary px-8 py-3 font-semibold text-secondary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Enrol Now - {formatMoney(
-                  selectedSession?.effective_price || qualification.current_price,
-                  qualification.currency,
-                )}
-              </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="mt-8 rounded-xl bg-secondary px-8 py-4 text-base font-semibold text-secondary-foreground transition hover:opacity-90"
+                >
+                  Enrol Now - {formatMoney(
+                    selectedSession?.effective_price || qualification.current_price,
+                    qualification.currency,
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -316,7 +398,7 @@ const QualificationDetail = () => {
             </div>
           </section>
 
-          {qualification.has_sessions && qualification?.upcoming_sessions?.length > 0 ? (
+          {usesSessionBooking && normalizedUpcomingSessions.length > 0 ? (
             <section className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
               <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
@@ -327,7 +409,7 @@ const QualificationDetail = () => {
                 </div>
               </div>
               <div className="mt-6 grid gap-4">
-                {(selectedLocation?.sessions || qualification.upcoming_sessions).map((session) => {
+                {(selectedLocation?.sessions.length ? selectedLocation.sessions : normalizedUpcomingSessions).map((session) => {
                   const isSelected = selectedSession?.id === session.id;
                   return (
                     <button
@@ -405,12 +487,13 @@ const QualificationDetail = () => {
             <button
               type="button"
               onClick={handleAddToCart}
-              className="mt-6 w-full rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground transition hover:opacity-90"
+              disabled={enrolmentDisabled}
+              className="mt-6 w-full rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {alreadyInCart ? "Update basket and continue" : "Add to basket"}
             </button>
             <p className="mt-3 text-xs leading-5 text-muted-foreground">
-              {qualification.has_sessions
+              {usesSessionBooking
                 ? "If sessions are available, the chosen session will be sent to checkout and enrolment automatically."
                 : "This qualification can be added directly to the checkout basket."}
             </p>
