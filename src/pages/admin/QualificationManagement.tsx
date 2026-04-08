@@ -43,7 +43,6 @@ type AdminQualificationRow = {
   id: string;
   title: string;
   qualification_code: string;
-  is_cpd: boolean;
   level: string;
   category: string;
   current_price: string | null;
@@ -51,6 +50,7 @@ type AdminQualificationRow = {
   awarding_body: string;
   access_duration: string;
   total_units: number;
+  is_cpd: boolean;
   active_enrolments_count: number;
   status: "active" | "draft" | "archived" | "inactive";
   created_at?: string;
