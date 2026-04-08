@@ -1,36 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import type {
-  BlockStyle,
-  BlockType,
-  CMSPageCategory,
-  ContentBlock,
-  TextAlignment,
-} from "@/types/pageBuilder";
-import { getDefaultBlockData } from "@/types/pageBuilder";
 import {
   useGetPageQuery,
   useUpdatePageMutation,
 } from "@/redux/apis/pageBuilderApi";
+import type {
+  BlockType,
+  CMSPageCategory,
+  ContentBlock
+} from "@/types/pageBuilder";
+import { getDefaultBlockData } from "@/types/pageBuilder";
 import { TryCatch } from "@/utils/apiTryCatch";
 import {
   getFallbackBlocksForSlug,
-  normalizeCmsPageCategory,
   getPreviewPath,
   getRenderableBlocks,
+  normalizeCmsPageCategory,
   preserveSystemBlockState,
-  resolvePageType,
   rememberCmsPageType,
+  resolvePageType,
 } from "@/utils/pageBuilder";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 
-import PageEditorHeader from "@/components/admin/page-builder/PageEditorHeader";
-import BlockList from "@/components/admin/page-builder/BlockList";
-import SEOPanel from "@/components/admin/page-builder/SEOPanel";
-import BlockPreviewRenderer from "@/components/admin/page-builder/BlockPreviewRenderer";
 import AddBlockDialog from "@/components/admin/page-builder/AddBlockDialog";
+import BlockList from "@/components/admin/page-builder/BlockList";
+import BlockPreviewRenderer from "@/components/admin/page-builder/BlockPreviewRenderer";
 import EditBlockDialog from "@/components/admin/page-builder/EditBlockDialog";
+import PageEditorHeader from "@/components/admin/page-builder/PageEditorHeader";
+import SEOPanel from "@/components/admin/page-builder/SEOPanel";
 
 const PageEditor = () => {
   const { pageId } = useParams();
