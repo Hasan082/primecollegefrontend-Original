@@ -43,6 +43,7 @@ type AdminQualificationRow = {
   id: string;
   title: string;
   qualification_code: string;
+  is_cpd: boolean;
   level: string;
   category: string;
   current_price: string | null;
