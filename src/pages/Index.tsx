@@ -241,7 +241,7 @@ const Index = () => {
                   return (
                     <Link
                       key={item.title}
-                      to={`/blog/${blogSlug}`}
+                      to={`/blogs/${blogSlug}`}
                       className="bg-card border border-border rounded-xl overflow-hidden group block"
                     >
                       <div className="aspect-[16/9] overflow-hidden">

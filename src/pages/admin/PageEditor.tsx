@@ -29,7 +29,7 @@ import AddBlockDialog from "@/components/admin/page-builder/AddBlockDialog";
 import EditBlockDialog from "@/components/admin/page-builder/EditBlockDialog";
 
 const getPreviewPath = (slug: string) => {
-  if (slug.startsWith("blog-")) return `/blog/${slug.replace(/^blog-/, "")}`;
+  if (slug.startsWith("blog-")) return `/blogs/${slug.replace(/^blog-/, "")}`;
   if (slug.startsWith("qualification-"))
     return `/qualifications/${slug.replace(/^qualification-/, "")}`;
   return `/${slug}`;
