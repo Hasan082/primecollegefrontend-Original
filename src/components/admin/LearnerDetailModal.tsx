@@ -20,6 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   User,
@@ -39,10 +48,13 @@ import {
   Pencil,
   Save,
   X,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import type { AdminLearner } from "@/data/adminMockData";
 import { useGetEnrolledLearnerActionModalDataQuery } from "@/redux/apis/admin/learnerManagementApi";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Props {
   learner: AdminLearner | null;
@@ -90,6 +102,15 @@ type PersonalInfoContent = {
 type StaffMember = {
   id: string;
   name: string;
+};
+
+type StaffOptionComboboxProps = {
+  value: string;
+  onChange: (value: string) => void;
+  options: StaffMember[];
+  placeholder: string;
+  searchPlaceholder: string;
+  emptyText: string;
 };
 
 type StaffAssignmentContent = {
@@ -285,6 +306,82 @@ const getSafeStaffAssignmentContent = (
       iqas: Array.isArray(value.options?.iqas) ? value.options.iqas : [],
     },
   };
+};
+
+const StaffOptionCombobox = ({
+  value,
+  onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+  emptyText,
+}: StaffOptionComboboxProps) => {
+  const [open, setOpen] = useState(false);
+  const selectedOption =
+    value === UNASSIGNED_VALUE
+      ? { id: UNASSIGNED_VALUE, name: "Unassigned" }
+      : options.find((option) => option.id === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate">
+            {selectedOption?.name || placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList className="max-h-60">
+            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="unassigned"
+                onSelect={() => {
+                  onChange(UNASSIGNED_VALUE);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === UNASSIGNED_VALUE ? "opacity-100" : "opacity-0",
+                  )}
+                />
+                Unassigned
+              </CommandItem>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.id}
+                  value={`${option.name} ${option.id}`}
+                  onSelect={() => {
+                    onChange(option.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.id ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {option.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
@@ -832,53 +929,28 @@ const LearnerDetailModal = ({ learner, open, onOpenChange }: Props) => {
                           <p className="text-xs text-muted-foreground">
                             Trainer Options
                           </p>
-                          <Select
+                          <StaffOptionCombobox
                             value={selectedTrainer}
-                            onValueChange={setSelectedTrainer}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select trainer" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={UNASSIGNED_VALUE}>
-                                Unassigned
-                              </SelectItem>
-                              {staffAssignment.options.trainers.map(
-                                (trainer) => (
-                                  <SelectItem
-                                    key={trainer.id}
-                                    value={trainer.id}
-                                  >
-                                    {trainer.name}
-                                  </SelectItem>
-                                ),
-                              )}
-                            </SelectContent>
-                          </Select>
+                            onChange={setSelectedTrainer}
+                            options={staffAssignment.options.trainers}
+                            placeholder="Select trainer"
+                            searchPlaceholder="Search trainers..."
+                            emptyText="No trainer found."
+                          />
                         </div>
 
                         <div className="space-y-1.5">
                           <p className="text-xs text-muted-foreground">
                             IQA Options
                           </p>
-                          <Select
+                          <StaffOptionCombobox
                             value={selectedIqa}
-                            onValueChange={setSelectedIqa}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select IQA" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={UNASSIGNED_VALUE}>
-                                Unassigned
-                              </SelectItem>
-                              {staffAssignment.options.iqas.map((iqa) => (
-                                <SelectItem key={iqa.id} value={iqa.id}>
-                                  {iqa.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onChange={setSelectedIqa}
+                            options={staffAssignment.options.iqas}
+                            placeholder="Select IQA"
+                            searchPlaceholder="Search IQAs..."
+                            emptyText="No IQA found."
+                          />
                         </div>
                       </div>
 
