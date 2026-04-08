@@ -16,30 +16,18 @@ import { Progress } from "@/components/ui/progress";
 import { Search, ArrowLeft, UserPlus, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import TablePagination from "@/components/admin/TablePagination";
 import LearnerDetailModal from "@/components/admin/LearnerDetailModal";
-import {
-  adminQualifications,
-  adminTrainers,
-  type AdminLearner,
-} from "@/data/adminMockData";
+import { type AdminLearner } from "@/data/adminMockData";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useGetEnrolledLearnersQuery } from "@/redux/apis/admin/learnerManagementApi";
+import EnrollLearnerModal from "@/components/admin/learnerManagement/EnrollLearnerModal";
 
 const ITEMS_PER_PAGE = 10;
 // TODO: need to work here for create enrollment and view details modal
@@ -52,7 +40,6 @@ const LearnerManagement = () => {
     null,
   );
   const [detailOpen, setDetailOpen] = useState(false);
-  const { toast } = useToast();
 
   const debouncedSearch = useDebounce(search, 500);
 
@@ -164,101 +151,9 @@ const LearnerManagement = () => {
           </p>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="w-4 h-4 mr-1" /> Enrol Learner
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Manual Learner Enrolment</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 pt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>First Name</Label>
-                  <Input placeholder="John" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Last Name</Label>
-                  <Input placeholder="Smith" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Email</Label>
-                <Input type="email" placeholder="learner@example.com" />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Phone</Label>
-                <Input placeholder="+44 7700 000000" />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Qualification</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select qualification" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {adminQualifications
-                      .filter((q) => q.status === "active")
-                      .map((q) => (
-                        <SelectItem key={q.id} value={q.id}>
-                          {q.title}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Assign Trainer</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select trainer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {adminTrainers
-                      .filter((t) => t.status === "active")
-                      .map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Payment Method</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual / Invoice</SelectItem>
-                    <SelectItem value="employer">Employer Funded</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setDialogOpen(false);
-                  toast({ title: "Learner enrolled (demo)" });
-                }}
-              >
-                Enrol Learner
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setDialogOpen(true)}>
+          <UserPlus className="w-4 h-4 mr-1" /> Enrol Learner
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -409,6 +304,11 @@ const LearnerManagement = () => {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onUpdate={handleLearnerUpdate}
+      />
+
+      <EnrollLearnerModal
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
       />
     </div>
   );
