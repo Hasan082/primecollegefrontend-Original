@@ -128,6 +128,9 @@ const LearnerManagement = () => {
     (location) => location.id === enrolForm.location_id,
   );
   const isSessionQualification = Boolean(selectedQualification?.is_session);
+  const hasBookableSessions = Boolean(
+    selectedQualification?.session_locations?.some((location) => location.dates.length > 0),
+  );
 
   const handleLearnerUpdate = (updated: AdminLearner) => {
     setSelectedLearner(updated);
@@ -178,10 +181,17 @@ const LearnerManagement = () => {
     if (!enrolForm.qualification_id) {
       nextErrors.qualification_id = "Qualification is required";
     }
-    if (isSessionQualification && !enrolForm.location_id) {
+    if (isSessionQualification && !hasBookableSessions) {
+      nextErrors.qualification_id = "No upcoming session dates are available for this qualification";
+    }
+    if (isSessionQualification && hasBookableSessions && !enrolForm.location_id) {
       nextErrors.location_id = "Location is required";
     }
-    if (isSessionQualification && !enrolForm.qualification_session_id) {
+    if (
+      isSessionQualification &&
+      hasBookableSessions &&
+      !enrolForm.qualification_session_id
+    ) {
       nextErrors.qualification_session_id = "Date is required";
     }
     if (!enrolForm.payment_method) {
@@ -426,7 +436,13 @@ const LearnerManagement = () => {
                 ) : null}
               </div>
 
-              {isSessionQualification ? (
+              {isSessionQualification && !hasBookableSessions ? (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  No upcoming session dates are available for this qualification.
+                </div>
+              ) : null}
+
+              {isSessionQualification && hasBookableSessions ? (
                 <>
                   <div className="space-y-1.5">
                     <Label>Location</Label>
@@ -543,7 +559,9 @@ const LearnerManagement = () => {
 
               <Button
                 className="w-full"
-                disabled={isSubmittingAdmission}
+                disabled={
+                  isSubmittingAdmission || (isSessionQualification && !hasBookableSessions)
+                }
                 onClick={handleEnrolLearner}
               >
                 {isSubmittingAdmission ? "Enrolling..." : "Enrol Learner"}

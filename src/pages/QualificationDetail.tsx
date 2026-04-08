@@ -127,7 +127,7 @@ const QualificationDetail = () => {
 
   const selectedSession = useMemo(
     () =>
-      qualification?.upcoming_sessions.find((session) => session.id === selectedSessionId) ||
+      qualification?.upcoming_sessions?.find((session) => session.id === selectedSessionId) ||
       null,
     [qualification?.upcoming_sessions, selectedSessionId],
   );
@@ -248,10 +248,10 @@ const QualificationDetail = () => {
                         setSelectedSessionId("");
                       }}
                     >
-                      <SelectTrigger className="border-white/20 bg-white/5 text-primary-foreground">
+                      <SelectTrigger className="border-white/60 bg-white text-left text-slate-900 data-[placeholder]:text-slate-500">
                         <SelectValue placeholder="Select location" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="border-slate-200 bg-white text-slate-900">
                         {sessionLocations.map((location) => (
                           <SelectItem key={location.name} value={location.name}>
                             {location.name}
@@ -273,10 +273,10 @@ const QualificationDetail = () => {
                       onValueChange={setSelectedSessionId}
                       disabled={!selectedLocation}
                     >
-                      <SelectTrigger className="border-white/20 bg-white/5 text-primary-foreground">
+                      <SelectTrigger className="border-white/60 bg-white text-left text-slate-900 data-[placeholder]:text-slate-500">
                         <SelectValue placeholder="Select date" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="border-slate-200 bg-white text-slate-900">
                         {selectedLocation?.sessions.map((session) => (
                           <SelectItem key={session.id} value={session.id}>
                             {formatDateRange(session.start_at, session.end_at)}
