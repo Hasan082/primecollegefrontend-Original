@@ -220,10 +220,6 @@ const ExtensionPlanManagement = () => {
             Control learner extension durations and prices from the backend.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <BadgePoundSterling className="h-4 w-4 text-primary" />
-          Pricing is now admin-managed, not hard-coded.
-        </div>
       </div>
 
       <Card className="border-border/70 shadow-sm">

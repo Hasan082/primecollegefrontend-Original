@@ -51,6 +51,65 @@ export interface LearnerDashboardResponse {
   };
 }
 
+export interface LearnerExtensionPlan {
+  id: string;
+  label: string;
+  duration_mode: "preset" | "custom";
+  duration_months: number;
+  amount: string;
+  currency: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface LearnerExtensionPlansResponse {
+  success: boolean;
+  message: string;
+  data: LearnerExtensionPlan[];
+}
+
+export interface LearnerExtensionOrder {
+  id: string;
+  status: string;
+  plan_id: string;
+  plan_label: string;
+  extension_months: number;
+  amount: string;
+  currency: string;
+  qualification_title: string;
+  previous_access_expires_at: string | null;
+  extended_access_expires_at: string;
+  current_access_expires_at: string | null;
+  paid_at: string | null;
+  payment_reference: string;
+  order: {
+    id: string;
+    order_number: string;
+    currency?: string;
+    grand_total?: string;
+    customer_email?: string;
+  };
+}
+
+export interface LearnerExtensionOrderCreateResponse {
+  success: boolean;
+  message: string;
+  data: {
+    extension_order: LearnerExtensionOrder;
+    available_plans: LearnerExtensionPlan[];
+    payment_intent_client_secret: string;
+    stripe_payment_intent_id: string;
+    stripe_customer_id: string;
+    stripe_publishable_key: string;
+  };
+}
+
+export interface LearnerExtensionOrderStatusResponse {
+  success: boolean;
+  message: string;
+  data: LearnerExtensionOrder;
+}
+
 const enrolmentApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getLearnerDashboard: builder.query<LearnerDashboardResponse, void>({
@@ -73,6 +132,37 @@ const enrolmentApi = api.injectEndpoints({
         method: "GET",
       }),
       providesTags: (result, error, id) => [{ type: "Enrolments", id }],
+    }),
+    getLearnerExtensionPlans: builder.query<LearnerExtensionPlansResponse, string>({
+      query: (enrolmentId) => ({
+        url: `/api/enrolments/me/${enrolmentId}/extension-plans/`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "Enrolments", id }, "ExtensionPlans"],
+    }),
+    createLearnerExtensionOrder: builder.mutation<
+      LearnerExtensionOrderCreateResponse,
+      { enrolmentId: string; plan_id: string }
+    >({
+      query: ({ enrolmentId, plan_id }) => ({
+        url: `/api/enrolments/me/${enrolmentId}/extension-order/`,
+        method: "POST",
+        body: { plan_id },
+      }),
+      invalidatesTags: (result, error, { enrolmentId }) => [{ type: "Enrolments", id: enrolmentId }, "Enrolments"],
+    }),
+    getLearnerExtensionOrderStatus: builder.query<
+      LearnerExtensionOrderStatusResponse,
+      { enrolmentId: string; orderId: string }
+    >({
+      query: ({ enrolmentId, orderId }) => ({
+        url: `/api/enrolments/me/${enrolmentId}/extension-orders/${orderId}/`,
+        method: "GET",
+      }),
+      providesTags: (result, error, { enrolmentId, orderId }) => [
+        { type: "Enrolments", id: enrolmentId },
+        { type: "Enrolments", id: `EXT_ORDER_${orderId}` },
+      ],
     }),
     submitEvidence: builder.mutation<EvidenceSubmissionResponse, { enrolmentId: string; unitId: string; body: FormData }>({
       query: ({ enrolmentId, unitId, body }) => ({
@@ -104,6 +194,9 @@ export const {
   useGetLearnerDashboardQuery,
   useGetEnrolmentsQuery,
   useGetEnrolmentContentQuery,
+  useGetLearnerExtensionPlansQuery,
+  useCreateLearnerExtensionOrderMutation,
+  useGetLearnerExtensionOrderStatusQuery,
   useSubmitEvidenceMutation,
   useGetEnrollmentAdminProgressQuery,
 } = enrolmentApi;

@@ -20,7 +20,6 @@ const mainNavItems = [
   { title: "Learners", url: "/admin/learners", icon: Users },
   { title: "Trainers", url: "/admin/trainers", icon: UserCheck },
   { title: "IQA", url: "/admin/iqa", icon: Shield },
-  { title: "Extension Plans", url: "/admin/extension-plans", icon: CalendarPlus },
   { title: "IQA Checklists", url: "/admin/checklists", icon: ClipboardList },
   { title: "Progress", url: "/admin/progress", icon: BarChart3 },
 ];
@@ -40,6 +39,7 @@ const siteSettingsItems = [
   { title: "Header", url: "/admin/settings/header", icon: PanelTop },
   { title: "Footer", url: "/admin/settings/footer", icon: PanelBottom },
   { title: "Email Logs", url: "/admin/settings/email-delivery-monitor", icon: Mail },
+  { title: "Extension Plans", url: "/admin/extension-plans", icon: CalendarPlus },
 ];
 
 const AdminSidebar = () => {
