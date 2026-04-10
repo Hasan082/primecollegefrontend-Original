@@ -21,6 +21,40 @@ export interface BlogCategorySummary {
     is_active: boolean;
 }
 
+export interface BlogCategoryListResponse {
+    success: boolean;
+    message: string;
+    data: BlogCategorySummary[];
+}
+
+export interface BlogDetail {
+    id: string;
+    blog_title: string;
+    blog_slug: string;
+    feature_image: string | null;
+    blog_category?: string | BlogCategorySummary | null;
+    category_id?: string | null;
+    category_name?: string;
+    category_slug?: string;
+    blog_excerpt: string;
+    blog_description: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface BlogDetailResponse {
+    success: boolean;
+    message: string;
+    data: BlogDetail;
+}
+
+export interface BlogCategoryMutationResponse {
+    success: boolean;
+    message: string;
+    data: BlogCategorySummary;
+}
+
 export interface BlogListData {
     count: number;
     next: string | null;
@@ -56,7 +90,7 @@ export const blogApi = api.injectEndpoints({
             },
             providesTags: ["BLOGS"],
         }),
-        createBlog: builder.mutation({
+        createBlog: builder.mutation<BlogDetailResponse, FormData>({
             query: (body) => ({
                 url: "/api/blogs/",
                 method: "POST",
@@ -64,14 +98,14 @@ export const blogApi = api.injectEndpoints({
             }),
             invalidatesTags: ["BLOGS", "BLOG"],
         }),
-        getBlog: builder.query({
+        getBlog: builder.query<BlogDetailResponse, string>({
             query: (blogSlug) => ({
                 url: `/api/blogs/${blogSlug}/`,
                 method: "GET",
             }),
             providesTags: ["BLOG"],
         }),
-        updateBlog: builder.mutation({
+        updateBlog: builder.mutation<BlogDetailResponse, { blogSlug: string; body: FormData }>({
             query: ({ blogSlug, body }) => ({
                 url: `/api/blogs/${blogSlug}/`,
                 method: "PUT",
@@ -79,7 +113,7 @@ export const blogApi = api.injectEndpoints({
             }),
             invalidatesTags: ["BLOGS", "BLOG"],
         }),
-        patchBlog: builder.mutation({
+        patchBlog: builder.mutation<BlogDetailResponse, { blogSlug: string; body: FormData }>({
             query: ({ blogSlug, body }) => ({
                 url: `/api/blogs/${blogSlug}/`,
                 method: "PATCH",
@@ -94,7 +128,7 @@ export const blogApi = api.injectEndpoints({
             }),
             invalidatesTags: ["BLOGS", "BLOG"],
         }),
-        getBlogCategories: builder.query({
+        getBlogCategories: builder.query<BlogCategoryListResponse, GetBlogsParams | void>({
             query: (args) => {
                 const filteredParams = cleanObject(args);
                 return {
@@ -105,7 +139,7 @@ export const blogApi = api.injectEndpoints({
             },
             providesTags: ["BLOGS_CATEGORIES"],
         }),
-        createBlogCategory: builder.mutation({
+        createBlogCategory: builder.mutation<BlogCategoryMutationResponse, { name: string; is_active: boolean }>({
             query: (body) => ({
                 url: "/api/blogs/blog-categories/",
                 method: "POST",

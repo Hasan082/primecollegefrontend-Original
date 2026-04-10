@@ -5,11 +5,17 @@ import {
   BookText,
   Check,
   ChevronsUpDown,
+  Eye,
   FolderTree,
   Newspaper,
+  Pencil,
+  Plus,
   Search,
   X,
 } from "lucide-react";
+import CreateBlogModal from "@/components/admin/blogs/CreateBlogModal";
+import EditBlogModal from "@/components/admin/blogs/EditBlogModal";
+import ViewBlogModal from "@/components/admin/blogs/ViewBlogModal";
 import TablePagination from "@/components/admin/TablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +53,9 @@ const BlogSettings = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategorySlug, setSelectedCategorySlug] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [viewBlogSlug, setViewBlogSlug] = useState<string | null>(null);
+  const [editBlogSlug, setEditBlogSlug] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -139,15 +148,24 @@ const BlogSettings = () => {
 
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <CardTitle className="text-lg">Blogs</CardTitle>
+              <Button onClick={() => setIsCreateModalOpen(true)} className="md:self-start">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Blog
+              </Button>
+            </div>
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative w-full flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search blogs..."
-                  className="pl-9"
-                />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search blogs..."
+                className="pl-9"
+              />
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-none">
@@ -236,6 +254,7 @@ const BlogSettings = () => {
               )}
             </div>
           </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -245,6 +264,7 @@ const BlogSettings = () => {
                   <TableHead>Blog</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                   <TableHead className="text-right">Created</TableHead>
                 </TableRow>
               </TableHeader>
@@ -317,6 +337,26 @@ const BlogSettings = () => {
                           {blog.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setViewBlogSlug(blog.blog_slug)}
+                            aria-label={`View ${blog.blog_title}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditBlogSlug(blog.blog_slug)}
+                            aria-label={`Edit ${blog.blog_title}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right text-sm text-muted-foreground">
                         {new Date(blog.created_at).toLocaleDateString()}
                       </TableCell>
@@ -335,6 +375,21 @@ const BlogSettings = () => {
           />
         </CardContent>
       </Card>
+
+      <CreateBlogModal
+        isModalOpen={isCreateModalOpen}
+        closeModal={() => setIsCreateModalOpen(false)}
+      />
+      <ViewBlogModal
+        isModalOpen={Boolean(viewBlogSlug)}
+        closeModal={() => setViewBlogSlug(null)}
+        blogSlug={viewBlogSlug}
+      />
+      <EditBlogModal
+        isModalOpen={Boolean(editBlogSlug)}
+        closeModal={() => setEditBlogSlug(null)}
+        blogSlug={editBlogSlug}
+      />
     </div>
   );
 };
