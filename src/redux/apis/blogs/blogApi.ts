@@ -1,9 +1,51 @@
 import { cleanObject } from "@/utils/cleanObject";
 import { api } from "../../api";
 
+export interface BlogListItem {
+    id: string;
+    blog_title: string;
+    blog_slug: string;
+    feature_image: string | null;
+    category_name: string;
+    category_slug: string;
+    blog_excerpt: string;
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface BlogCategorySummary {
+    id: string;
+    name: string;
+    category_slug: string;
+    blog_count: number;
+    is_active: boolean;
+}
+
+export interface BlogListData {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: BlogListItem[];
+    categories_summary: BlogCategorySummary[];
+}
+
+export interface BlogListResponse {
+    success: boolean;
+    message: string;
+    data: BlogListData;
+}
+
+export interface GetBlogsParams {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    category_slug?: string;
+    is_active?: boolean;
+}
+
 export const blogApi = api.injectEndpoints({
     endpoints: (builder) => ({
-        getBlogs: builder.query({
+        getBlogs: builder.query<BlogListResponse, GetBlogsParams | void>({
             query: (args) => {
                 const filteredParams = cleanObject(args);
                 return {
