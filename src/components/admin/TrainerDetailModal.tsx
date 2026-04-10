@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UserCheck, Users, Clock, CheckCircle2, GraduationCap, Pencil, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
-import type { TrainerManagementItem } from "@/redux/apis/staffApi";
+import { useUpdateStaffMutation, type TrainerManagementItem } from "@/redux/apis/staffApi";
+import { Loader2 } from "lucide-react";
 
 const ALL_SPECIALISMS = ["Business", "Care", "Management", "First Aid"];
 
@@ -24,12 +25,15 @@ interface Props {
 const TrainerDetailModal = ({ trainer, open, onOpenChange }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    name: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     email: "",
     specialisms: [] as string[],
     status: "" as TrainerManagementItem["status"],
   });
   const { toast } = useToast();
+  const [updateStaff, { isLoading: isUpdating }] = useUpdateStaffMutation();
 
   if (!trainer) return null;
 
@@ -41,7 +45,9 @@ const TrainerDetailModal = ({ trainer, open, onOpenChange }: Props) => {
 
   const startEditing = () => {
     setEditData({
-      name: trainer.full_name,
+      first_name: trainer.first_name,
+      middle_name: trainer.middle_name || "",
+      last_name: trainer.last_name,
       email: trainer.email,
       specialisms: [...trainer.specialisms],
       status: trainer.status,
@@ -49,13 +55,33 @@ const TrainerDetailModal = ({ trainer, open, onOpenChange }: Props) => {
     setIsEditing(true);
   };
 
-  const saveChanges = () => {
+  const saveChanges = async () => {
     if (editData.specialisms.length === 0) {
       toast({ title: "At least one specialism required", variant: "destructive" });
       return;
     }
-    setIsEditing(false);
-    toast({ title: "Trainer updated", description: `${editData.name}'s details have been saved.` });
+
+    try {
+      await updateStaff({
+        id: trainer.id,
+        body: {
+          first_name: editData.first_name,
+          middle_name: editData.middle_name,
+          last_name: editData.last_name,
+          is_active: editData.status === "active",
+          specialisms: editData.specialisms,
+        },
+      }).unwrap();
+
+      toast({ title: "Trainer updated", description: `${editData.first_name} ${editData.last_name}'s details have been saved.` });
+      setIsEditing(false);
+    } catch (err: any) {
+      toast({
+        title: "Update failed",
+        description: err?.data?.detail || err?.data?.message || "Failed to update trainer.",
+        variant: "destructive",
+      });
+    }
   };
 
   const cancelEditing = () => setIsEditing(false);
@@ -78,7 +104,7 @@ const TrainerDetailModal = ({ trainer, open, onOpenChange }: Props) => {
               <UserCheck className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <span>{isEditing ? editData.name : trainer.full_name}</span>
+              <span>{isEditing ? `${editData.first_name} ${editData.middle_name ? editData.middle_name + " " : ""}${editData.last_name}` : trainer.full_name}</span>
               <p className="text-xs text-muted-foreground font-normal">
                 {isEditing ? editData.email : trainer.email}
               </p>
@@ -104,11 +130,11 @@ const TrainerDetailModal = ({ trainer, open, onOpenChange }: Props) => {
             <div className="flex justify-end gap-2">
               {isEditing ? (
                 <>
-                  <Button variant="outline" size="sm" onClick={cancelEditing}>
+                  <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isUpdating}>
                     <X className="w-3.5 h-3.5 mr-1" /> Cancel
                   </Button>
-                  <Button size="sm" onClick={saveChanges}>
-                    <Save className="w-3.5 h-3.5 mr-1" /> Save Changes
+                  <Button size="sm" onClick={saveChanges} disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />} Save Changes
                   </Button>
                 </>
               ) : (
@@ -121,11 +147,27 @@ const TrainerDetailModal = ({ trainer, open, onOpenChange }: Props) => {
             {isEditing ? (
               <Card>
                 <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">First Name</Label>
+                      <Input
+                        value={editData.first_name}
+                        onChange={(e) => setEditData((d) => ({ ...d, first_name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Middle Name</Label>
+                      <Input
+                        value={editData.middle_name}
+                        onChange={(e) => setEditData((d) => ({ ...d, middle_name: e.target.value }))}
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Full Name</Label>
+                    <Label className="text-xs">Last Name</Label>
                     <Input
-                      value={editData.name}
-                      onChange={(e) => setEditData((d) => ({ ...d, name: e.target.value }))}
+                      value={editData.last_name}
+                      onChange={(e) => setEditData((d) => ({ ...d, last_name: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">

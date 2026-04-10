@@ -104,7 +104,8 @@ export const api = createApi({
     "ChecklistTemplates",
     "EmailLogs",
     "EnrollLearners",
-    "Trainers"
+    "Trainers",
+    "IQAs"
   ],
   endpoints: () => ({}),
 });

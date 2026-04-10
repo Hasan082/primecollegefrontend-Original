@@ -283,7 +283,7 @@ const TrainerManagement = () => {
       />
 
       <TrainerDetailModal
-        trainer={selectedTrainer}
+        trainer={trainers.find(t => t.id === selectedTrainer?.id) || selectedTrainer}
         open={detailOpen}
         onOpenChange={(o) => { setDetailOpen(o); if (!o) setSelectedTrainer(null); }}
       />

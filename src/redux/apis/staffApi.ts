@@ -18,6 +18,24 @@ export interface StaffCreateRequest {
   cpd_record_url?: string;
 }
 
+export interface UpdateStaffRequest {
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  phone?: string;
+  is_active?: boolean;
+  qualification_held?: string;
+  specialisms?: string[];
+  centre_registration_number?: string;
+  standardisation_last_attended?: string;
+  cpd_record_url?: string;
+}
+
+export interface AssignIQARequest {
+  enrolment_id: string;
+  iqa_id: string;
+}
+
 export interface StaffResponse {
   success: boolean;
   message: string;
@@ -136,7 +154,7 @@ export const staffApi = api.injectEndpoints({
     >({
       query: (params) => ({
         url: "/api/auth/admin/staff/",
-        params: params ?? undefined,
+        params: (params as Record<string, any>) ?? undefined,
       }),
       providesTags: ["Enrolments"],
     }),
@@ -151,6 +169,16 @@ export const staffApi = api.injectEndpoints({
       invalidatesTags: ["Trainers"],
     }),
 
+    // Update staff (trainer / iqa)
+    updateStaff: builder.mutation<StaffResponse, { id: string; body: UpdateStaffRequest }>({
+      query: ({ id, body }) => ({
+        url: `/api/auth/admin/staff/${id}/`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Trainers"],
+    }),
+
     // Trainer management list (rich data)
     getTrainerManagement: builder.query<
       TrainerManagementResponse,
@@ -158,14 +186,14 @@ export const staffApi = api.injectEndpoints({
     >({
       query: (params) => ({
         url: "/api/auth/admin/trainers/management/",
-        params: params ?? undefined,
+        params: (params as Record<string, any>) ?? undefined,
       }),
       providesTags: ["Trainers"],
     }),
 
     // Trainer options for reassign dropdown
     getTrainerOptions: builder.query<TrainerOptionsResponse, void>({
-      query: () => "/api/auth/trainers/options/",
+      query: () => ({ url: "/api/auth/trainers/options/" }),
       providesTags: ["Trainers"],
     }),
 
@@ -181,13 +209,48 @@ export const staffApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Trainers"],
     }),
+
+    // IQA management list
+    getIQAManagement: builder.query<
+      TrainerManagementResponse,
+      TrainerManagementParams | void
+    >({
+      query: (params) => ({
+        url: "/api/auth/admin/iqas/management/",
+        params: (params as Record<string, any>) ?? undefined,
+      }),
+      providesTags: ["IQAs" as const],
+    }),
+
+    // IQA options for reassign dropdown
+    getIQAOptions: builder.query<TrainerOptionsResponse, void>({
+      query: () => ({ url: "/api/auth/iqas/options/" }),
+      providesTags: ["IQAs" as const],
+    }),
+
+    // Assign IQA to learner
+    assignIQA: builder.mutation<
+      StaffResponse,
+      AssignIQARequest
+    >({
+      query: ({ enrolment_id, iqa_id }) => ({
+        url: `/api/enrolments/admin/${enrolment_id}/assign-iqa/`,
+        method: "POST",
+        body: { iqa_id },
+      }),
+      invalidatesTags: ["IQAs" as const],
+    }),
   }),
 });
 
 export const {
   useGetStaffListQuery,
   useCreateStaffMutation,
+  useUpdateStaffMutation,
   useGetTrainerManagementQuery,
   useGetTrainerOptionsQuery,
   useReassignTrainerMutation,
+  useGetIQAManagementQuery,
+  useGetIQAOptionsQuery,
+  useAssignIQAMutation,
 } = staffApi;
