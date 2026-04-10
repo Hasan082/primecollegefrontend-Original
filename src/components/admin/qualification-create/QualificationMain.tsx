@@ -55,6 +55,12 @@ const generateSlug = (title: string) =>
     .replace(/[\s_]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+const withCacheBust = (url?: string | null) => {
+  if (!url) return undefined;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}t=${Date.now()}`;
+};
+
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
 
 const qualificationMainSchema = z.object({
@@ -320,7 +326,7 @@ const QualificationMain = () => {
     if (isEditMode && data?.data) {
       const { featured_image, ...rest } = data?.data as any;
       // Keep the existing image URL for preview; don't put it in the File field
-      setExistingImageUrl(featured_image ?? undefined);
+      setExistingImageUrl(withCacheBust(featured_image));
       setClearFeaturedImage(false);
       form.reset({ ...rest, featured_image: null });
     }
@@ -367,12 +373,18 @@ const QualificationMain = () => {
         successMessage: "Qualification updated successfully",
       });
 
+      if (result.type === "success") {
+        const updatedImage = data?.data?.featured_image;
+        setExistingImageUrl(withCacheBust(updatedImage));
+        setClearFeaturedImage(false);
+        form.setValue("featured_image", null);
+      }
+
       toast({
         title: result.type === "success" ? "Success" : "Error",
         description: result.message,
         variant: result.type === "error" ? "destructive" : "default",
       });
-      toast({ title: "Qualification updated successfully" });
     } else {
       const [data, error] = await TryCatch(
         createQualificationMain(formData).unwrap(),
