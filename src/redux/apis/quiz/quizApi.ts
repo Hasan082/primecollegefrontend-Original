@@ -215,6 +215,25 @@ export interface QuizResponse<T> {
   data: T;
 }
 
+interface PaginatedQuizList<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+const asQuizList = <T>(payload: T[] | PaginatedQuizList<T> | null | undefined): T[] => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (payload && Array.isArray(payload.results)) {
+    return payload.results;
+  }
+
+  return [];
+};
+
 const quizApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getQuestionBankQualificationGuard: builder.query<QuizBankQualificationGuard, string>({
@@ -231,10 +250,10 @@ const quizApi = api.injectEndpoints({
         url: `/api/quizzes/qualifications/${qualificationId}/units/`,
         method: "GET",
       }),
-      transformResponse: (response: QuizResponse<QuizBankUnitCard[]>) => response.data,
+      transformResponse: (response: QuizResponse<QuizBankUnitCard[] | PaginatedQuizList<QuizBankUnitCard>>) => asQuizList(response.data),
       providesTags: (result, _error, qualificationId) => [
         { type: "Quizzes", id: `UNITS_${qualificationId}` },
-        ...(result?.map((u) => ({ type: "Quizzes" as const, id: u.id })) || []),
+        ...asQuizList(result).map((u) => ({ type: "Quizzes" as const, id: u.id })),
       ],
     }),
 
@@ -272,10 +291,10 @@ const quizApi = api.injectEndpoints({
         url: `/api/quizzes/units/${unitId}/questions/`,
         method: "GET",
       }),
-      transformResponse: (response: QuizResponse<Question[]>) => response.data,
+      transformResponse: (response: QuizResponse<Question[] | PaginatedQuizList<Question>>) => asQuizList(response.data),
       providesTags: (result, _error, unitId) => [
         { type: "Quizzes", id: `QUESTIONS_${unitId}` },
-        ...(result?.map((q) => ({ type: "Quizzes" as const, id: q.id })) || []),
+        ...asQuizList(result).map((q) => ({ type: "Quizzes" as const, id: q.id })),
       ],
     }),
 
