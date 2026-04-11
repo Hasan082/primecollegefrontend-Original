@@ -69,6 +69,7 @@ export interface WrittenAssignmentConfig {
   min_words: number;
   max_words: number;
   is_active: boolean;
+  version: number;
   created_at: string;
   updated_at: string;
 }
@@ -324,6 +325,21 @@ const quizApi = api.injectEndpoints({
       providesTags: (result, _error, unitId) => [{ type: "Quizzes", id: `WA_${unitId}` }],
     }),
 
+    createWrittenAssignmentConfig: builder.mutation<
+      QuizResponse<WrittenAssignmentConfig>,
+      { unitId: string; data: Partial<WrittenAssignmentConfig> }
+    >({
+      query: ({ unitId, data }) => ({
+        url: `/api/quizzes/units/${unitId}/assignment-config/`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (result, _error, { unitId }) => [
+        { type: "Quizzes", id: `WA_${unitId}` },
+        { type: "QualificationUnits", id: `LIST` },
+      ],
+    }),
+
     updateWrittenAssignmentConfig: builder.mutation<
       QuizResponse<WrittenAssignmentConfig>,
       { unitId: string; data: Partial<WrittenAssignmentConfig> }
@@ -505,10 +521,13 @@ const quizApi = api.injectEndpoints({
         url: `/api/qualification/admin/cpd-final-assessments/${assessmentId}/questions/`,
         method: "GET",
       }),
-      providesTags: (result, _error, assessmentId) => [
-        { type: "Quizzes", id: `CPD_QUESTIONS_${assessmentId}` },
-        ...(result?.data?.map((q) => ({ type: "Quizzes" as const, id: q.id })) || []),
-      ],
+      providesTags: (result, _error, assessmentId) => {
+        const dataArr = Array.isArray(result?.data) ? result.data : ((result?.data as any)?.results || []);
+        return [
+          { type: "Quizzes", id: `CPD_QUESTIONS_${assessmentId}` },
+          ...dataArr.map((q: any) => ({ type: "Quizzes" as const, id: q.id })),
+        ];
+      },
     }),
 
     createCPDFinalAssessmentQuestion: builder.mutation<QuizResponse<CPDFinalAssessmentQuestion>, { assessmentId: string; data: Partial<CPDFinalAssessmentQuestion> }>({
@@ -551,6 +570,7 @@ export const {
   useCreateQuestionMutation,
   useDeleteQuestionMutation,
   useGetWrittenAssignmentConfigQuery,
+  useCreateWrittenAssignmentConfigMutation,
   useUpdateWrittenAssignmentConfigMutation,
   useStartQuizMutation,
   useSubmitQuizMutation,

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -20,8 +21,10 @@ import {
   useCreateQuestionMutation,
   useDeleteQuestionMutation,
   useUpdateQuizConfigMutation,
-  useGetWrittenAssignmentConfigQuery,
+  useCreateWrittenAssignmentConfigMutation,
+  useUpdateWrittenAssignmentConfigMutation,
   useGetQuestionBankUnitsQuery,
+  useGetWrittenAssignmentConfigQuery,
 } from "@/redux/apis/quiz/quizApi";
 
 const QuestionBankEditor = () => {
@@ -31,17 +34,23 @@ const QuestionBankEditor = () => {
   const { data: qualGuard, isLoading: isLoadingGuard } = useGetQuestionBankQualificationGuardQuery(qualificationId!);
   const { data: units, isLoading: isLoadingUnits } = useGetQuestionBankUnitsQuery(qualificationId!, { skip: !qualificationId });
 
-  const unitId = units?.find(u =>
-    u.unit_code.trim().toLowerCase() === unitCode?.trim().toLowerCase()
+  const unitsResponseData = units as any;
+  const unitsArray = Array.isArray(unitsResponseData) ? unitsResponseData : (unitsResponseData?.results || []);
+  const unitId = unitsArray.find(u =>
+    u.unit_code?.trim().toLowerCase() === unitCode?.trim().toLowerCase()
   )?.id;
 
-  const { data: questions = [], isLoading: isLoadingQuestions } = useGetQuestionsQuery(unitId!, { skip: !unitId });
+  const { data: questionsResponse, isLoading: isLoadingQuestions } = useGetQuestionsQuery(unitId!, { skip: !unitId });
   const { data: config, isLoading: isLoadingConfig } = useGetQuizConfigQuery(unitId!, { skip: !unitId });
   const { data: writtenAssignment } = useGetWrittenAssignmentConfigQuery(unitId!, { skip: !unitId });
+
+  const questions = Array.isArray(questionsResponse) ? questionsResponse : [];
 
   const [createQuestion] = useCreateQuestionMutation();
   const [deleteQuestionMutation] = useDeleteQuestionMutation();
   const [updateQuizConfig] = useUpdateQuizConfigMutation();
+  const [createWrittenAssignmentConfig] = useCreateWrittenAssignmentConfigMutation();
+  const [updateWrittenAssignmentConfig] = useUpdateWrittenAssignmentConfigMutation();
 
   // Local state for the "Add Question" form
   const [showAddQ, setShowAddQ] = useState(false);
@@ -53,11 +62,28 @@ const QuestionBankEditor = () => {
   // Local state for Quiz Config editing
   const [localConfig, setLocalConfig] = useState<any>(null);
 
+  // Local state for Written Assignment editing
+  const [localWA, setLocalWA] = useState<any>(null);
+
   useEffect(() => {
     if (config) {
       setLocalConfig({ ...config });
     }
   }, [config]);
+
+  useEffect(() => {
+    if (writtenAssignment) {
+      setLocalWA({ ...writtenAssignment });
+    } else {
+      setLocalWA({
+        title: "",
+        instructions: "",
+        min_words: 250,
+        max_words: 500,
+        is_active: false
+      });
+    }
+  }, [writtenAssignment]);
 
   // Fallback initialization for localConfig if config is still loading or missing
   const isDataReady = !!localConfig;
@@ -98,6 +124,27 @@ const QuestionBankEditor = () => {
     }
   };
 
+  const handleSaveWA = async () => {
+    if (!localWA) return;
+    try {
+      if (writtenAssignment) {
+        await updateWrittenAssignmentConfig({
+          unitId: unitId!,
+          data: localWA
+        }).unwrap();
+        toast({ title: "Written assignment updated" });
+      } else {
+        await createWrittenAssignmentConfig({
+          unitId: unitId!,
+          data: localWA
+        }).unwrap();
+        toast({ title: "Written assignment created" });
+      }
+    } catch (err: any) {
+      toast({ title: "Failed to save written assignment", variant: "destructive" });
+    }
+  };
+
   const toggleCorrect = (oIdx: number) => {
     if (newQType === "single") {
       setNewQCorrect([oIdx]);
@@ -119,8 +166,8 @@ const QuestionBankEditor = () => {
     }
   };
 
-  const currentUnit = units?.find(u =>
-    u.unit_code.trim().toLowerCase() === unitCode?.trim().toLowerCase()
+  const currentUnit = unitsArray.find(u =>
+    u.unit_code?.trim().toLowerCase() === unitCode?.trim().toLowerCase()
   );
 
   if (isLoadingGuard || isLoadingUnits || (unitId && (isLoadingConfig || isLoadingQuestions))) {
@@ -376,35 +423,81 @@ const QuestionBankEditor = () => {
             </TabsContent>
 
             <TabsContent value="written" className="space-y-4">
-              {writtenAssignment ? (
-                <Card className="p-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <PenLine className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="font-semibold text-foreground">{writtenAssignment.title}</p>
-                        <Badge className={writtenAssignment.is_active ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"}>
-                          {writtenAssignment.is_active ? "Published" : "Draft"}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{writtenAssignment.instructions}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Word limit: {writtenAssignment.min_words} — {writtenAssignment.max_words}</p>
-                    </div>
-                    <Button size="icon" variant="ghost" className="text-primary h-8 w-8 hover:bg-primary/10">
-                      <Settings2 className="w-4 h-4" />
-                    </Button>
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <PenLine className="w-5 h-5 text-primary" />
+                    <h2 className="text-lg font-bold text-foreground">
+                      {writtenAssignment ? "Edit Written Assignment" : "Configure Written Assignment"}
+                    </h2>
                   </div>
-                </Card>
-              ) : (
-                <div className="py-20 text-center border-2 border-dashed rounded-xl border-muted/20">
-                  <p className="text-muted-foreground text-sm">No written assignment configured for this unit.</p>
-                  <Button variant="outline" className="mt-4 gap-2">
-                    <Plus className="w-4 h-4" /> Configure Written Assignment
-                  </Button>
+                  {writtenAssignment && (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Version: {writtenAssignment.version || 0}
+                    </Badge>
+                  )}
                 </div>
-              )}
+                
+                {localWA && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Assignment Title</Label>
+                      <Input 
+                        value={localWA.title} 
+                        onChange={(e) => setLocalWA({ ...localWA, title: e.target.value })} 
+                        placeholder="e.g. End of Unit Reflection" 
+                        className="mt-1" 
+                      />
+                    </div>
+                    <div>
+                      <Label>Instructions</Label>
+                      <Textarea 
+                        value={localWA.instructions} 
+                        onChange={(e) => setLocalWA({ ...localWA, instructions: e.target.value })} 
+                        placeholder="Provide detailed instructions for the learner..." 
+                        className="mt-1 h-32" 
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Minimum Words</Label>
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          value={localWA.min_words} 
+                          onChange={(e) => setLocalWA({ ...localWA, min_words: Number(e.target.value) })} 
+                          className="mt-1" 
+                        />
+                      </div>
+                      <div>
+                        <Label>Maximum Words</Label>
+                        <Input 
+                          type="number" 
+                          min={localWA.min_words} 
+                          value={localWA.max_words} 
+                          onChange={(e) => setLocalWA({ ...localWA, max_words: Number(e.target.value) })} 
+                          className="mt-1" 
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
+                      <div>
+                        <Label className="font-bold flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-primary" /> Assignment Visibility
+                        </Label>
+                        <p className="text-[11px] text-muted-foreground">Keep this enabled to make the assignment available to learners.</p>
+                      </div>
+                      <Switch 
+                        checked={localWA.is_active} 
+                        onCheckedChange={(value) => setLocalWA({ ...localWA, is_active: value })} 
+                      />
+                    </div>
+                    <div className="flex justify-end pt-4">
+                      <Button onClick={handleSaveWA}><Save className="w-4 h-4 mr-2" /> Save Assignment</Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

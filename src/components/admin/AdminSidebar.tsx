@@ -1,24 +1,7 @@
-import {
-  LayoutDashboard,
-  GraduationCap,
-  Users,
-  UserCheck,
-  BarChart3,
-  FileText,
-  Blocks,
-  BookOpen,
-  ClipboardCheck,
-  Download,
-  Shield,
-  ClipboardList,
-  PanelTop,
-  PanelBottom,
-  Mail,
-  CalendarPlus,
-  BookText,
-} from "lucide-react";
+import { LayoutDashboard, GraduationCap, Users, UserCheck, BarChart3, FileText, Blocks, BookOpen, ClipboardCheck, Download, Shield, ClipboardList, PanelTop, PanelBottom, Mail } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -121,7 +104,9 @@ const AdminSidebar = () => {
         <SidebarGroup>
           <SidebarGroupLabel>Assessment</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderNavItems(assessmentNavItems)}</SidebarMenu>
+            <SidebarMenu>
+              {renderNavItems(assessmentNavItems)}
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -130,7 +115,9 @@ const AdminSidebar = () => {
         <SidebarGroup>
           <SidebarGroupLabel>Tools</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderNavItems(toolsNavItems)}</SidebarMenu>
+            <SidebarMenu>
+              {renderNavItems(toolsNavItems)}
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -139,7 +126,9 @@ const AdminSidebar = () => {
         <SidebarGroup>
           <SidebarGroupLabel>Site Setting</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderNavItems(siteSettingsItems)}</SidebarMenu>
+            <SidebarMenu>
+              {renderNavItems(siteSettingsItems)}
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

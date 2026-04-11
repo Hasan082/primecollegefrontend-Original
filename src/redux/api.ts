@@ -107,6 +107,7 @@ export const api = createApi({
     "ExtensionPlans",
     "Trainers",
     "IQAs",
+    "Unit",
     "BLOGS",
     "BLOG",
     "BLOGS_CATEGORIES",
