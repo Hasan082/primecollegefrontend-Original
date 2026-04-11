@@ -356,10 +356,6 @@ const App = () => {
                               element={<BlogDetail />}
                             />
                             <Route
-                              path="/blog"
-                              element={<Navigate to="/blogs" replace />}
-                            />
-                            <Route
                               path="/blog/:slug"
                               element={<BlogDetail />}
                             />
