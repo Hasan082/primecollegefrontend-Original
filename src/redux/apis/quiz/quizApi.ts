@@ -69,6 +69,7 @@ export interface WrittenAssignmentConfig {
   min_words: number;
   max_words: number;
   is_active: boolean;
+  version: number;
   created_at: string;
   updated_at: string;
 }
@@ -231,10 +232,12 @@ const quizApi = api.injectEndpoints({
         url: `/api/quizzes/qualifications/${qualificationId}/units/`,
         method: "GET",
       }),
-      transformResponse: (response: QuizResponse<QuizBankUnitCard[]>) => response.data,
+      transformResponse: (response: any) => response.data?.results || response.data || [],
       providesTags: (result, _error, qualificationId) => [
         { type: "Quizzes", id: `UNITS_${qualificationId}` },
-        ...(result?.map((u) => ({ type: "Quizzes" as const, id: u.id })) || []),
+        ...(Array.isArray(result)
+          ? result.map((u) => ({ type: "Quizzes" as const, id: u.id }))
+          : []),
       ],
     }),
 
@@ -272,10 +275,10 @@ const quizApi = api.injectEndpoints({
         url: `/api/quizzes/units/${unitId}/questions/`,
         method: "GET",
       }),
-      transformResponse: (response: QuizResponse<Question[]>) => response.data,
+      transformResponse: (response: any) => response.data?.results || response.data || [],
       providesTags: (result, _error, unitId) => [
         { type: "Quizzes", id: `QUESTIONS_${unitId}` },
-        ...(result?.map((q) => ({ type: "Quizzes" as const, id: q.id })) || []),
+        ...(Array.isArray(result) ? result.map((q: any) => ({ type: "Quizzes" as const, id: q.id })) : []),
       ],
     }),
 
@@ -303,6 +306,21 @@ const quizApi = api.injectEndpoints({
       }),
       transformResponse: (response: QuizResponse<WrittenAssignmentConfig>) => response.data,
       providesTags: (result, _error, unitId) => [{ type: "Quizzes", id: `WA_${unitId}` }],
+    }),
+
+    createWrittenAssignmentConfig: builder.mutation<
+      QuizResponse<WrittenAssignmentConfig>,
+      { unitId: string; data: Partial<WrittenAssignmentConfig> }
+    >({
+      query: ({ unitId, data }) => ({
+        url: `/api/quizzes/units/${unitId}/assignment-config/`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (result, _error, { unitId }) => [
+        { type: "Quizzes", id: `WA_${unitId}` },
+        { type: "QualificationUnits", id: `LIST` },
+      ],
     }),
 
     updateWrittenAssignmentConfig: builder.mutation<
@@ -486,10 +504,13 @@ const quizApi = api.injectEndpoints({
         url: `/api/qualification/admin/cpd-final-assessments/${assessmentId}/questions/`,
         method: "GET",
       }),
-      providesTags: (result, _error, assessmentId) => [
-        { type: "Quizzes", id: `CPD_QUESTIONS_${assessmentId}` },
-        ...(result?.data?.map((q) => ({ type: "Quizzes" as const, id: q.id })) || []),
-      ],
+      providesTags: (result, _error, assessmentId) => {
+        const dataArr = Array.isArray(result?.data) ? result.data : ((result?.data as any)?.results || []);
+        return [
+          { type: "Quizzes", id: `CPD_QUESTIONS_${assessmentId}` },
+          ...dataArr.map((q: any) => ({ type: "Quizzes" as const, id: q.id })),
+        ];
+      },
     }),
 
     createCPDFinalAssessmentQuestion: builder.mutation<QuizResponse<CPDFinalAssessmentQuestion>, { assessmentId: string; data: Partial<CPDFinalAssessmentQuestion> }>({
@@ -532,6 +553,7 @@ export const {
   useCreateQuestionMutation,
   useDeleteQuestionMutation,
   useGetWrittenAssignmentConfigQuery,
+  useCreateWrittenAssignmentConfigMutation,
   useUpdateWrittenAssignmentConfigMutation,
   useStartQuizMutation,
   useSubmitQuizMutation,
