@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import TablePagination from "@/components/admin/TablePagination";
@@ -19,8 +19,11 @@ import contactBanner from "@/assets/contact-banner.jpg";
 const ITEMS_PER_PAGE = 9;
 
 const Blog = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState(
+    searchParams.get("category") || "all",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -36,6 +39,25 @@ const Blog = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategory]);
+
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category") || "all";
+    if (categoryFromUrl !== activeCategory) {
+      setActiveCategory(categoryFromUrl);
+    }
+  }, [searchParams, activeCategory]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (activeCategory !== "all") {
+      nextParams.set("category", activeCategory);
+    } else {
+      nextParams.delete("category");
+    }
+
+    setSearchParams(nextParams, { replace: true });
+  }, [activeCategory, searchParams, setSearchParams]);
 
   const {
     data: blogsResponse,
