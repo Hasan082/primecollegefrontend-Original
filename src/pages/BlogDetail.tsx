@@ -167,6 +167,19 @@ const BlogDetail = () => {
             </article>
 
             <aside className="space-y-8 lg:col-span-1">
+              <div className="rounded-2xl border border-border bg-card p-6">
+                <h3 className="text-lg font-bold text-foreground">Ready to Start?</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Explore our qualifications and take the next step in your career.
+                </p>
+                <Link
+                  to="/qualifications"
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  View Qualifications
+                </Link>
+              </div>
+
               <div className="rounded-xl border border-border bg-card p-6">
                 <h3 className="mb-1 text-base font-bold text-foreground">
                   Categories
