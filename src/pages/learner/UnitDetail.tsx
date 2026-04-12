@@ -393,25 +393,24 @@ const UnitDetail = () => {
                             : "No submission yet"}
                         </p>
                       </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded ${
-                        latestWrittenSubmission
-                          ? latestWrittenSubmission.status === "competent"
-                            ? statusConfig["Competent"].color
-                            : latestWrittenSubmission.status === "under_review"
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded ${latestWrittenSubmission
+                        ? latestWrittenSubmission.status === "competent"
+                          ? statusConfig["Competent"].color
+                          : latestWrittenSubmission.status === "under_review"
                             ? statusConfig["Waiting for assessor review"].color
                             : latestWrittenSubmission.status === "resubmit"
-                            ? statusConfig["Resubmission required"].color
-                            : statusConfig.Submitted.color
-                          : "bg-muted text-muted-foreground"
-                      }`}>
+                              ? statusConfig["Resubmission required"].color
+                              : statusConfig.Submitted.color
+                        : "bg-muted text-muted-foreground"
+                        }`}>
                         {latestWrittenSubmission
                           ? latestWrittenSubmission.status === "competent"
                             ? statusConfig["Competent"].label
                             : latestWrittenSubmission.status === "under_review"
-                            ? statusConfig["Waiting for assessor review"].label
-                            : latestWrittenSubmission.status === "resubmit"
-                            ? statusConfig["Resubmission required"].label
-                            : statusConfig.Submitted.label
+                              ? statusConfig["Waiting for assessor review"].label
+                              : latestWrittenSubmission.status === "resubmit"
+                                ? statusConfig["Resubmission required"].label
+                                : statusConfig.Submitted.label
                           : "Not Started"}
                       </span>
                     </button>
@@ -595,7 +594,7 @@ const UnitDetail = () => {
                     <span className="text-sm text-foreground">Written assignment submitted</span>
                   </div>
                 )}
-                {unit.requires_evidence && (
+                {unit.requires_evidence || (isExpired && qualification.is_cpd && !evidenceSetupMissing) && (
                   <div className="flex items-center gap-2">
                     {evidenceUploaded ? (
                       <CheckCircle2 className="w-4 h-4 text-green-600" />
