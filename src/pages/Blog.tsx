@@ -199,7 +199,7 @@ const Blog = () => {
                             {new Date(blog.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <h3 className="text-base font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
+                        <h3 className="text-base font-semibold text-foreground leading-snug mb-2 line-clamp-2 min-h-[44px] group-hover:text-primary transition-colors">
                           {blog.blog_title}
                         </h3>
                         <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
