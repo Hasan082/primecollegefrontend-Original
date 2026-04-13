@@ -29,6 +29,12 @@ type QuizAttemptPayload = QuizAttempt & {
   questions?: QuizAttempt["questions"];
 };
 
+const getErrorMessage = (error: unknown): string => {
+  if (!error || typeof error !== "object") return "";
+  const payload = error as { data?: { message?: string }; message?: string };
+  return payload.data?.message || payload.message || "";
+};
+
 const getAttemptId = (attempt: QuizAttempt | null) => {
   if (!attempt) return undefined;
   return attempt.id || (attempt as unknown as { attempt_id?: string }).attempt_id;
@@ -65,6 +71,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
   const [tabSwitchLog, setTabSwitchLog] = useState<string[]>([]);
   const [result, setResult] = useState<QuizAttempt | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [isFinalizingPending, setIsFinalizingPending] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -89,12 +96,37 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
   const maxAttemptsReached = maxAttempts > 0 && attemptsUsed >= maxAttempts;
   const canTake = !maxAttemptsReached; 
 
+  const finalizePendingAttempt = useCallback(async () => {
+    const pendingAttempt = [...previousAttempts]
+      .filter((attempt) => attempt.status === "in_progress")
+      .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())[0];
+
+    const pendingAttemptId = getAttemptId(pendingAttempt || null);
+    if (!pendingAttemptId) return;
+
+    try {
+      setIsFinalizingPending(true);
+      await submitQuizMutation({
+        attemptId: pendingAttemptId,
+        data: {
+          answers: {},
+          violations_count: pendingAttempt?.violations_count || 0,
+        },
+      }).unwrap();
+    } catch {
+      // Best effort: if this fails, the backend will still block new attempts.
+    } finally {
+      setIsFinalizingPending(false);
+    }
+  }, [previousAttempts, submitQuizMutation]);
+
   // Check if max attempts reached on load
   useEffect(() => {
     if (phase === "intro" && maxAttemptsReached) {
+      void finalizePendingAttempt();
       setPhase("max-attempts");
     }
-  }, [maxAttemptsReached, phase]);
+  }, [maxAttemptsReached, phase, finalizePendingAttempt]);
 
   // Timer countdown
   useEffect(() => {
@@ -237,6 +269,13 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
       }
       toast({ title: "Failed to start quiz", variant: "destructive" });
     } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      if (errorMessage.toLowerCase().includes("maximum attempts reached")) {
+        setPhase("max-attempts");
+        void finalizePendingAttempt();
+        toast({ title: "Maximum attempts reached", description: "Your latest result has been sent to your trainer." });
+        return;
+      }
       toast({ title: "Failed to start quiz", variant: "destructive" });
     }
   };
@@ -304,7 +343,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
   const totalQuestions = getAttemptTotalQuestions(quiz);
   const answeredCount = Object.keys(answers).filter((k) => answers[k]?.length > 0).length;
 
-  if (isLoadingAttempts || isLoadingConfig || isStarting) {
+  if (isLoadingAttempts || isLoadingConfig || isStarting || isFinalizingPending) {
     return (
       <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center">
         <div className="text-center">

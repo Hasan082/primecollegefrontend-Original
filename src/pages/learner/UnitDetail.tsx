@@ -356,10 +356,19 @@ const UnitDetail = () => {
                             Latest result: <strong>{unit.quiz_summary.score_summary_text}</strong>
                           </div>
                         )}
+                        {!unit.quiz_summary.passed && unit.quiz_summary.attempts_used > 0 && !unit.quiz_summary.can_retake && (
+                          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                            Maximum attempts reached. Your final attempt has been submitted to your trainer for review.
+                          </div>
+                        )}
                         {!unit.quiz_summary.passed ? (
                           isExpired ? (
                             <Button variant="outline" className="gap-2" onClick={() => setShowExtension(true)}>
                               <Lock className="w-4 h-4" /> Access Locked
+                            </Button>
+                          ) : !unit.quiz_summary.can_retake ? (
+                            <Button variant="outline" className="gap-2" disabled>
+                              <Clock className="w-4 h-4" /> Await Trainer Review
                             </Button>
                           ) : (
                             <Button onClick={() => setShowStrictQuiz(true)} className="gap-2">
