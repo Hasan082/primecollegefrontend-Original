@@ -38,7 +38,7 @@ const SamplingSettings = () => {
   const [newPlanStatus, setNewPlanStatus] = useState<"draft" | "active" | "closed">("draft");
 
   const plans = plansResponse?.results || [];
-  const qualifications = Array.isArray(qualificationsResponse) ? qualificationsResponse : qualificationsResponse?.results || [];
+  const qualifications = qualificationsResponse || [];
   const qualificationOptions = useMemo(
     () => qualifications.filter((item) => !plans.some((plan) => plan.qualification === item.id)),
     [plans, qualifications],
