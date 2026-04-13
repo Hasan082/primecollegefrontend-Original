@@ -112,6 +112,7 @@ export const api = createApi({
     "BLOGS",
     "BLOG",
     "BLOGS_CATEGORIES",
+    "ContactForms",
   ],
   endpoints: () => ({}),
 });
