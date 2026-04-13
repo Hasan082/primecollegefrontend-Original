@@ -2,6 +2,7 @@ import {
   EnrolmentContentResponse,
   LearnerEvidenceSubmissionListResponse,
   LearnerWrittenAssignmentResponse,
+  LearnerUnitOverviewResource,
 } from "@/types/enrollment.types";
 import { api } from "../../api";
 
@@ -166,6 +167,12 @@ export interface TrainerSubmissionRecordResponse {
   };
 }
 
+export interface TrainerUnitResourcesResponse {
+  success: boolean;
+  message: string;
+  data: LearnerUnitOverviewResource[];
+}
+
 const trainerReviewApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getTrainerDashboard: builder.query<TrainerDashboardResponse, void>({
@@ -278,6 +285,19 @@ const trainerReviewApi = api.injectEndpoints({
         { type: "Enrolments", id: `TRAINER_RECORD_${submissionId}` },
       ],
     }),
+    getTrainerUnitResources: builder.query<
+      TrainerUnitResourcesResponse,
+      { enrolmentId: string; unitId: string }
+    >({
+      query: ({ enrolmentId, unitId }) => ({
+        url: `/api/enrolments/trainer/${enrolmentId}/units/${unitId}/resources/`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, { enrolmentId, unitId }) => [
+        { type: "Enrolments", id: enrolmentId },
+        { type: "Enrolments", id: `TRAINER_RESOURCES_${unitId}` },
+      ],
+    }),
   }),
 });
 
@@ -290,4 +310,5 @@ export const {
   useReviewTrainerEvidenceSubmissionMutation,
   useGetTrainerNotificationsQuery,
   useGetTrainerSubmissionRecordQuery,
+  useGetTrainerUnitResourcesQuery,
 } = trainerReviewApi;

@@ -12,6 +12,7 @@ import {
   Trophy,
   AlertCircle,
 } from "lucide-react";
+import ResourceSection from "@/components/shared/ResourceSection";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   useGetTrainerWrittenAssignmentQuery,
   useReviewTrainerEvidenceSubmissionMutation,
   useReviewTrainerWrittenAssignmentMutation,
+  useGetTrainerUnitResourcesQuery,
 } from "@/redux/apis/trainer/trainerReviewApi";
 
 type TrainerOutcome = "competent" | "resubmit" | "not_competent";
@@ -110,6 +112,11 @@ const UnitManagement = () => {
       enrolmentId: enrolmentId!,
     },
     { skip: !unitId || !enrolmentId || !unit?.has_quiz },
+  );
+
+  const { data: resourcesResponse } = useGetTrainerUnitResourcesQuery(
+    { enrolmentId: enrolmentId!, unitId: unitId! },
+    { skip: !enrolmentId || !unitId }
   );
 
   const [reviewWritten, { isLoading: isSavingWritten }] = useReviewTrainerWrittenAssignmentMutation();
@@ -220,6 +227,8 @@ const UnitManagement = () => {
           </div>
         </div>
       </Card>
+
+
 
       {unit.has_quiz && (
         <Card className="p-6">
@@ -567,6 +576,8 @@ const UnitManagement = () => {
           No assessment components are configured for this unit.
         </Card>
       )}
+
+      <ResourceSection resources={resourcesResponse?.data || []} />
     </div>
   );
 };
