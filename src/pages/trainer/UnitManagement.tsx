@@ -65,7 +65,17 @@ function SubmissionReviewCard({
             Submitted {new Date(submittedAt).toLocaleDateString()}
           </p>
         </div>
-        <Badge variant="secondary" className="capitalize">
+        <Badge
+          variant="secondary"
+          className={`capitalize ${status === "competent"
+            ? "bg-green-100 text-green-700 border-green-200"
+            : status === "resubmit"
+              ? "bg-amber-100 text-amber-700 border-amber-200"
+              : status === "not_competent"
+                ? "bg-red-100 text-red-700 border-red-200"
+                : ""
+            }`}
+        >
           {status.replace(/_/g, " ")}
         </Badge>
       </div>
@@ -364,38 +374,73 @@ const UnitManagement = () => {
               <div className="text-sm text-muted-foreground">
                 Word count: {latestWritten.response_word_count}
               </div>
-              <div className="space-y-3">
-                <div className="grid gap-2 md:grid-cols-3">
-                  {outcomeOptions.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      variant={writtenOutcome === option.value ? "default" : "outline"}
-                      className="h-auto whitespace-normal py-3"
-                      onClick={() => setWrittenOutcome(option.value)}
-                    >
-                      <span className="text-left">
-                        <span className="block font-semibold">{option.label}</span>
-                        <span className="block text-xs opacity-80">{option.description}</span>
-                      </span>
-                    </Button>
-                  ))}
+              {latestWritten.status === "submitted" ? (
+                <div className="space-y-3">
+                  <div className="grid gap-2 md:grid-cols-3">
+                    {outcomeOptions.map((option) => (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={writtenOutcome === option.value ? "default" : "outline"}
+                        className={`h-auto whitespace-normal py-3 px-4 flex flex-col items-start text-left transition-all ${writtenOutcome === option.value
+                          ? option.value === "competent"
+                            ? "bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm"
+                            : option.value === "resubmit"
+                              ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500 shadow-sm"
+                              : "bg-red-600 hover:bg-red-700 text-white border-red-600 shadow-sm"
+                          : "hover:bg-muted/50"
+                          }`}
+                        onClick={() => setWrittenOutcome(option.value)}
+                      >
+                        <span className="block font-bold mb-1">{option.label}</span>
+                        <span className={`block text-[10px] leading-tight opacity-90 ${writtenOutcome === option.value ? "text-white/90" : "text-muted-foreground"}`}>
+                          {option.description}
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                  <Textarea
+                    value={writtenFeedback}
+                    onChange={(event) => setWrittenFeedback(event.target.value)}
+                    placeholder="Provide trainer feedback for the learner"
+                    className="min-h-[120px]"
+                  />
+                  <Button onClick={handleWrittenReview} disabled={isSavingWritten}>
+                    {isSavingWritten ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
+                    Submit Written Review
+                  </Button>
                 </div>
-                <Textarea
-                  value={writtenFeedback}
-                  onChange={(event) => setWrittenFeedback(event.target.value)}
-                  placeholder="Provide trainer feedback for the learner"
-                  className="min-h-[120px]"
-                />
-                <Button onClick={handleWrittenReview} disabled={isSavingWritten}>
-                  {isSavingWritten ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4 mr-2" />
+              ) : (
+                <div className="mt-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <h4 className="font-bold text-sm">Assessor Feedback</h4>
+                  </div>
+                  <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                    {latestWritten.assessor_feedback || "No feedback provided."}
+                  </p>
+                  {(latestWritten.assessor_score !== null || latestWritten.assessor_band) && (
+                    <div className="mt-4 pt-4 border-t flex flex-wrap gap-4">
+                      {latestWritten.assessor_score !== null && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Score</p>
+                          <p className="text-sm font-bold">{latestWritten.assessor_score} / {latestWritten.assessor_score_max || 100}</p>
+                        </div>
+                      )}
+                      {latestWritten.assessor_band && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Band</p>
+                          <Badge variant="outline" className="mt-0.5 capitalize">{latestWritten.assessor_band}</Badge>
+                        </div>
+                      )}
+                    </div>
                   )}
-                  Submit Written Review
-                </Button>
-              </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">No written submission found.</div>
@@ -443,38 +488,73 @@ const UnitManagement = () => {
                   </div>
                 ))}
               </div>
-              <div className="space-y-3">
-                <div className="grid gap-2 md:grid-cols-3">
-                  {outcomeOptions.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      variant={evidenceOutcome === option.value ? "default" : "outline"}
-                      className="h-auto whitespace-normal py-3"
-                      onClick={() => setEvidenceOutcome(option.value)}
-                    >
-                      <span className="text-left">
-                        <span className="block font-semibold">{option.label}</span>
-                        <span className="block text-xs opacity-80">{option.description}</span>
-                      </span>
-                    </Button>
-                  ))}
+              {latestEvidence.status === "submitted" ? (
+                <div className="space-y-3">
+                  <div className="grid gap-2 md:grid-cols-3">
+                    {outcomeOptions.map((option) => (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={evidenceOutcome === option.value ? "default" : "outline"}
+                        className={`h-auto whitespace-normal py-3 px-4 flex flex-col items-start text-left transition-all ${evidenceOutcome === option.value
+                          ? option.value === "competent"
+                            ? "bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm"
+                            : option.value === "resubmit"
+                              ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500 shadow-sm"
+                              : "bg-red-600 hover:bg-red-700 text-white border-red-600 shadow-sm"
+                          : "hover:bg-muted/50"
+                          }`}
+                        onClick={() => setEvidenceOutcome(option.value)}
+                      >
+                        <span className="block font-bold mb-1">{option.label}</span>
+                        <span className={`block text-[10px] leading-tight opacity-90 ${evidenceOutcome === option.value ? "text-white/90" : "text-muted-foreground"}`}>
+                          {option.description}
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                  <Textarea
+                    value={evidenceFeedback}
+                    onChange={(event) => setEvidenceFeedback(event.target.value)}
+                    placeholder="Provide trainer feedback for the evidence portfolio"
+                    className="min-h-[120px]"
+                  />
+                  <Button onClick={handleEvidenceReview} disabled={isSavingEvidence}>
+                    {isSavingEvidence ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
+                    Submit Evidence Review
+                  </Button>
                 </div>
-                <Textarea
-                  value={evidenceFeedback}
-                  onChange={(event) => setEvidenceFeedback(event.target.value)}
-                  placeholder="Provide trainer feedback for the evidence portfolio"
-                  className="min-h-[120px]"
-                />
-                <Button onClick={handleEvidenceReview} disabled={isSavingEvidence}>
-                  {isSavingEvidence ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4 mr-2" />
+              ) : (
+                <div className="mt-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <h4 className="font-bold text-sm">Assessor Feedback</h4>
+                  </div>
+                  <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                    {latestEvidence.assessor_feedback || "No feedback provided."}
+                  </p>
+                  {(latestEvidence.assessor_score !== null || latestEvidence.assessor_band) && (
+                    <div className="mt-4 pt-4 border-t flex flex-wrap gap-4">
+                      {latestEvidence.assessor_score !== null && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Score</p>
+                          <p className="text-sm font-bold">{latestEvidence.assessor_score} / {latestEvidence.assessor_score_max || 100}</p>
+                        </div>
+                      )}
+                      {latestEvidence.assessor_band && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Band</p>
+                          <Badge variant="outline" className="mt-0.5 capitalize">{latestEvidence.assessor_band}</Badge>
+                        </div>
+                      )}
+                    </div>
                   )}
-                  Submit Evidence Review
-                </Button>
-              </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">No evidence submission found.</div>

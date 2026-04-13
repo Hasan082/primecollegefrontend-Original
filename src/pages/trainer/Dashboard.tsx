@@ -150,13 +150,12 @@ const TrainerDashboard = () => {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          className={`${
-                            submission.days_waiting >= 4
+                          className={`${submission.days_waiting >= 4
                               ? "bg-destructive"
                               : submission.days_waiting >= 3
                                 ? "bg-secondary"
                                 : "bg-green-600"
-                          } text-white text-xs`}
+                            } text-white text-xs`}
                         >
                           {submission.days_waiting}d
                         </Badge>
@@ -195,6 +194,7 @@ const TrainerDashboard = () => {
                   <TableHead>Qualification</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Pending</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -225,6 +225,7 @@ const TrainerDashboard = () => {
                           <span className="text-sm text-muted-foreground">None</span>
                         )}
                       </TableCell>
+                      <TableCell>{learner?.email}</TableCell>
                       <TableCell>
                         <Button variant="outline" size="icon" className="h-8 w-8" asChild>
                           <Link to={`/trainer/learner/${learner.id}`}>
