@@ -5,6 +5,7 @@ import {
   useStartQuizMutation,
   useSubmitQuizMutation,
   useGetUnitAttemptsQuery,
+  useGetQuizConfigQuery,
   type QuizAttempt,
 } from "@/redux/apis/quiz/quizApi";
 import { Progress } from "@/components/ui/progress";
@@ -54,7 +55,7 @@ const getAttemptTotalQuestions = (attempt: QuizAttempt | null | undefined) => {
 };
 
 const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose, onSubmitted }: StrictQuizModalProps) => {
-  const [phase, setPhase] = useState<"intro" | "active" | "results">("intro");
+  const [phase, setPhase] = useState<"intro" | "active" | "results" | "max-attempts">("intro");
   const [quiz, setQuiz] = useState<QuizAttempt | null>(null);
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
   const [warnings, setWarnings] = useState(0);
@@ -71,15 +72,29 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
     { unitId: unitId || "" },
     { skip: !unitId }
   );
+  const { data: quizConfigData, isLoading: isLoadingConfig } = useGetQuizConfigQuery(
+    unitId || "",
+    { skip: !unitId }
+  );
   const [startQuizMutation, { isLoading: isStarting }] = useStartQuizMutation();
   const [submitQuizMutation, { isLoading: isSubmitting }] = useSubmitQuizMutation();
 
   const previousAttempts = Array.isArray((attemptsData as { data?: { attempts?: QuizAttempt[] } | QuizAttempt[] } | undefined)?.data)
     ? (((attemptsData as { data?: QuizAttempt[] }).data as QuizAttempt[]) || [])
     : (((attemptsData as { data?: { attempts?: QuizAttempt[] } } | undefined)?.data?.attempts) || []);
-  // For mock/development, we'll assume canAttempt is true if we don't have a config yet
-  // Ideally we should check the unit's quiz config
-  const canTake = true; 
+  
+  const quizConfig = (quizConfigData as any)?.data || quizConfigData;
+  const maxAttempts = quizConfig?.max_attempts || 3;
+  const attemptsUsed = previousAttempts.length;
+  const maxAttemptsReached = maxAttempts > 0 && attemptsUsed >= maxAttempts;
+  const canTake = !maxAttemptsReached; 
+
+  // Check if max attempts reached on load
+  useEffect(() => {
+    if (phase === "intro" && maxAttemptsReached) {
+      setPhase("max-attempts");
+    }
+  }, [maxAttemptsReached, phase]);
 
   // Timer countdown
   useEffect(() => {
@@ -211,8 +226,8 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
           return;
         }
         setQuiz(startedQuiz);
-        if (typeof startData.time_limit_minutes === "number" && startData.time_limit_minutes > 0) {
-          setTimeLeft(startData.time_limit_minutes * 60);
+        if (typeof quizConfig?.time_limit_minutes === "number" && quizConfig.time_limit_minutes > 0) {
+          setTimeLeft(quizConfig.time_limit_minutes * 60);
         } else {
           setTimeLeft(null);
         }
@@ -289,7 +304,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
   const totalQuestions = getAttemptTotalQuestions(quiz);
   const answeredCount = Object.keys(answers).filter((k) => answers[k]?.length > 0).length;
 
-  if (isLoadingAttempts || isStarting) {
+  if (isLoadingAttempts || isLoadingConfig || isStarting) {
     return (
       <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center">
         <div className="text-center">
@@ -433,6 +448,81 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
                 <p className="text-xs text-muted-foreground mt-1">You have used all available attempts for this quiz.</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Maximum Attempts Reached */}
+        {phase === "max-attempts" && (
+          <div className="max-w-xl mx-auto py-16 px-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-8 h-8 text-destructive" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Maximum Attempts Reached</h2>
+            <p className="text-muted-foreground mb-8">
+              You have reached the maximum number of attempts allowed for this quiz.
+            </p>
+
+            {/* Attempt Summary */}
+            <div className="bg-card border border-border rounded-xl p-6 text-left mb-8">
+              <h3 className="font-bold text-foreground mb-4">📊 Assessment Summary</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Maximum Attempts</span>
+                  <span className="text-sm font-semibold text-foreground">{maxAttempts}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Attempts Used</span>
+                  <span className="text-sm font-semibold text-foreground">{attemptsUsed}</span>
+                </div>
+
+                {previousAttempts.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs font-semibold text-muted-foreground mb-3">Previous Attempts</p>
+                    <div className="space-y-2">
+                      {previousAttempts.map((a, i) => (
+                        <div key={a.id} className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Attempt {i + 1}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{a.score_percent}%</span>
+                            {a.passed ? (
+                              <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs font-bold">PASS</span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive text-xs font-bold">FAIL</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Next Steps */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 text-left">
+              <p className="text-sm font-semibold text-blue-900 mb-2">📝 What Happens Next</p>
+              <ul className="space-y-2 text-sm text-blue-800">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold flex-shrink-0">1.</span>
+                  <span>Your assessment results have been recorded and submitted to your trainer.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold flex-shrink-0">2.</span>
+                  <span>Your trainer will review your quiz attempts and provide feedback.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold flex-shrink-0">3.</span>
+                  <span>Check back regularly for your trainer's assessment decision.</span>
+                </li>
+              </ul>
+            </div>
+
+            <button 
+              onClick={handleClose} 
+              className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
+            >
+              Close & Return to Unit
+            </button>
           </div>
         )}
 
