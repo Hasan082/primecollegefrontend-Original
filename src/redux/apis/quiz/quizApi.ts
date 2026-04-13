@@ -69,6 +69,7 @@ export interface WrittenAssignmentConfig {
   min_words: number;
   max_words: number;
   is_active: boolean;
+  version: number;
   created_at: string;
   updated_at: string;
 }
@@ -85,12 +86,22 @@ export interface QuizAttempt {
   unit: string;
   learner: string;
   questions: LearnerQuestion[];
+  attempt_number?: number;
   started_at: string;
   submitted_at: string | null;
   time_taken_seconds: number | null;
+  time_taken_display?: string;
   score_percent: number | null;
+  score_summary_text?: string;
+  correct_count?: number;
+  total_questions?: number;
   passed: boolean | null;
+  pass_mark_snapshot?: number;
   violations_count: number;
+  violation_count?: number;
+  auto_submitted?: boolean;
+  can_retake?: boolean;
+  remaining_attempts?: number;
   status: "in_progress" | "submitted" | "expired";
 }
 
@@ -110,6 +121,14 @@ export interface QuizAttemptReview extends QuizAttempt {
 export interface QuizSubmission {
   answers: Record<string, number[]>;
   violations_count: number;
+}
+
+export interface UnitAttemptsData {
+  attempts?: QuizAttempt[];
+  best_attempt?: QuizAttempt;
+  remaining_attempts?: number;
+  max_attempts?: number;
+  best_score?: number | null;
 }
 
 export interface CPDFinalAssessmentAttemptQuestion {
@@ -324,6 +343,21 @@ const quizApi = api.injectEndpoints({
       providesTags: (result, _error, unitId) => [{ type: "Quizzes", id: `WA_${unitId}` }],
     }),
 
+    createWrittenAssignmentConfig: builder.mutation<
+      QuizResponse<WrittenAssignmentConfig>,
+      { unitId: string; data: Partial<WrittenAssignmentConfig> }
+    >({
+      query: ({ unitId, data }) => ({
+        url: `/api/quizzes/units/${unitId}/assignment-config/`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (result, _error, { unitId }) => [
+        { type: "Quizzes", id: `WA_${unitId}` },
+        { type: "QualificationUnits", id: `LIST` },
+      ],
+    }),
+
     updateWrittenAssignmentConfig: builder.mutation<
       QuizResponse<WrittenAssignmentConfig>,
       { unitId: string; data: Partial<WrittenAssignmentConfig> }
@@ -365,15 +399,15 @@ const quizApi = api.injectEndpoints({
       providesTags: (result, _error, attemptId) => [{ type: "Quizzes", id: `ATTEMPT_${attemptId}` }],
     }),
 
-    getUnitAttempts: builder.query<QuizResponse<QuizAttempt[]>, { unitId: string; learnerId?: string }>({
-      query: ({ unitId, learnerId }) => ({
-        url: `/api/quizzes/units/${unitId}/attempts/`,
+    getUnitAttempts: builder.query<QuizResponse<UnitAttemptsData>, { unitId: string; enrolmentId?: string }>({
+      query: ({ unitId, enrolmentId }) => ({
+        url: `/api/quizzes/units/${unitId}/best-attempt/enrolments/${enrolmentId}/`,
         method: "GET",
-        params: learnerId ? { learner_id: learnerId } : {},
+        // params: learnerId ? { learner_id: learnerId } : {},
       }),
-      providesTags: (result, _error, { unitId, learnerId }) => [
+      providesTags: (result, _error, { unitId, enrolmentId }) => [
         { type: "Quizzes", id: `ATTEMPTS_UNIT_${unitId}` },
-        ...(learnerId ? [{ type: "Quizzes" as const, id: `ATTEMPTS_UNIT_${unitId}_LEARNER_${learnerId}` }] : []),
+        ...(enrolmentId ? [{ type: "Quizzes" as const, id: `ATTEMPTS_UNIT_${unitId}_LEARNER_${enrolmentId}` }] : []),
       ],
     }),
 
@@ -505,10 +539,13 @@ const quizApi = api.injectEndpoints({
         url: `/api/qualification/admin/cpd-final-assessments/${assessmentId}/questions/`,
         method: "GET",
       }),
-      providesTags: (result, _error, assessmentId) => [
-        { type: "Quizzes", id: `CPD_QUESTIONS_${assessmentId}` },
-        ...(result?.data?.map((q) => ({ type: "Quizzes" as const, id: q.id })) || []),
-      ],
+      providesTags: (result, _error, assessmentId) => {
+        const dataArr = Array.isArray(result?.data) ? result.data : ((result?.data as any)?.results || []);
+        return [
+          { type: "Quizzes", id: `CPD_QUESTIONS_${assessmentId}` },
+          ...dataArr.map((q: any) => ({ type: "Quizzes" as const, id: q.id })),
+        ];
+      },
     }),
 
     createCPDFinalAssessmentQuestion: builder.mutation<QuizResponse<CPDFinalAssessmentQuestion>, { assessmentId: string; data: Partial<CPDFinalAssessmentQuestion> }>({
@@ -551,6 +588,7 @@ export const {
   useCreateQuestionMutation,
   useDeleteQuestionMutation,
   useGetWrittenAssignmentConfigQuery,
+  useCreateWrittenAssignmentConfigMutation,
   useUpdateWrittenAssignmentConfigMutation,
   useStartQuizMutation,
   useSubmitQuizMutation,

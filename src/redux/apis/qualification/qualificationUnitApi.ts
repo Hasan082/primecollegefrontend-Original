@@ -102,6 +102,7 @@ const qualificationUnitApi = api.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { qualificationId }) => [
         { type: "QualificationUnits", id: `LIST-${qualificationId}` },
+        "Unit",
         { type: "Qualifications", id: `SUMMARY-${qualificationId}` },
       ],
     }),
@@ -112,7 +113,7 @@ const qualificationUnitApi = api.injectEndpoints({
         method: "PATCH",
         body: payload,
       }),
-      invalidatesTags: (_result, _error, { unitId }) => [{ type: "QualificationUnits", id: unitId }],
+      invalidatesTags: (_result, _error, { unitId }) => [{ type: "QualificationUnits", id: unitId }, "Unit"],
     }),
 
     deleteUnit: builder.mutation<void, { unitId: string; qualificationId: string }>({
@@ -122,6 +123,7 @@ const qualificationUnitApi = api.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { qualificationId }) => [
         { type: "QualificationUnits", id: `LIST-${qualificationId}` },
+        "Unit",
         { type: "Qualifications", id: `SUMMARY-${qualificationId}` },
       ],
     }),
@@ -151,7 +153,8 @@ const qualificationUnitApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { unitId, qualificationId }) => [
         { type: "UnitResources", id: `LIST-${unitId}` },
         { type: "QualificationUnits", id: unitId },
-        { type: "QualificationUnits", id: `LIST-${qualificationId}` }
+        { type: "QualificationUnits", id: `LIST-${qualificationId}` },
+        "Unit"
       ],
     }),
 
@@ -163,7 +166,8 @@ const qualificationUnitApi = api.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { resourceId, unitId }) => [
         { type: "UnitResources", id: resourceId },
-        { type: "UnitResources", id: `LIST-${unitId}` }
+        { type: "UnitResources", id: `LIST-${unitId}` },
+        "Unit"
       ],
     }),
 
@@ -175,7 +179,8 @@ const qualificationUnitApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { unitId, qualificationId }) => [
         { type: "UnitResources", id: `LIST-${unitId}` },
         { type: "QualificationUnits", id: unitId },
-        { type: "QualificationUnits", id: `LIST-${qualificationId}` }
+        { type: "QualificationUnits", id: `LIST-${qualificationId}` },
+        "Unit"
       ],
     }),
 

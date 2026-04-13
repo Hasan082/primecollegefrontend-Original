@@ -7,6 +7,7 @@ import {
   useGetIQAManagementQuery,
   useGetIQAOptionsQuery,
   useAssignIQAMutation,
+  useUpdateStaffMutation,
   type TrainerManagementItem as IQAManagementItem,
   type TrainerManagementParams as IQAManagementParams,
 } from "@/redux/apis/staffApi";
@@ -48,6 +49,17 @@ const IQAManagement = () => {
 
   const [assignIQA, { isLoading: isAssigning }] = useAssignIQAMutation();
   const { data: iqaOptionsData } = useGetIQAOptionsQuery();
+  const [updateStaff] = useUpdateStaffMutation();
+
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateStaff({ id, body: { is_active: !currentStatus } }).unwrap();
+      toast({ title: "Status updated successfully" });
+      refetch();
+    } catch (error) {
+      toast({ title: "Failed to update status", variant: "destructive" });
+    }
+  };
 
   // Debounce search
   useEffect(() => {
@@ -181,6 +193,15 @@ const IQAManagement = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className={`h-8 w-8 p-0 ${iqa.is_active ? 'text-destructive hover:text-destructive hover:bg-destructive/10' : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                        onClick={() => handleToggleActive(iqa.id, iqa.is_active)}
+                        title={iqa.is_active ? "Deactivate" : "Activate"}
+                      >
+                        <Power className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-8 w-8 p-0"
                         onClick={() => { setSelectedIQA(iqa); setDetailOpen(true); }}
                         title="View details"
@@ -220,7 +241,7 @@ const IQAManagement = () => {
                                   });
                                 }}
                               >
-                                Assign
+                                Reassign
                               </Button>
                             </div>
                           ))}

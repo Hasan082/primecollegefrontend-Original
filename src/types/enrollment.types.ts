@@ -47,11 +47,20 @@ export interface LearnerWrittenAssignmentConfig {
     required_criteria?: string[];
 }
 
+export interface LearnerWrittenAssignmentSnapshot {
+    version: number;
+    title: string;
+    instructions: string;
+    min_words: number;
+    max_words: number;
+}
+
 export interface LearnerWrittenAssignmentSubmission {
     id: string;
     submission_number: number;
     title: string;
     submission_type: string;
+    assignment_snapshot?: LearnerWrittenAssignmentSnapshot;
     response_html: string;
     response_word_count: number;
     declaration_signed: boolean;
@@ -79,6 +88,12 @@ export interface LearnerWrittenAssignmentResponse {
         config: LearnerWrittenAssignmentConfig;
         submissions: LearnerWrittenAssignmentSubmission[];
     };
+}
+
+export interface LearnerWrittenAssignmentSubmissionResponse {
+    success: boolean;
+    message: string;
+    data: LearnerWrittenAssignmentSubmission;
 }
 
 export interface LearnerEvidenceCriterion {
@@ -314,6 +329,12 @@ export interface EnrolmentContent {
     access_expires_at: string | null;
     completed_at: string | null;
     access_expired: boolean;
+    learner: {
+        id: string;
+        name: string;
+        qualification_learner_id: string;
+        email: string;
+    };
     qualification: {
         id: string;
         title: string;

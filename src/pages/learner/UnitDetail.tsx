@@ -3,7 +3,6 @@ import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Download,
-  FileText,
   CheckCircle2,
   Circle,
   ClipboardList,
@@ -16,9 +15,11 @@ import {
   Clock,
   AlertTriangle,
 } from "lucide-react";
+import ResourceSection from "@/components/shared/ResourceSection";
 import { Button } from "@/components/ui/button";
 import StrictQuizModal from "@/components/learner/StrictQuizModal";
 import EvidenceUploadForm from "@/components/learner/EvidenceUploadForm";
+import WrittenAssignmentForm from "@/components/learner/WrittenAssignmentForm";
 import ExtensionRequestModal from "@/components/learner/ExtensionRequestModal";
 import SubmissionHistory, { type SubmissionVersion } from "@/components/learner/SubmissionHistory";
 import {
@@ -184,6 +185,7 @@ const UnitDetail = () => {
   const {
     data: writtenResponse,
     isLoading: isLoadingWritten,
+    refetch: refetchWritten,
   } = useGetLearnerWrittenAssignmentQuery(
     { enrolmentId: resolvedEnrolmentId, unitId: resolvedUnitId },
     {
@@ -354,10 +356,19 @@ const UnitDetail = () => {
                             Latest result: <strong>{unit.quiz_summary.score_summary_text}</strong>
                           </div>
                         )}
+                        {!unit.quiz_summary.passed && unit.quiz_summary.attempts_used > 0 && !unit.quiz_summary.can_retake && (
+                          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                            Maximum attempts reached. Your final attempt has been submitted to your trainer for review.
+                          </div>
+                        )}
                         {!unit.quiz_summary.passed ? (
                           isExpired ? (
                             <Button variant="outline" className="gap-2" onClick={() => setShowExtension(true)}>
                               <Lock className="w-4 h-4" /> Access Locked
+                            </Button>
+                          ) : !unit.quiz_summary.can_retake ? (
+                            <Button variant="outline" className="gap-2" disabled>
+                              <Clock className="w-4 h-4" /> Await Trainer Review
                             </Button>
                           ) : (
                             <Button onClick={() => setShowStrictQuiz(true)} className="gap-2">
@@ -393,25 +404,24 @@ const UnitDetail = () => {
                             : "No submission yet"}
                         </p>
                       </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded ${
-                        latestWrittenSubmission
-                          ? latestWrittenSubmission.status === "competent"
-                            ? statusConfig["Competent"].color
-                            : latestWrittenSubmission.status === "under_review"
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded ${latestWrittenSubmission
+                        ? latestWrittenSubmission.status === "competent"
+                          ? statusConfig["Competent"].color
+                          : latestWrittenSubmission.status === "under_review"
                             ? statusConfig["Waiting for assessor review"].color
                             : latestWrittenSubmission.status === "resubmit"
-                            ? statusConfig["Resubmission required"].color
-                            : statusConfig.Submitted.color
-                          : "bg-muted text-muted-foreground"
-                      }`}>
+                              ? statusConfig["Resubmission required"].color
+                              : statusConfig.Submitted.color
+                        : "bg-muted text-muted-foreground"
+                        }`}>
                         {latestWrittenSubmission
                           ? latestWrittenSubmission.status === "competent"
                             ? statusConfig["Competent"].label
                             : latestWrittenSubmission.status === "under_review"
-                            ? statusConfig["Waiting for assessor review"].label
-                            : latestWrittenSubmission.status === "resubmit"
-                            ? statusConfig["Resubmission required"].label
-                            : statusConfig.Submitted.label
+                              ? statusConfig["Waiting for assessor review"].label
+                              : latestWrittenSubmission.status === "resubmit"
+                                ? statusConfig["Resubmission required"].label
+                                : statusConfig.Submitted.label
                           : "Not Started"}
                       </span>
                     </button>
@@ -456,6 +466,21 @@ const UnitDetail = () => {
                                 No written assignment has been submitted for this unit yet.
                               </p>
                             )}
+                            {!latestWrittenSubmission && (
+                              <WrittenAssignmentForm
+                                enrolmentId={resolvedEnrolmentId}
+                                unitId={resolvedUnitId}
+                                title={writtenConfig?.title || unit.written_assignment_summary.title}
+                                minWords={writtenConfig?.min_words || unit.written_assignment_summary.min_words}
+                                maxWords={writtenConfig?.max_words || unit.written_assignment_summary.max_words}
+                                isLocked={isExpired}
+                                onSuccess={() => {
+                                  void refetchOverview();
+                                  void refetchUnit();
+                                  void refetchWritten();
+                                }}
+                              />
+                            )}
                           </>
                         )}
                       </div>
@@ -466,35 +491,7 @@ const UnitDetail = () => {
             </div>
           )}
 
-          {unit.resources && unit.resources.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="text-base font-bold text-primary mb-1">Downloadable Resources</h3>
-              <p className="text-sm text-muted-foreground mb-5">
-                Access unit specifications, templates, and guidance materials.
-              </p>
-              <div className="space-y-3">
-                {unit.resources.map((resource, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 border border-border rounded-lg">
-                    <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-primary">{resource.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {resource.resource_type}
-                        {resource.estimated_minutes ? ` • ${resource.estimated_minutes} mins` : ""}
-                      </p>
-                    </div>
-                    {resource.is_downloadable && resource.file && (
-                      <Button variant="ghost" size="sm" className="gap-1.5" asChild>
-                        <a href={resource.file}>
-                          <Download className="w-4 h-4" /> Download
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <ResourceSection resources={unit.resources} />
 
           {qualification.is_cpd && (
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 mb-6 flex items-start gap-4">
@@ -512,7 +509,7 @@ const UnitDetail = () => {
             </div>
           )}
 
-          {!isExpired && !qualification.is_cpd && unit.requires_evidence && !evidenceSetupMissing && (
+          {!latestEvidenceSubmission && !isExpired && !qualification.is_cpd && unit.requires_evidence && !evidenceSetupMissing && (
             <EvidenceUploadForm
               requirements={evidenceRequirementList}
               enrolmentId={resolvedEnrolmentId}
@@ -525,15 +522,7 @@ const UnitDetail = () => {
             />
           )}
 
-          {!isExpired && !qualification.is_cpd && evidenceSetupMissing && (
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
-              <h3 className="text-base font-bold text-foreground">Evidence Upload Unavailable</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                This unit is marked as requiring evidence, but its evidence portfolio is not configured correctly yet.
-                Please contact an administrator or trainer before attempting to upload evidence.
-              </p>
-            </div>
-          )}
+
 
           {isExpired && !qualification.is_cpd && (
             <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
@@ -595,7 +584,7 @@ const UnitDetail = () => {
                     <span className="text-sm text-foreground">Written assignment submitted</span>
                   </div>
                 )}
-                {unit.requires_evidence && (
+                {unit.requires_evidence && !evidenceSetupMissing && (
                   <div className="flex items-center gap-2">
                     {evidenceUploaded ? (
                       <CheckCircle2 className="w-4 h-4 text-green-600" />

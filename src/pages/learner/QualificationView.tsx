@@ -12,17 +12,56 @@ import { useGetEnrolmentOverviewQuery } from "@/redux/apis/enrolmentApi";
 import type { EnrolmentOverviewUnit } from "@/types/enrollment.types";
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  Competent: { label: "Competent", color: "bg-green-600 text-white", icon: CheckCircle2 },
-  Completed: { label: "Completed", color: "bg-green-600 text-white", icon: CheckCircle2 },
-  "Waiting for assessor review": { label: "Awaiting Assessment", color: "bg-amber-500 text-white", icon: Clock },
-  "Waiting for IQA review": { label: "Awaiting IQA Verification", color: "bg-blue-600 text-white", icon: ShieldCheck },
-  "Resubmission required": { label: "Resubmission Required", color: "bg-orange-500 text-white", icon: AlertTriangle },
-  "Not yet competent": { label: "Not Yet Competent", color: "bg-orange-500 text-white", icon: AlertTriangle },
-  "In progress": { label: "In Progress", color: "bg-primary text-white", icon: Clock },
-  "Not started": { label: "Not Started", color: "bg-muted text-muted-foreground", icon: Circle },
+  competent: { label: "Competent", color: "bg-green-600 text-white", icon: CheckCircle2 },
+  completed: { label: "Competent", color: "bg-green-600 text-white", icon: CheckCircle2 },
+  pending: { label: "Awaiting Assessment", color: "bg-amber-500 text-white", icon: Clock },
+  trainer_approved: { label: "Awaiting for IQA Assessment", color: "bg-blue-600 text-white", icon: ShieldCheck },
+  iqa_review: { label: "Awaiting for IQA Assessment", color: "bg-blue-600 text-white", icon: ShieldCheck },
+  resubmit: { label: "Resubmission Required", color: "bg-orange-500 text-white", icon: AlertTriangle },
+  not_competent: { label: "Not Yet Competent", color: "bg-orange-500 text-white", icon: AlertTriangle },
+  in_progress: { label: "In Progress", color: "bg-primary text-white", icon: Clock },
+  not_started: { label: "Not Started", color: "bg-muted text-muted-foreground", icon: Circle },
 };
 
-const getUnitDisplayStatus = (unit: EnrolmentOverviewUnit) => statusConfig[unit.display_status] || statusConfig["Not started"];
+const normalizeStatusKey = (value?: string | null): string => {
+  if (!value) return "not_started";
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, "_");
+
+  const aliases: Record<string, string> = {
+    awaiting_assessment: "pending",
+    waiting_for_assessor_review: "pending",
+    waiting_for_trainer_review: "pending",
+    trainer_approved: "trainer_approved",
+    awaiting_for_iqa_assessment: "iqa_review",
+    waiting_for_iqa_review: "iqa_review",
+    awaiting_iqa_review: "iqa_review",
+    awaiting_iqa_assessment: "iqa_review",
+    iqa_reviewed: "completed",
+    iqa_approved: "completed",
+    approved: "completed",
+    competent: "competent",
+    completed: "completed",
+    resubmission_required: "resubmit",
+    resubmit: "resubmit",
+    not_yet_competent: "not_competent",
+    not_competent: "not_competent",
+    in_progress: "in_progress",
+    not_started: "not_started",
+    pending: "pending",
+  };
+
+  return aliases[normalized] || "not_started";
+};
+
+const getUnitStatusKey = (unit: EnrolmentOverviewUnit): string => {
+  // API already provides learner-facing state via `display_status`.
+  return normalizeStatusKey(unit.display_status || "not_started");
+};
+
+const getUnitDisplayStatus = (unit: EnrolmentOverviewUnit) => {
+  const statusKey = getUnitStatusKey(unit);
+  return statusConfig[statusKey] || statusConfig.not_started;
+};
 
 const QualificationView = () => {
   const { id } = useParams<{ id: string }>();
@@ -231,6 +270,7 @@ const QualificationView = () => {
 
       <div className="space-y-4">
         {units.map((unit) => {
+          const statusKey = getUnitStatusKey(unit);
           const cfg = getUnitDisplayStatus(unit);
           const Icon = cfg.icon;
 
@@ -239,15 +279,15 @@ const QualificationView = () => {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1">
                   <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-                    unit.display_status === "Competent" || unit.display_status === "Completed"
+                    statusKey === "competent" || statusKey === "completed"
                       ? "text-green-600"
-                      : unit.display_status === "Waiting for assessor review"
+                      : statusKey === "pending"
                       ? "text-amber-500"
-                      : unit.display_status === "Waiting for IQA review"
+                      : statusKey === "trainer_approved" || statusKey === "iqa_review"
                       ? "text-blue-600"
-                      : unit.display_status === "Resubmission required" || unit.display_status === "Not yet competent"
+                      : statusKey === "resubmit" || statusKey === "not_competent"
                       ? "text-orange-500"
-                      : unit.display_status === "In progress"
+                      : statusKey === "in_progress"
                       ? "text-primary"
                       : "text-muted-foreground"
                   }`} />

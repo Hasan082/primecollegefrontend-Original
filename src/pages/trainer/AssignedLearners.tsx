@@ -107,6 +107,7 @@ const AssignedLearners = () => {
               <TableHead>Qualification</TableHead>
               <TableHead>Progress</TableHead>
               <TableHead>Pending</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -164,6 +165,9 @@ const AssignedLearners = () => {
                     ) : (
                       "None"
                     )}
+                  </TableCell>
+                  <TableCell>
+                    {learner?.email}
                   </TableCell>
 
                   <TableCell>
