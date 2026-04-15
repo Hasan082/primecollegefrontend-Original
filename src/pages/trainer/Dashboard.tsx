@@ -54,6 +54,14 @@ const TrainerDashboard = () => {
     isLoading: isNotificationsLoading,
     isError: isNotificationsError,
   } = useGetTrainerNotificationsQuery();
+  const notifications = notificationsResponse?.data || [];
+  const actionRequiredNotifications = useMemo(
+    () =>
+      notifications.filter((item) =>
+        ["changes_required", "referred_back"].includes(item.iqa_decision),
+      ),
+    [notifications],
+  );
 
   if (isLoading) {
     return <div className="py-20 text-center text-muted-foreground">Loading dashboard...</div>;
@@ -64,14 +72,6 @@ const TrainerDashboard = () => {
   }
 
   const { summary, pending_submissions, assigned_learners, recent_assessments } = data.data;
-  const notifications = notificationsResponse?.data || [];
-  const actionRequiredNotifications = useMemo(
-    () =>
-      notifications.filter((item) =>
-        ["changes_required", "referred_back"].includes(item.iqa_decision),
-      ),
-    [notifications],
-  );
 
   const getActionRequiredReviewLink = (notification: TrainerNotification) =>
     `/trainer/learner/${notification.enrolment_id}/unit/${notification.unit.id}`;

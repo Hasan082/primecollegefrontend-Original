@@ -75,7 +75,7 @@ const getUnitDisplayStatus = (unit: EnrolmentOverviewUnit) => {
   }
   if (lifecycleLabel === "Action Required") {
     return {
-      label: "Action Required",
+      label: "Resubmission Required",
       color: "bg-orange-500 text-white",
       icon: AlertTriangle,
     };
