@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useGetTrainerSubmissionRecordQuery } from "@/redux/apis/trainer/trainerReviewApi";
+import { getIqaDecisionLabel } from "@/lib/iqaStatus";
 
 const outcomeColors: Record<string, string> = {
   competent: "bg-green-600 text-white",
@@ -153,7 +154,7 @@ const AssessmentRecord = () => {
             <div className="rounded-xl p-4 bg-muted/30 border">
               <p className="text-sm text-muted-foreground mb-1">IQA Decision</p>
               <p className="font-semibold text-primary">
-                {record.iqa_decision ? record.iqa_decision.replace(/_/g, " ") : "—"}
+                {getIqaDecisionLabel(record.iqa_decision)}
               </p>
             </div>
             <div className="rounded-xl p-4 bg-muted/30 border">

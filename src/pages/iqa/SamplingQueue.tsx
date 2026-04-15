@@ -24,16 +24,18 @@ import {
   useGetIqaAssignedEnrolmentsQuery,
   useGetIqaReviewQueueQuery,
 } from "@/redux/apis/iqa/iqaApi";
+import {
+  getIqaWorkflowBadgeVariant,
+  getIqaWorkflowLabel,
+  getSubmissionOutcomeLabel,
+} from "@/lib/iqaStatus";
 
-const statusColors: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  "Pending IQA Review": "outline",
-  "IQA Approved": "default",
-  "Trainer Action Required": "secondary",
-  "Escalated to Admin": "destructive",
-};
+const queueStatusFilters = [
+  { value: "Pending IQA Review", label: "Awaiting IQA" },
+  { value: "IQA Approved", label: "Signed Off" },
+  { value: "Assessor Action Required", label: "Action Required" },
+  { value: "Escalated to Admin", label: "Escalated" },
+] as const;
 
 const SamplingQueue = () => {
   const [query, setQuery] = useState({
@@ -165,9 +167,9 @@ const SamplingQueue = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {Object.keys(statusColors).map((status) => (
-              <SelectItem key={status} value={status}>
-                {status}
+            {queueStatusFilters.map((status) => (
+              <SelectItem key={status.value} value={status.value}>
+                {status.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -221,7 +223,7 @@ const SamplingQueue = () => {
                         }
                         className="text-xs"
                       >
-                        {item.status.replace(/_/g, " ")}
+                        {getSubmissionOutcomeLabel(item.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -231,10 +233,10 @@ const SamplingQueue = () => {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={statusColors[item.iqa_status] || "outline"}
+                        variant={getIqaWorkflowBadgeVariant(getIqaWorkflowLabel(item.iqa_status))}
                         className="text-xs"
                       >
-                        {item.iqa_status}
+                        {getIqaWorkflowLabel(item.iqa_status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">

@@ -6,6 +6,7 @@ import { ArrowLeft, Download, BarChart3, Users, ClipboardCheck, GraduationCap, F
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useGetIqaDashboardQuery, useGetIqaReviewQueueQuery } from "@/redux/apis/iqa/iqaApi";
+import { getIqaWorkflowLabel } from "@/lib/iqaStatus";
 
 const reports = [
   { id: "trainer-quality", title: "Trainer Assessment Quality", description: "Live trainer approval and flagging summary", icon: Users, category: "Quality" },
@@ -62,9 +63,10 @@ const IQAReports = () => {
       }
       acc[key].total += 1;
       acc[key].sampled += 1;
-      if (item.iqa_status === "IQA Approved") acc[key].approved += 1;
-      if (item.iqa_status === "Trainer Action Required" || item.iqa_status === "Escalated to Admin") acc[key].flagged += 1;
-      if (item.iqa_status === "Pending IQA Review") acc[key].pending += 1;
+      const workflowLabel = getIqaWorkflowLabel(item.iqa_status);
+      if (workflowLabel === "Signed Off") acc[key].approved += 1;
+      if (workflowLabel === "Action Required" || workflowLabel === "Escalated") acc[key].flagged += 1;
+      if (workflowLabel === "Awaiting IQA") acc[key].pending += 1;
       if (item.trainer?.name) acc[key].trainers.add(item.trainer.name);
       return acc;
     }, {}),
