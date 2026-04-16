@@ -8,19 +8,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 
 interface AddPageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  newPage: { title: string; slug: string; type: "static" | "qualification" | "blog-post" };
-  setNewPage: React.Dispatch<React.SetStateAction<{ title: string; slug: string; type: "static" | "qualification" | "blog-post" }>>;
+  newPage: { title: string; slug: string; };
+  setNewPage: React.Dispatch<React.SetStateAction<{ title: string; slug: string; }>>;
   onAdd: () => void;
 }
 
@@ -54,24 +48,7 @@ const AddPageDialog = ({
               placeholder="e.g. our-team"
             />
           </div>
-          <div>
-            <Label>Page Type</Label>
-            <Select
-              value={newPage.type}
-              onValueChange={(value) =>
-                setNewPage((p) => ({ ...p, type: value as "static" | "qualification" | "blog-post" }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select page type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="static">Static Page</SelectItem>
-                <SelectItem value="qualification">Qualification Page</SelectItem>
-                <SelectItem value="blog-post">Blog Post</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

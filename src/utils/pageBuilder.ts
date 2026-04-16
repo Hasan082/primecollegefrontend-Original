@@ -32,6 +32,12 @@ const asNumber = (value: unknown, fallback: number): number => {
   return fallback;
 };
 
+const CORE_STATIC_PAGE_SLUGS = new Set(["home", "about", "contact"]);
+
+const isCoreStaticPageSlug = (slug?: string): boolean => CORE_STATIC_PAGE_SLUGS.has(slug || "");
+const isQualificationPageSlug = (slug?: string): boolean => (slug || "").startsWith("qualification-");
+const ALL_BLOCK_TYPES = Object.keys(BLOCK_TYPE_LABELS) as BlockType[];
+
 const normalizePopularQualificationsBlock = (block: ContentBlock): ContentBlock => {
   if (block.type !== "popular-qualifications") return block;
 
@@ -122,12 +128,7 @@ const getHomeQualificationSliderBlock = (): ContentBlock =>
   } as ContentBlock);
 
 const normalizeHomePageBlocks = (blocks: ContentBlock[]): ContentBlock[] => {
-  const heroIndex = blocks.findIndex((block) => block.type === "hero");
-  const heroBlock = heroIndex >= 0
-    ? normalizeHeroBlock(blocks[heroIndex])
-    : normalizeHeroBlock(getHomeDefaultBlocks()[0]);
-
-  const blocksWithoutHero = blocks.filter((block) => block.type !== "hero");
+  const blocksWithoutHero = blocks.filter((block) => block.type !== "hero" && block.type !== "qualification_hero");
   const qualificationIndex = blocksWithoutHero.findIndex((block) => block.type === "qualification_slider");
   const qualificationBlock = qualificationIndex >= 0
     ? normalizeQualificationSliderBlock({
@@ -137,8 +138,7 @@ const normalizeHomePageBlocks = (blocks: ContentBlock[]): ContentBlock[] => {
       })
     : getHomeQualificationSliderBlock();
   const remainingBlocks = blocksWithoutHero.filter((block, index) => index !== qualificationIndex);
-
-  return [heroBlock, qualificationBlock, ...remainingBlocks];
+  return [qualificationBlock, ...remainingBlocks];
 };
 
 export const normalizePageBlocksForSlug = (
@@ -146,13 +146,30 @@ export const normalizePageBlocksForSlug = (
   slug?: string,
 ): ContentBlock[] => {
   if ((slug || "") === "home") return normalizeHomePageBlocks(blocks);
-  if ((slug || "") === "contact") {
+  if ((slug || "") === "contact" || (slug || "") === "about" || isQualificationPageSlug(slug)) {
+    return blocks.filter((block) => block.type !== "hero" && block.type !== "qualification_hero");
+  }
+  if (slug && slug !== "home" && slug !== "contact" && slug !== "about") {
     const heroIndex = blocks.findIndex((block) => block.type === "hero");
-    const heroBlock = heroIndex >= 0
-      ? normalizeHeroBlock(blocks[heroIndex])
-      : normalizeHeroBlock(getContactDefaultBlocks()[0]);
-    const remainingBlocks = blocks.filter((block) => block.type !== "hero");
-    return [heroBlock, ...remainingBlocks];
+    if (heroIndex >= 0) {
+      const heroBlock = normalizeHeroBlock(blocks[heroIndex]);
+      const remainingBlocks = blocks.filter((block) => block.type !== "hero");
+      return [heroBlock, ...remainingBlocks];
+    }
+    return [normalizeHeroBlock({
+      id: `static_hero_${slug}`,
+      type: "hero",
+      label: BLOCK_TYPE_LABELS.hero,
+      isLocked: true,
+      isFixed: true,
+      data: {
+        title: "Hero Banner",
+        subtitle: "Add a short introduction for this page.",
+        image: "",
+        ctaLabel: "",
+        ctaHref: "",
+      },
+    } as ContentBlock), ...blocks];
   }
   return blocks;
 };
@@ -208,11 +225,11 @@ export const safeParseBlocks = (blocks: unknown): ContentBlock[] => {
 export const getFallbackBlocksForSlug = (slug: string): ContentBlock[] => {
   switch (slug) {
     case "home":
-      return getHomeDefaultBlocks();
+      return getHomeDefaultBlocks().filter((block) => block.type !== "hero");
     case "about":
-      return getAboutDefaultBlocks();
+      return getAboutDefaultBlocks().filter((block) => block.type !== "hero");
     case "contact":
-      return getContactDefaultBlocks();
+      return getContactDefaultBlocks().filter((block) => block.type !== "hero");
     default:
       return [];
   }
@@ -224,6 +241,27 @@ export const getFallbackBlocksForPageType = (
 ): ContentBlock[] => {
   if (pageType === "qualification_detail") {
     return getQualificationDefaultBlocks();
+  }
+
+  if (pageType === "static") {
+    if (isCoreStaticPageSlug(slug)) {
+      return getFallbackBlocksForSlug(slug || "");
+    }
+
+    return [normalizeHeroBlock({
+      id: `static_hero_${slug || "page"}`,
+      type: "hero",
+      label: BLOCK_TYPE_LABELS.hero,
+      isLocked: true,
+      isFixed: true,
+      data: {
+        title: "Hero Banner",
+        subtitle: "Add a short introduction for this page.",
+        image: "",
+        ctaLabel: "",
+        ctaHref: "",
+      },
+    } as ContentBlock)];
   }
 
   return getFallbackBlocksForSlug(slug || "");
@@ -264,20 +302,19 @@ export const getAllowedBlockTypesForPage = (
   slug?: string,
 ): BlockType[] | undefined => {
   const currentSlug = slug || "";
+  const hideHeroForCurrentPage =
+    currentSlug === "home" ||
+    currentSlug === "about" ||
+    currentSlug === "contact" ||
+    pageType === "qualification_detail" ||
+    isQualificationPageSlug(currentSlug);
 
-  if (currentSlug === "home") {
-    return ["text", "why-us", "stats", "logos", "features", "cta", "blog"];
-  }
-
-  if (currentSlug === "contact") {
-    return ["contact-form", "map", "cta", "text"];
-  }
-
-  if (pageType === "qualification_detail") {
-    return ["cta", "image-text", "modules", "faq", "cards"];
-  }
-
-  return undefined;
+  return ALL_BLOCK_TYPES.filter((type) => {
+    if (type === "qualification_hero") return false;
+    if (type === "qualification_slider") return false;
+    if (hideHeroForCurrentPage && type === "hero") return false;
+    return true;
+  });
 };
 
 export const resolvePageType = (page?: Pick<CMSPage, "slug" | "page_type"> | null): CmsPageCategory => {
@@ -322,7 +359,10 @@ export const getPreviewPath = ({
     case "blog-detail":
       return slug ? `/blogs/${normalizeBlogSlug(slug)}` : "/blogs";
     case "static":
-      return slug === "home" ? "/" : `/${slug}`;
+      if (isCoreStaticPageSlug(slug)) {
+        return slug === "home" ? "/" : `/${slug}`;
+      }
+      return slug ? `/page/${slug}` : "/page";
     default:
       return slug ? `/${slug}` : "/";
   }
@@ -386,7 +426,7 @@ export const normalizeQualificationSliderData = (
 };
 
 export const filterOutSystemBlocks = (blocks: ContentBlock[]): ContentBlock[] =>
-  blocks.filter((block) => block.type !== "qualification_hero");
+  blocks.filter((block) => block.type !== "qualification_hero" && block.type !== "hero");
 
 export const preserveSystemBlockState = (
   incomingBlocks: ContentBlock[],

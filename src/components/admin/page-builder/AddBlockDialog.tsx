@@ -63,15 +63,6 @@ const BLOCK_ICONS: Partial<Record<BlockType, React.ElementType>> = {
   map: MapPinned,
 };
 
-const HIDDEN_BLOCK_TYPES: BlockType[] = [
-  "hero",
-  "image",
-  "pricing",
-  "popular-qualifications",
-  "qualification_hero",
-  "qualification_slider",
-];
-
 interface AddBlockDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -86,7 +77,7 @@ const AddBlockDialog = ({
   allowedBlocks,
 }: AddBlockDialogProps) => {
   const blockTypes = (allowedBlocks || (Object.keys(BLOCK_TYPE_LABELS) as BlockType[]))
-    .filter((type) => !HIDDEN_BLOCK_TYPES.includes(type));
+    .filter((type) => type !== "qualification_hero" && type !== "qualification_slider");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

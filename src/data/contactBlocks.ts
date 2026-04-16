@@ -2,18 +2,6 @@ import { ContentBlock } from "@/types/pageBuilder";
 
 export const getContactDefaultBlocks = (): ContentBlock[] => [
   {
-    id: "contact_hero",
-    type: "hero",
-    label: "Contact Hero",
-    isLocked: true,
-    isFixed: true,
-    data: {
-      title: "Get in Touch",
-      subtitle: "Have a question or need assistance? We're here to help you every step of the way.",
-      image: "",
-    }
-  },
-  {
     id: "contact_form",
     type: "contact-form",
     label: "Contact Details",
