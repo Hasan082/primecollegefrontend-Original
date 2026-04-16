@@ -6,7 +6,6 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import QualificationCard from "@/components/QualificationCard";
 import Section from "@/components/Section";
 import { useGetQualificationsQuery } from "@/redux/apis/qualificationApi";
-import qualificationsBanner from "@/assets/qualifications-banner.jpg";
 import { useDebounce } from "@/hooks/use-debounce";
 
 const Qualifications = () => {
@@ -89,22 +88,12 @@ const Qualifications = () => {
 
   return (
     <div>
-      <div className="relative">
-        <img src={qualificationsBanner} alt="Qualifications" className="h-[300px] w-full object-cover md:h-[400px]" />
-        <div className="absolute inset-0 bg-primary/75" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="px-4 text-center">
-            <h1 className="mb-4 text-4xl font-bold text-primary-foreground">Qualifications</h1>
-            <p className="mx-auto max-w-2xl text-primary-foreground/80">
-              Browse our active qualifications and find the right course for your role, sector, and progression route.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <Breadcrumb items={[{ label: "Qualifications" }]} />
 
-      <Section title="">
+      <Section title="Qualifications">
+        <p className="mb-8 max-w-2xl text-muted-foreground">
+          Browse our active qualifications and find the right course for your role, sector, and progression route.
+        </p>
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-1 flex-wrap items-end gap-3">
             <form onSubmit={handleSearchSubmit} className="w-full max-w-md">

@@ -12,10 +12,12 @@ import type {
 import { getDefaultBlockData } from "@/types/pageBuilder";
 import { TryCatch } from "@/utils/apiTryCatch";
 import {
-  getFallbackBlocksForSlug,
+  getAllowedBlockTypesForPage,
+  getFallbackBlocksForPageType,
   getPreviewPath,
   getRenderableBlocks,
   normalizeCmsPageCategory,
+  normalizePageBlocksForSlug,
   preserveSystemBlockState,
   rememberCmsPageType,
   resolvePageType,
@@ -51,28 +53,31 @@ const PageEditor = () => {
   const [isPublished, setIsPublished] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [pageType, setPageType] = useState<CMSPageCategory>(queryPageType);
-  const [updatePage] = useUpdatePageMutation();
+  const [updatePage, { isLoading: isSaving }] = useUpdatePageMutation();
 
   useEffect(() => {
     if (!cmsPage || hasLoaded) return;
 
     const resolvedSlug = (cmsPage.slug || pageId || "").replace(/^\//, "");
+    const resolvedPageType = cmsPage.page_type
+      ? normalizeCmsPageCategory(cmsPage.page_type)
+      : queryPageType !== "general"
+        ? queryPageType
+        : rememberOrResolvePageType(cmsPage);
     const resolvedBlocks = getRenderableBlocks(cmsPage, resolvedSlug);
+    const normalizedBlocks =
+      resolvedPageType === "qualification_detail"
+        ? resolvedBlocks.filter((block) => block.type !== "hero" && block.type !== "qualification_hero")
+        : resolvedBlocks;
 
     setPageTitle(cmsPage.title || "Untitled");
-    setBlocks(resolvedBlocks);
+    setBlocks(normalizedBlocks);
     setSlug(resolvedSlug);
     setIsPublished(Boolean(cmsPage.is_published));
     setMeta({
       title: cmsPage.seo_title || "",
       description: cmsPage.seo_description || "",
     });
-
-    const resolvedPageType = cmsPage.page_type
-      ? normalizeCmsPageCategory(cmsPage.page_type)
-      : queryPageType !== "general"
-        ? queryPageType
-        : rememberOrResolvePageType(cmsPage);
 
     setPageType(resolvedPageType);
     if (!cmsPage.page_type) rememberCmsPageType(resolvedSlug, resolvedPageType);
@@ -96,7 +101,9 @@ const PageEditor = () => {
   );
 
   const savePage = async (updatedBlocks?: ContentBlock[]) => {
-    const nextBlocks = preserveSystemBlockState(updatedBlocks || blocks, blocks);
+    const normalizedIncoming = normalizePageBlocksForSlug(updatedBlocks || blocks, slug);
+    const normalizedExisting = normalizePageBlocksForSlug(blocks, slug);
+    const nextBlocks = preserveSystemBlockState(normalizedIncoming, normalizedExisting);
     const [data, error] = await TryCatch(
       updatePage({
         slug: pageId as string,
@@ -134,12 +141,16 @@ const PageEditor = () => {
   };
 
   const handleRemove = (id: string) => {
+    const target = blocks.find((block) => block.id === id);
+    if (!target || target.type === "hero" || target.isLocked) return;
     const updated = blocks.filter((block) => block.id !== id);
     savePage(updated);
   };
 
   const handleAdd = (type: BlockType) => {
+    if (type === "hero") return;
     if (type === "qualification_hero") return;
+    if (isQualificationPage && type === "qualification_slider") return;
     const block = getDefaultBlockData(type);
     const updated = [...blocks, block];
     savePage(updated).then(({ error }) => {
@@ -151,10 +162,18 @@ const PageEditor = () => {
   };
 
   const isHomePage = pageId === "home" || slug === "home";
-  const isAboutPage = pageId === "about" || slug === "about";
-  const isContactPage = pageId === "contact" || slug === "contact";
-  const fallbackBlocks = useMemo(() => getFallbackBlocksForSlug(slug), [slug]);
-  const visibleBlocks = blocks.length > 0 ? blocks : fallbackBlocks;
+  const isQualificationPage = pageType === "qualification_detail";
+  const showPublishedToggle =
+    !isHomePage &&
+    slug !== "about" &&
+    slug !== "contact" &&
+    !isQualificationPage;
+  const fallbackBlocks = useMemo(
+    () => getFallbackBlocksForPageType(pageType, slug),
+    [pageType, slug],
+  );
+  const visibleBlocks =
+    blocks.length > 0 ? blocks : isQualificationPage ? [] : fallbackBlocks;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-4">
@@ -164,8 +183,10 @@ const PageEditor = () => {
         previewPath={previewPath}
         isPublished={isPublished}
         setIsPublished={setIsPublished}
+        showPublishedToggle={showPublishedToggle}
         showPreview={showPreview}
         setShowPreview={setShowPreview}
+        isSaving={isSaving}
         handleSave={() => savePage()}
       />
       <SEOPanel slug={slug} onSlugChange={setSlug} meta={meta} onMetaChange={setMeta} />
@@ -187,7 +208,7 @@ const PageEditor = () => {
               <span className="truncate flex-1">{previewPath}</span>
             </div>
             <div className="overflow-y-auto h-full pb-10">
-              <BlockPreviewRenderer blocks={visibleBlocks} pageTitle={pageTitle} />
+              <BlockPreviewRenderer blocks={visibleBlocks} pageTitle={pageTitle} pageSlug={slug} />
             </div>
           </div>
         )}
@@ -196,15 +217,7 @@ const PageEditor = () => {
         open={addOpen}
         onOpenChange={setAddOpen}
         addBlock={handleAdd}
-        allowedBlocks={
-          isHomePage
-            ? ["cta", "text", "faq", "stats", "logos", "cards", "qualification_slider"]
-            : isAboutPage
-              ? ["cta", "text", "faq", "stats", "features", "image-text", "about-split", "logos"]
-              : isContactPage
-                ? ["cta", "text", "contact-form", "map"]
-                : undefined
-        }
+        allowedBlocks={getAllowedBlockTypesForPage(pageType, slug)}
       />
       <EditBlockDialog
         block={editBlock}

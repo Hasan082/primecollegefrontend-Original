@@ -2,18 +2,6 @@ import { ContentBlock } from "@/types/pageBuilder";
 
 export const getAboutDefaultBlocks = (): ContentBlock[] => [
   {
-    id: "about_hero",
-    type: "hero",
-    label: "About Hero",
-    isLocked: true,
-    isFixed: true,
-    data: {
-      title: "About Prime College",
-      subtitle: "Broaden your horizons and elevate your career with our industry-leading qualifications.",
-      image: "", // Placeholder or default image URL if available
-    }
-  },
-  {
     id: "about_intro",
     type: "about-split",
     label: "About Us Intro",

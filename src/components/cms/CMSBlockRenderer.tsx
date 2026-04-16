@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useSubmitContactFormMutation } from "@/redux/apis/contactApi";
+import { Image } from "@/components/Image";
 import { Users, Award, CheckCircle, Clock, Target } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import HeroSlider from "@/components/HeroSlider";
@@ -9,6 +10,13 @@ import Section from "@/components/Section";
 import CTASection from "@/components/CTASection";
 import LogoCarousel from "@/components/LogoCarousel";
 import QualificationSlider from "@/components/QualificationSlider";
+import QualificationCard from "@/components/QualificationCard";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import type {
   ContentBlock,
   QualificationSliderBlock,
@@ -29,6 +37,9 @@ const heroImageMap: Record<string, string> = {
   executive: heroExecutive,
   care: heroCare,
 };
+
+const resolveCmsImage = (image: unknown): unknown =>
+  typeof image === "string" ? heroImageMap[image] || image : image;
 
 const iconMap: Record<string, React.ElementType> = {
   Users,
@@ -80,11 +91,7 @@ const renderHero = (block: ContentBlock, pageSlug?: string) => {
 
   return (
     <div className="relative h-[400px] overflow-hidden">
-      <img
-        src={imageSrc}
-        alt={d.title}
-        className="w-full h-full object-cover"
-      />
+      <Image image={imageSrc} alt={d.title} className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-foreground/70" />
       <div className="absolute inset-0 flex items-center justify-center text-center px-4">
         <div>
@@ -112,6 +119,353 @@ const renderHero = (block: ContentBlock, pageSlug?: string) => {
         </div>
       ) : null}
     </div>
+  );
+};
+
+const renderPopularQualifications = (block: ContentBlock) => {
+  const d = block.data as any;
+  const items = Array.isArray(d.items) ? d.items : [];
+  const visibleItems = items.slice(0, Math.max(1, Number(d.show_count) || 4));
+
+  return (
+    <Section title={d.title || "Popular Qualifications"}>
+      {visibleItems.length > 0 ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {visibleItems.map((item: any, i: number) => {
+            const slug =
+              item.slug ||
+              item.id ||
+              item.title
+                ?.toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, "");
+            return (
+              <QualificationCard
+                key={item.id || slug || i}
+                id={item.id || slug || String(i)}
+                slug={slug}
+                title={item.title || "Qualification"}
+                category={item.category || null}
+                level={item.level || null}
+                duration={item.duration || item.qualification_type || "Qualification"}
+                price={
+                  item.price ||
+                  (item.current_price
+                    ? `${item.currency || "£"}${item.current_price}`
+                    : "Contact us")
+                }
+                description={item.description || item.short_description || item.blog_excerpt || ""}
+                imageUrl={
+                  resolveCmsImage(
+                    item.image ||
+                      item.featured_image?.card ||
+                      item.featured_image?.original ||
+                      "",
+                  ) as string
+                }
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
+          No qualifications available yet.
+        </div>
+      )}
+    </Section>
+  );
+};
+
+const renderPricing = (block: ContentBlock) => {
+  const d = block.data as any;
+  const features = Array.isArray(d.features) ? d.features.filter(Boolean) : [];
+
+  return (
+    <section className="bg-muted/20 py-16 px-4">
+      <div className="container mx-auto max-w-5xl">
+        <div className="mx-auto mb-10 max-w-3xl text-center">
+          {d.title ? (
+            <h2 className="text-3xl font-bold text-foreground">{d.title}</h2>
+          ) : null}
+          {d.content ? (
+            <p className="mt-3 text-muted-foreground leading-relaxed">
+              {d.content}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
+          <div className="border-b border-border bg-primary px-6 py-5 text-primary-foreground">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-primary-foreground/80">
+                  {d.duration || "Course Duration"}
+                </p>
+                <p className="mt-2 text-4xl font-bold">
+                  {d.price || "Contact us"}
+                </p>
+              </div>
+              {d.ctaLabel ? (
+                <Link
+                  to={d.ctaHref || "/contact"}
+                  className="inline-flex rounded bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground hover:opacity-90"
+                >
+                  {d.ctaLabel}
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          {features.length > 0 ? (
+            <div className="grid gap-3 p-6 sm:grid-cols-2">
+              {features.map((feature: string, index: number) => (
+                <div
+                  key={`${feature}-${index}`}
+                  className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-foreground"
+                >
+                  {feature}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const renderQualificationWhy = (block: ContentBlock) => {
+  const d = block.data as any;
+  const imageSrc = resolveCmsImage(d.image) || heroBusiness;
+  const paragraphs = Array.isArray(d.paragraphs) ? d.paragraphs : [];
+
+  return (
+    <section className="py-16 px-4">
+      <div className="container mx-auto">
+        <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-secondary mb-2 block">
+              {block.label || "Why Choose This Qualification"}
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+              {d.headline || "Build Confidence & Advance Your Career"}
+            </h2>
+            {paragraphs.length > 0 ? (
+              paragraphs.map((paragraph: string, index: number) => (
+                <p key={index} className="text-muted-foreground leading-relaxed mb-4">
+                  {paragraph}
+                </p>
+              ))
+            ) : (
+              <p className="text-muted-foreground leading-relaxed">
+                {d.description || ""}
+              </p>
+            )}
+          </div>
+          <div className="rounded-lg overflow-hidden shadow-lg">
+            <img
+              src={typeof imageSrc === "string" ? imageSrc : heroBusiness}
+              alt={d.headline || block.label}
+              className="w-full h-[320px] object-cover"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const renderQualificationStructure = (block: ContentBlock) => {
+  const d = block.data as any;
+  const items = Array.isArray(d.items) ? d.items : [];
+
+  return (
+    <section className="py-16 px-4 bg-accent/30">
+      <div className="container mx-auto">
+        <div className="text-center mb-10">
+          <span className="text-xs font-bold uppercase tracking-widest text-secondary">
+            Flexible Learning
+          </span>
+          <h2 className="text-3xl font-bold text-foreground mt-2">
+            {d.title || "Qualification Structure"}
+          </h2>
+          {d.content ? (
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
+              {d.content}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {items.map((module: any, index: number) => (
+            <div
+              key={module.title || index}
+              className="bg-card border border-border rounded-lg p-6 hover:border-secondary hover:shadow-md transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <span className="text-primary font-bold text-sm">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+              </div>
+              <h3 className="text-base font-semibold text-foreground mb-2">
+                {module.title}
+              </h3>
+              {module.description ? (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {module.description}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const renderQualificationCertification = (block: ContentBlock) => {
+  const d = block.data as any;
+  const bgImage = resolveCmsImage(d.bgImage) || qualificationsBanner;
+
+  return (
+    <section className="relative py-16 overflow-hidden">
+      <div className="absolute inset-0">
+        <img
+          src={typeof bgImage === "string" ? bgImage : qualificationsBanner}
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-primary/90" />
+      </div>
+      <div className="relative container mx-auto px-4 text-center">
+        <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">
+          {d.title || "Certification & Validity"}
+        </h2>
+        {d.content ? (
+          <p className="text-primary-foreground/85 max-w-2xl mx-auto leading-relaxed mb-6">
+            {d.content}
+          </p>
+        ) : null}
+        <div className="flex flex-wrap justify-center gap-4">
+          <span className="bg-primary-foreground/15 text-primary-foreground text-xs font-bold px-5 py-2.5 rounded border border-primary-foreground/20">
+            Ofqual Regulated
+          </span>
+          <span className="bg-primary-foreground/15 text-primary-foreground text-xs font-bold px-5 py-2.5 rounded border border-primary-foreground/20">
+            Internationally Recognised
+          </span>
+          <span className="bg-primary-foreground/15 text-primary-foreground text-xs font-bold px-5 py-2.5 rounded border border-primary-foreground/20">
+            Employer Approved
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const renderQualificationFaq = (block: ContentBlock) => {
+  const d = block.data as any;
+  const items = Array.isArray(d.items) ? d.items : [];
+
+  return (
+    <section className="py-16 px-4">
+      <div className="container mx-auto max-w-3xl">
+        <div className="text-center mb-10">
+          <span className="text-xs font-bold uppercase tracking-widest text-secondary">
+            Have Questions?
+          </span>
+          <h2 className="text-3xl font-bold text-foreground mt-2">
+            {d.title || "Frequently Asked Questions"}
+          </h2>
+        </div>
+        <Accordion type="single" collapsible className="border-t border-border">
+          {items.map((faq: any, index: number) => (
+            <AccordionItem key={faq.question || index} value={`faq-${index}`}>
+              <AccordionTrigger className="py-5 text-left no-underline hover:no-underline">
+                <span className="font-medium text-foreground pr-4">{faq.question}</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div
+                  className="text-muted-foreground leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: faq.answer }}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
+    </section>
+  );
+};
+
+const renderQualificationCards = (block: ContentBlock) => {
+  const d = block.data as any;
+  const items = Array.isArray(d.items) ? d.items : [];
+
+  return (
+    <section className="py-16 px-4 bg-accent/30">
+      <div className="container mx-auto">
+        <h2 className="text-3xl font-bold text-foreground mb-8 text-center">
+          {d.title || "Related Qualifications"}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {items.length > 0 ? (
+            items.map((item: any, index: number) => (
+              <Link
+                key={item.slug || item.title || index}
+                to={item.slug ? `/qualifications/${item.slug}` : "/qualifications"}
+                className="group relative rounded-lg overflow-hidden block h-[220px]"
+              >
+                <img
+                  src={resolveCmsImage(item.image) || heroBusiness}
+                  alt={item.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-primary/60 group-hover:bg-primary/70 transition-colors" />
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <h3 className="text-sm font-semibold text-primary-foreground">
+                    {item.title}
+                  </h3>
+                  <span className="text-xs text-primary-foreground/70 mt-1 block">
+                    {[item.level, item.duration || item.qualification_type].filter(Boolean).join(" · ")}
+                  </span>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground md:col-span-3">
+              No related qualifications available yet.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const renderQualificationFinalCta = (block: ContentBlock) => {
+  const d = block.data as any;
+
+  return (
+    <section className="py-16 md:py-20 px-4">
+      <div className="container mx-auto text-center max-w-3xl">
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+          {d.title || "More Than One Qualification?"}
+        </h2>
+        {d.content ? (
+          <p className="text-muted-foreground leading-relaxed mb-8">
+            {d.content}
+          </p>
+        ) : null}
+        {d.ctaLabel ? (
+          <Link
+            to={d.ctaHref || "/contact"}
+            className="inline-block bg-secondary text-secondary-foreground px-8 py-3 rounded font-semibold text-sm hover:opacity-90 transition-opacity"
+          >
+            {d.ctaLabel}
+          </Link>
+        ) : null}
+      </div>
+    </section>
   );
 };
 
@@ -237,22 +591,31 @@ export const CMSBlockRenderer = ({
 
   switch (block.type) {
     case "hero":
+      if (
+        pageSlug === "home" ||
+        pageSlug === "about" ||
+        pageSlug === "contact" ||
+        pageSlug?.startsWith("qualification-")
+      ) {
+        return null;
+      }
       return renderHero(block, pageSlug);
     case "text":
       return (
         <Section title={d.title || ""}>
-          {renderRichText(
-            d.content,
-            "text-center text-muted-foreground max-w-3xl mx-auto leading-relaxed prose prose-sm max-w-none",
-          )}
+          {d.content ? (
+            <div className="mx-auto max-w-3xl text-center text-muted-foreground leading-relaxed">
+              <div dangerouslySetInnerHTML={{ __html: d.content }} />
+            </div>
+          ) : null}
         </Section>
       );
     case "image":
       return (
         <section className="py-16 px-4">
           <div className="container mx-auto max-w-5xl">
-            <img
-              src={d.image}
+            <Image
+              image={resolveCmsImage(d.image) as any}
               alt={d.alt || d.caption || "CMS image"}
               className="w-full rounded-2xl border border-border object-cover"
             />
@@ -265,14 +628,17 @@ export const CMSBlockRenderer = ({
         </section>
       );
     case "image-text":
+      if (block.label === "Why Choose This Qualification") {
+        return renderQualificationWhy(block);
+      }
       return (
         <section className="bg-muted py-16 px-4">
           <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div
               className={`rounded-xl overflow-hidden ${d.imagePosition === "right" ? "order-2" : "order-1"}`}
             >
-              <img
-                src={d.image || aboutHero}
+              <Image
+                image={resolveCmsImage(d.image) || aboutHero}
                 alt={d.headline}
                 className="w-full h-[400px] object-cover rounded-xl"
               />
@@ -330,9 +696,12 @@ export const CMSBlockRenderer = ({
             >
               {Array.isArray(d.paragraphs) && d.paragraphs.length > 0
                 ? d.paragraphs.map((p: string, i: number) => (
-                    <p key={i} className="leading-relaxed">
-                      {p}
-                    </p>
+                    <div
+                      key={i}
+                      className="leading-relaxed prose prose-sm max-w-none"
+                    >
+                      {renderRichText(p)}
+                    </div>
                   ))
                 : renderRichText(d.description)}
             </div>
@@ -340,24 +709,30 @@ export const CMSBlockRenderer = ({
         </section>
       );
     case "faq":
+      if (block.label === "Frequently Asked Questions" || block.label === "FAQs") {
+        return renderQualificationFaq(block);
+      }
       return (
         <Section title={d.title || "FAQs"}>
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-4xl mx-auto">
+            <Accordion type="single" collapsible className="border-t border-border">
             {Array.isArray(d.items) &&
               d.items.map((item: any, i: number) => (
-                <details
-                  key={i}
-                  className="rounded-xl border border-border bg-card p-5"
-                >
-                  <summary className="cursor-pointer font-semibold text-foreground">
-                    {item.question}
-                  </summary>
-                  <div
-                    className="mt-3 text-sm text-muted-foreground leading-7"
-                    dangerouslySetInnerHTML={{ __html: item.answer }}
-                  />
-                </details>
+                <AccordionItem key={i} value={`faq-${i}`}>
+                  <AccordionTrigger className="py-5 text-left no-underline hover:no-underline">
+                    <span className="font-semibold text-foreground pr-4">
+                      {item.question}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div
+                      className="text-sm text-muted-foreground leading-7"
+                      dangerouslySetInnerHTML={{ __html: item.answer }}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
               ))}
+            </Accordion>
           </div>
         </Section>
       );
@@ -395,14 +770,20 @@ export const CMSBlockRenderer = ({
         </section>
       );
     case "cta":
+      if (block.label === "Certification Banner") {
+        return renderQualificationCertification(block);
+      }
+      if (block.label === "More Than One Qualification") {
+        return renderQualificationFinalCta(block);
+      }
       // On the home page always use the original CTASection with background image.
       // On other pages use dynamic data if available, otherwise fall back to CTASection.
       if (pageSlug === "home") return <CTASection />;
       return d.bgImage || d.title || d.content ? (
         <section className="relative py-20 px-4 overflow-hidden bg-primary text-primary-foreground text-center">
           {d.bgImage ? (
-            <img
-              src={d.bgImage}
+            <Image
+              image={resolveCmsImage(d.bgImage) as any}
               className="absolute inset-0 w-full h-full object-cover opacity-20"
               alt=""
             />
@@ -410,9 +791,9 @@ export const CMSBlockRenderer = ({
           <div className="relative z-10 max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-4">{d.title}</h2>
             {d.content ? (
-              <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto leading-relaxed">
-                {d.content}
-              </p>
+              <div className="text-primary-foreground/80 mb-8 max-w-xl mx-auto leading-relaxed prose prose-sm prose-invert max-w-none">
+                {renderRichText(d.content)}
+              </div>
             ) : null}
             {d.ctaLabel ? (
               <Link
@@ -442,8 +823,8 @@ export const CMSBlockRenderer = ({
                 className="bg-card rounded-xl border border-border p-4 h-24 flex items-center justify-center"
               >
                 {item.image ? (
-                  <img
-                    src={item.image}
+                  <Image
+                    image={resolveCmsImage(item.image) as any}
                     alt={item.title}
                     className="max-h-14 w-auto object-contain"
                   />
@@ -460,7 +841,9 @@ export const CMSBlockRenderer = ({
         <LogoCarousel />
       );
     case "cards":
-    case "popular-qualifications":
+      if (block.label === "Related Qualifications") {
+        return renderQualificationCards(block);
+      }
       if (pageSlug === "home") {
         // Original home page styling: rounded top image with m-2 padding & hover-scale
         return (
@@ -481,15 +864,11 @@ export const CMSBlockRenderer = ({
                     >
                       <Link to={`/qualifications/${slug}`}>
                         <div className="aspect-[4/3] overflow-hidden rounded-t-xl m-2">
-                          <img
-                            src={
-                              heroImageMap[item.image || ""] ||
-                              item.image ||
-                              heroClassroom
-                            }
-                            alt={item.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
+                        <Image
+                          image={resolveCmsImage(item.image) || heroClassroom}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
                         </div>
                       </Link>
                       <div className="px-4 pb-5 flex flex-col flex-1">
@@ -547,8 +926,8 @@ export const CMSBlockRenderer = ({
                   className="bg-card border border-border rounded-xl overflow-hidden group flex flex-col"
                 >
                   {item.image ? (
-                    <img
-                      src={heroImageMap[item.image] || item.image}
+                    <Image
+                      image={resolveCmsImage(item.image) as any}
                       alt={item.title}
                       className="w-full h-48 object-cover"
                     />
@@ -588,6 +967,10 @@ export const CMSBlockRenderer = ({
           </div>
         </Section>
       );
+    case "popular-qualifications":
+      return renderPopularQualifications(block);
+    case "pricing":
+      return renderPricing(block);
     case "contact-form":
       return <ContactFormBlock d={d} />;
     case "map":
@@ -633,12 +1016,8 @@ export const CMSBlockRenderer = ({
                       className="bg-card border border-border rounded-xl overflow-hidden group flex h-full flex-col"
                     >
                       <div className="aspect-[16/9] overflow-hidden">
-                        <img
-                          src={
-                            heroImageMap[item.image || ""] ||
-                            item.image ||
-                            heroClassroom
-                          }
+                        <Image
+                          image={resolveCmsImage(item.image) || heroClassroom}
                           srcSet={item.image_srcset}
                           sizes="(min-width: 768px) 33vw, 100vw"
                           alt={item.title}
@@ -685,8 +1064,8 @@ export const CMSBlockRenderer = ({
                   className="bg-card border border-border rounded-xl overflow-hidden"
                 >
                   {item.image ? (
-                    <img
-                      src={item.image}
+                    <Image
+                      image={resolveCmsImage(item.image) as any}
                       alt={item.title}
                       className="w-full h-48 object-cover"
                     />
@@ -809,6 +1188,9 @@ export const CMSBlockRenderer = ({
       );
     case "features":
     case "modules":
+      if (block.label === "Course Structure") {
+        return renderQualificationStructure(block);
+      }
       if (pageSlug === "home") {
         // Original home page features: bg-muted background on the section
         return (
