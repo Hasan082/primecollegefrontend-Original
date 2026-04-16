@@ -10,10 +10,12 @@ const StaticPage = () => {
   const { data: pageResponse, isLoading, isError } = useGetPageQuery(slug ?? "", {
     skip: !slug,
   });
+  const page = pageResponse?.data;
   const blocks = getRenderableBlocks(pageResponse?.data, slug);
 
   if (isLoading) return <LoadingSpinner />;
-  if (isError || !pageResponse?.data) return <NotFound />;
+  if (isError || !page) return <NotFound />;
+  if (page.is_published === false) return <NotFound />;
 
   return <CMSPageRenderer blocks={blocks} pageSlug={slug} />;
 };

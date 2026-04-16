@@ -53,7 +53,7 @@ const PageEditor = () => {
   const [isPublished, setIsPublished] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [pageType, setPageType] = useState<CMSPageCategory>(queryPageType);
-  const [updatePage] = useUpdatePageMutation();
+  const [updatePage, { isLoading: isSaving }] = useUpdatePageMutation();
 
   useEffect(() => {
     if (!cmsPage || hasLoaded) return;
@@ -180,6 +180,7 @@ const PageEditor = () => {
         setIsPublished={setIsPublished}
         showPreview={showPreview}
         setShowPreview={setShowPreview}
+        isSaving={isSaving}
         handleSave={() => savePage()}
       />
       <SEOPanel slug={slug} onSlugChange={setSlug} meta={meta} onMetaChange={setMeta} />
