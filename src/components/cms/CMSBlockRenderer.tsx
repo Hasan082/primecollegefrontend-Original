@@ -591,14 +591,23 @@ export const CMSBlockRenderer = ({
 
   switch (block.type) {
     case "hero":
+      if (
+        pageSlug === "home" ||
+        pageSlug === "about" ||
+        pageSlug === "contact" ||
+        pageSlug?.startsWith("qualification-")
+      ) {
+        return null;
+      }
       return renderHero(block, pageSlug);
     case "text":
       return (
         <Section title={d.title || ""}>
-          {renderRichText(
-            d.content,
-            "text-center text-muted-foreground max-w-3xl mx-auto leading-relaxed prose prose-sm max-w-none",
-          )}
+          {d.content ? (
+            <div className="mx-auto max-w-3xl text-center text-muted-foreground leading-relaxed">
+              <div dangerouslySetInnerHTML={{ __html: d.content }} />
+            </div>
+          ) : null}
         </Section>
       );
     case "image":
@@ -687,9 +696,12 @@ export const CMSBlockRenderer = ({
             >
               {Array.isArray(d.paragraphs) && d.paragraphs.length > 0
                 ? d.paragraphs.map((p: string, i: number) => (
-                    <p key={i} className="leading-relaxed">
-                      {p}
-                    </p>
+                    <div
+                      key={i}
+                      className="leading-relaxed prose prose-sm max-w-none"
+                    >
+                      {renderRichText(p)}
+                    </div>
                   ))
                 : renderRichText(d.description)}
             </div>
@@ -779,9 +791,9 @@ export const CMSBlockRenderer = ({
           <div className="relative z-10 max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-4">{d.title}</h2>
             {d.content ? (
-              <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto leading-relaxed">
-                {d.content}
-              </p>
+              <div className="text-primary-foreground/80 mb-8 max-w-xl mx-auto leading-relaxed prose prose-sm prose-invert max-w-none">
+                {renderRichText(d.content)}
+              </div>
             ) : null}
             {d.ctaLabel ? (
               <Link

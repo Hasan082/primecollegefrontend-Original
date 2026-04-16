@@ -59,22 +59,25 @@ const PageEditor = () => {
     if (!cmsPage || hasLoaded) return;
 
     const resolvedSlug = (cmsPage.slug || pageId || "").replace(/^\//, "");
+    const resolvedPageType = cmsPage.page_type
+      ? normalizeCmsPageCategory(cmsPage.page_type)
+      : queryPageType !== "general"
+        ? queryPageType
+        : rememberOrResolvePageType(cmsPage);
     const resolvedBlocks = getRenderableBlocks(cmsPage, resolvedSlug);
+    const normalizedBlocks =
+      resolvedPageType === "qualification_detail"
+        ? resolvedBlocks.filter((block) => block.type !== "hero" && block.type !== "qualification_hero")
+        : resolvedBlocks;
 
     setPageTitle(cmsPage.title || "Untitled");
-    setBlocks(resolvedBlocks);
+    setBlocks(normalizedBlocks);
     setSlug(resolvedSlug);
     setIsPublished(Boolean(cmsPage.is_published));
     setMeta({
       title: cmsPage.seo_title || "",
       description: cmsPage.seo_description || "",
     });
-
-    const resolvedPageType = cmsPage.page_type
-      ? normalizeCmsPageCategory(cmsPage.page_type)
-      : queryPageType !== "general"
-        ? queryPageType
-        : rememberOrResolvePageType(cmsPage);
 
     setPageType(resolvedPageType);
     if (!cmsPage.page_type) rememberCmsPageType(resolvedSlug, resolvedPageType);

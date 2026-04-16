@@ -369,7 +369,7 @@ const App = () => {
                             />
                             <Route path="/contact" element={<Contact />} />
                             <Route
-                              path="/pages/:slug"
+                              path="/page/:slug"
                               element={<StaticPage />}
                             />
                             <Route path="*" element={<NotFound />} />

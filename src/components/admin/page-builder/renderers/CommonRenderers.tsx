@@ -68,10 +68,12 @@ export const TextRenderer = ({ block }: { block: ContentBlock }) => {
   const tAlignClass = alignClass(textAlign as any);
   return (
     <div className={`py-8 px-6 bg-background ${tAlignClass}`} style={buildBlockStyle(block.style)}>
-      {d.title && <h3 className="text-[13px] font-bold text-foreground mb-3">{d.title as string}</h3>}
+      {d.title && <h3 className="text-[13px] font-bold text-primary mb-3">{d.title as string}</h3>}
       {d.content && typeof d.content === "string" && (
-        <div className={`text-[11px] text-muted-foreground leading-relaxed max-w-[90%] ${textAlign === "center" ? "mx-auto" : ""} prose prose-sm overflow-x-auto`} 
-             dangerouslySetInnerHTML={{ __html: d.content }} />
+        <div
+          className={`mx-auto max-w-[85%] text-[11px] text-muted-foreground leading-relaxed ${textAlign === "center" ? "text-center" : ""}`}
+          dangerouslySetInnerHTML={{ __html: d.content }}
+        />
       )}
     </div>
   );
