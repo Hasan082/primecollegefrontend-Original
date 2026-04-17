@@ -6,11 +6,28 @@ import { api } from "@/redux/api";
 
 export type UserRole = "learner" | "trainer" | "admin" | "iqa";
 
-interface User {
+export interface StaffProfile {
+  staff_role: string;
+  qualification_held: string;
+  specialisms: string;
+  centre_registration_number: string;
+  standardisation_last_attended: string;
+  cpd_record_url: string;
+}
+
+export interface User {
   id: string;
   email: string;
   role: UserRole;
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  phone?: string;
   full_name?: string;
+  profile_picture?: string;
+  bio?: string;
+  date_of_birth?: string;
+  staff_profile?: StaffProfile;
 }
 
 interface AuthContextType {
