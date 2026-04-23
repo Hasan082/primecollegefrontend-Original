@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
@@ -35,6 +35,12 @@ import {
 import { useGetQualificationMainQuery } from "@/redux/apis/qualification/qualificationMainApi";
 import { TryCatch } from "@/utils/apiTryCatch";
 import { handleResponse } from "@/utils/handleResponse";
+import {
+  buildQualificationDraftKey,
+  clearQualificationDraft,
+  loadQualificationDraft,
+  saveQualificationDraft,
+} from "@/lib/qualificationDrafts";
 
 // ─── Zod Schema ────────────────────────────────────────────────────────────────
 
@@ -151,6 +157,7 @@ const booleanFields: {
 const QualificationDetails = () => {
   const { qualificationId } = useParams();
   const { toast } = useToast();
+  const draftKey = buildQualificationDraftKey("details", qualificationId);
 
   const [createQualificationDetails] = useCreateQualificationDetailsMutation();
   const [updateQualificationDetails] = useUpdateQualificationDetailsMutation();
@@ -164,6 +171,8 @@ const QualificationDetails = () => {
   const isEditMode = Boolean(data?.data);
   const isCpd =
     qualificationMainData?.data?.qualification_type_detail?.slug === "cpd";
+  const [draftLoaded, setDraftLoaded] = useState<Partial<QualificationDetailsFormValues> | null | undefined>(undefined);
+  const hydrationRef = useRef(false);
 
   const form = useForm<QualificationDetailsFormValues>({
     resolver: zodResolver(qualificationDetailsSchema),
@@ -179,12 +188,42 @@ const QualificationDetails = () => {
 
   const issuesCertificate = watch("issues_certificate");
 
-  // ── Populate form in edit mode ──────────────────────────────────────────
   useEffect(() => {
+    let active = true;
+    setDraftLoaded(undefined);
+
+    loadQualificationDraft<Partial<QualificationDetailsFormValues>>(draftKey)
+      .then((draft) => {
+        if (active) setDraftLoaded(draft);
+      })
+      .catch(() => {
+        if (active) setDraftLoaded(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (draftLoaded === undefined) return;
+    if (isEditMode && !data?.data) return;
+
     if (isEditMode && data?.data) {
-      form.reset(data?.data);
+      form.reset({
+        ...defaultValues,
+        ...data.data,
+        ...(draftLoaded ?? {}),
+      });
+    } else {
+      form.reset({
+        ...defaultValues,
+        ...(draftLoaded ?? {}),
+      });
     }
-  }, [isEditMode, data?.data, form]);
+
+    hydrationRef.current = true;
+  }, [data?.data, draftLoaded, form, isEditMode]);
 
   useEffect(() => {
     if (!isCpd) {
@@ -193,6 +232,16 @@ const QualificationDetails = () => {
       setValue("cpd_branding_clean", false);
     }
   }, [isCpd, setValue]);
+
+  useEffect(() => {
+    if (!hydrationRef.current) return;
+
+    const subscription = watch((values) => {
+      saveQualificationDraft(draftKey, values);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [draftKey, watch]);
 
   // ── Submit ──────────────────────────────────────────────────────────────
   const onSubmit = async (values: QualificationDetailsFormValues) => {
@@ -222,7 +271,9 @@ const QualificationDetails = () => {
         description: result.message,
         variant: result.type === "error" ? "destructive" : "default",
       });
-      toast({ title: "Qualification updated successfully" });
+      if (result.type === "success") {
+        clearQualificationDraft(draftKey);
+      }
     } else {
       const [data, error] = await TryCatch(
         createQualificationDetails({ id: qualificationId, payload }).unwrap(),
@@ -240,8 +291,10 @@ const QualificationDetails = () => {
         variant: result.type === "error" ? "destructive" : "default",
       });
 
-      if (result.type === "success")
+      if (result.type === "success") {
+        clearQualificationDraft(draftKey);
         navigate(`/admin/qualifications/${qualificationId}/edit?step=3`);
+      }
     }
   };
 

@@ -39,6 +39,12 @@ import {
 import { handleResponse } from "@/utils/handleResponse";
 import { TryCatch } from "@/utils/apiTryCatch";
 import {
+  buildQualificationDraftKey,
+  clearQualificationDraft,
+  loadQualificationDraft,
+  saveQualificationDraft,
+} from "@/lib/qualificationDrafts";
+import {
   useGetAwardingBodiesQuery,
   useGetCategoriesQuery,
   useGetDeliveryModesQuery,
@@ -74,6 +80,11 @@ type PresignResponse = {
   key: string;
   upload_url: string;
   fields: Record<string, string>;
+};
+
+type QualificationMainDraft = {
+  values: QualificationMainFormValues;
+  clearFeaturedImage: boolean;
 };
 
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
@@ -314,11 +325,14 @@ const QualificationMain = () => {
     skip: !qualificationId,
   });
 
+  const draftKey = buildQualificationDraftKey("main", qualificationId);
   // Holds the existing image URL string from the API (edit mode only)
   const [existingImageUrl, setExistingImageUrl] = useState<string | undefined>(
     undefined,
   );
   const [clearFeaturedImage, setClearFeaturedImage] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState<QualificationMainDraft | null | undefined>(undefined);
+  const hydrationRef = useRef(false);
 
   const form = useForm<QualificationMainFormValues>({
     resolver: zodResolver(qualificationMainSchema),
@@ -335,6 +349,56 @@ const QualificationMain = () => {
   const titleValue = watch("title");
   const statusValue = watch("status");
 
+  useEffect(() => {
+    let active = true;
+    setDraftLoaded(undefined);
+
+    loadQualificationDraft<QualificationMainDraft>(draftKey)
+      .then((draft) => {
+        if (active) setDraftLoaded(draft);
+      })
+      .catch(() => {
+        if (active) setDraftLoaded(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (draftLoaded === undefined) return;
+    if (isEditMode && !data?.data) return;
+
+    if (isEditMode && data?.data) {
+      const { featured_image, ...rest } = data.data as any;
+      const nextValues = {
+        ...defaultValues,
+        ...rest,
+        category: normalizeSelectValue(rest.category),
+        level: normalizeSelectValue(rest.level),
+        awarding_body: normalizeSelectValue(rest.awarding_body),
+        qualification_type: normalizeSelectValue(rest.qualification_type),
+        delivery_mode: normalizeSelectValue(rest.delivery_mode),
+        featured_image: draftLoaded?.values.featured_image ?? null,
+      };
+
+      form.reset(nextValues);
+      setExistingImageUrl(draftLoaded?.clearFeaturedImage ? undefined : withCacheBust(featured_image));
+      setClearFeaturedImage(Boolean(draftLoaded?.clearFeaturedImage));
+      hydrationRef.current = true;
+      return;
+    }
+
+    form.reset({
+      ...defaultValues,
+      ...(draftLoaded?.values ?? {}),
+    });
+    setExistingImageUrl(undefined);
+    setClearFeaturedImage(Boolean(draftLoaded?.clearFeaturedImage));
+    hydrationRef.current = true;
+  }, [data?.data, draftLoaded, form, isEditMode]);
+
   // ── Auto-generate slug from title (create mode only) ─────────────────────
   useEffect(() => {
     if (!isEditMode && titleValue) {
@@ -342,23 +406,26 @@ const QualificationMain = () => {
     }
   }, [titleValue, isEditMode, setValue]);
 
-  // ── Populate form in edit mode ────────────────────────────────────────────
   useEffect(() => {
-    if (isEditMode && data?.data) {
-      const { featured_image, ...rest } = data?.data as any;
-      setExistingImageUrl(withCacheBust(featured_image));
-      setClearFeaturedImage(false);
-      form.reset({
-        ...rest,
-        category: normalizeSelectValue(rest.category),
-        level: normalizeSelectValue(rest.level),
-        awarding_body: normalizeSelectValue(rest.awarding_body),
-        qualification_type: normalizeSelectValue(rest.qualification_type),
-        delivery_mode: normalizeSelectValue(rest.delivery_mode),
-        featured_image: null,
+    if (!hydrationRef.current) return;
+
+    const subscription = watch((values) => {
+      saveQualificationDraft(draftKey, {
+        values: values as QualificationMainFormValues,
+        clearFeaturedImage,
       });
-    }
-  }, [isEditMode, data?.data, form]);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [clearFeaturedImage, draftKey, watch]);
+
+  useEffect(() => {
+    if (!hydrationRef.current) return;
+    saveQualificationDraft(draftKey, {
+      values: form.getValues(),
+      clearFeaturedImage,
+    });
+  }, [clearFeaturedImage, draftKey, form]);
 
   const uploadFeaturedImage = async (file: File): Promise<string> => {
     const presignResult = await presignQualificationImageUpload({
@@ -426,6 +493,7 @@ const QualificationMain = () => {
         setExistingImageUrl(withCacheBust(updatedImage));
         setClearFeaturedImage(false);
         form.setValue("featured_image", null);
+        clearQualificationDraft(draftKey);
       }
 
       toast({
@@ -450,6 +518,8 @@ const QualificationMain = () => {
         variant: result.type === "error" ? "destructive" : "default",
       });
 
+      if (result.type === "success")
+        clearQualificationDraft(draftKey);
       if (result.type === "success")
         navigate(`/admin/qualifications/${data?.data?.id}/edit?step=2`);
     }

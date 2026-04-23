@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -78,6 +78,12 @@ import {
 import { useGetQualificationMainQuery } from "@/redux/apis/qualification/qualificationMainApi";
 import { handleResponse } from "@/utils/handleResponse";
 import { TryCatch } from "@/utils/apiTryCatch";
+import {
+  buildQualificationDraftKey,
+  clearQualificationDraft,
+  loadQualificationDraft,
+  saveQualificationDraft,
+} from "@/lib/qualificationDrafts";
 
 // ─── Currency options ─────────────────────────────────────────────────────────
 
@@ -212,13 +218,22 @@ interface QualificationPriceData extends QualificationPriceFormValues {
   id: string;
 }
 
+type QualificationPriceDraft = {
+  isFormOpen: boolean;
+  editingPriceId: string | null;
+  values: QualificationPriceFormValues;
+};
+
 const QualificationPrice = () => {
   const { qualificationId } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const draftKey = buildQualificationDraftKey("price", qualificationId);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState<QualificationPriceDraft | null | undefined>(undefined);
+  const hydrationRef = useRef(false);
 
   const { data: pricesData, isLoading: isLoadingPrices } =
     useGetQualificationPricesQuery(qualificationId, {
@@ -244,6 +259,55 @@ const QualificationPrice = () => {
     formState: { isSubmitting },
   } = form;
 
+  useEffect(() => {
+    let active = true;
+    setDraftLoaded(undefined);
+
+    loadQualificationDraft<QualificationPriceDraft>(draftKey)
+      .then((draft) => {
+        if (active) setDraftLoaded(draft);
+      })
+      .catch(() => {
+        if (active) setDraftLoaded(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (draftLoaded === undefined) return;
+
+    if (draftLoaded) {
+      setIsFormOpen(draftLoaded.isFormOpen);
+      setEditingPriceId(draftLoaded.editingPriceId);
+      reset(draftLoaded.values);
+    }
+
+    hydrationRef.current = true;
+  }, [draftLoaded, reset]);
+
+  useEffect(() => {
+    if (!hydrationRef.current) return;
+
+    const subscription = form.watch((nextValues) => {
+      saveQualificationDraft(draftKey, {
+        isFormOpen,
+        editingPriceId,
+        values: nextValues as QualificationPriceFormValues,
+      });
+    });
+
+    saveQualificationDraft(draftKey, {
+      isFormOpen,
+      editingPriceId,
+      values: form.getValues(),
+    });
+
+    return () => subscription.unsubscribe();
+  }, [draftKey, editingPriceId, form, isFormOpen]);
+
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleEdit = (price: QualificationPriceData) => {
@@ -256,6 +320,17 @@ const QualificationPrice = () => {
       is_active: price.is_active,
     });
     setIsFormOpen(true);
+    saveQualificationDraft(draftKey, {
+      isFormOpen: true,
+      editingPriceId: price.id,
+      values: {
+        amount: String(price.amount),
+        currency: price.currency,
+        effective_from: new Date(price.effective_from),
+        effective_to: price.effective_to ? new Date(price.effective_to) : undefined,
+        is_active: price.is_active,
+      },
+    });
     // Use requestAnimationFrame to ensure the form is rendered before scrolling
     window.requestAnimationFrame(() => {
       const formElement = document.getElementById("qualification-price-form");
@@ -269,6 +344,11 @@ const QualificationPrice = () => {
     setEditingPriceId(null);
     reset(defaultValues);
     setIsFormOpen(true);
+    saveQualificationDraft(draftKey, {
+      isFormOpen: true,
+      editingPriceId: null,
+      values: defaultValues as QualificationPriceFormValues,
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -320,6 +400,7 @@ const QualificationPrice = () => {
         setIsFormOpen(false);
         setEditingPriceId(null);
         reset(defaultValues);
+        clearQualificationDraft(draftKey);
       }
     } else {
       const [data, error] = await TryCatch(
@@ -341,6 +422,7 @@ const QualificationPrice = () => {
       if (result.type === "success") {
         setIsFormOpen(false);
         reset(defaultValues);
+        clearQualificationDraft(draftKey);
       }
     }
   };

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -70,6 +70,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TryCatch } from "@/utils/apiTryCatch";
+import {
+  buildQualificationDraftKey,
+  clearQualificationDraft,
+  loadQualificationDraft,
+  saveQualificationDraft,
+} from "@/lib/qualificationDrafts";
 import {
   useCreateQualificationSessionLocationDateMutation,
   useGetQualificationSessionLocationDateQuery,
@@ -190,6 +196,12 @@ const locationSchema = z.object({
 type SessionDateValues = z.infer<typeof sessionDateSchema>;
 type LocationFormValues = z.infer<typeof locationSchema>;
 
+type QualificationSessionsDraft = {
+  isFormView: boolean;
+  editingId: string | null;
+  showAddForm: boolean;
+};
+
 // ─── Saved session date (includes API id) ────────────────────────────────────
 
 interface SavedSessionDate extends SessionDateValues {
@@ -211,6 +223,7 @@ const emptyDate = (): Partial<SessionDateValues> => ({
 interface SessionDateFormProps {
   locationId: string;
   initial?: Partial<SessionDateValues>;
+  draftKey?: string;
   onSave: (values: SessionDateValues) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
@@ -218,14 +231,66 @@ interface SessionDateFormProps {
 
 const SessionDateForm = ({
   initial,
+  draftKey,
   onSave,
   onCancel,
   isSaving,
 }: SessionDateFormProps) => {
+  const [draftLoaded, setDraftLoaded] = useState<Partial<SessionDateValues> | null | undefined>(undefined);
+  const hydrationRef = useRef(false);
   const form = useForm<SessionDateValues>({
     resolver: zodResolver(sessionDateSchema),
     defaultValues: { ...emptyDate(), ...initial } as SessionDateValues,
   });
+
+  useEffect(() => {
+    if (!draftKey) {
+      hydrationRef.current = true;
+      return;
+    }
+
+    let active = true;
+    setDraftLoaded(undefined);
+
+    loadQualificationDraft<Partial<SessionDateValues>>(draftKey)
+      .then((draft) => {
+        if (active) setDraftLoaded(draft);
+      })
+      .catch(() => {
+        if (active) setDraftLoaded(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (draftLoaded === undefined) return;
+
+    form.reset({
+      ...emptyDate(),
+      ...initial,
+      ...(draftLoaded ?? {}),
+    } as SessionDateValues);
+    hydrationRef.current = true;
+  }, [draftLoaded, form, initial]);
+
+  useEffect(() => {
+    if (!draftKey || !hydrationRef.current) return;
+
+    const subscription = form.watch((values) => {
+      saveQualificationDraft(draftKey, values);
+    });
+
+    saveQualificationDraft(draftKey, form.getValues());
+
+    return () => subscription.unsubscribe();
+  }, [draftKey, form]);
+
+  const handleCancel = () => {
+    onCancel();
+  };
 
   return (
     <Form {...form}>
@@ -320,7 +385,7 @@ const SessionDateForm = ({
           <Button
             type="button"
             variant="outline"
-            onClick={onCancel}
+            onClick={handleCancel}
             disabled={isSaving}
           >
             <X className="h-4 w-4 mr-1.5" />
@@ -508,6 +573,14 @@ const QualificationSessions = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isFormView, setIsFormView] = useState(Boolean(locationId));
+  const [draftLoaded, setDraftLoaded] = useState<QualificationSessionsDraft | null | undefined>(undefined);
+  const [locationDraftLoaded, setLocationDraftLoaded] = useState<LocationFormValues | null | undefined>(undefined);
+  const hydrationRef = useRef(false);
+  const sessionDraftKey = buildQualificationDraftKey("sessions", qualificationId);
+  const locationDraftKey = buildQualificationDraftKey(
+    "sessions",
+    `${qualificationId || "new"}:location:${locationId || "new"}`,
+  );
 
   // Sync isFormView with locationId from URL
   useEffect(() => {
@@ -528,26 +601,104 @@ const QualificationSessions = () => {
   });
 
   useEffect(() => {
+    let active = true;
+    setDraftLoaded(undefined);
+
+    loadQualificationDraft<QualificationSessionsDraft>(sessionDraftKey)
+      .then((draft) => {
+        if (active) setDraftLoaded(draft);
+      })
+      .catch(() => {
+        if (active) setDraftLoaded(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [sessionDraftKey]);
+
+  useEffect(() => {
+    let active = true;
+    setLocationDraftLoaded(undefined);
+
+    loadQualificationDraft<LocationFormValues>(locationDraftKey)
+      .then((draft) => {
+        if (active) setLocationDraftLoaded(draft);
+      })
+      .catch(() => {
+        if (active) setLocationDraftLoaded(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [locationDraftKey]);
+
+  useEffect(() => {
+    if (draftLoaded === undefined || locationDraftLoaded === undefined) return;
+
+    if (draftLoaded) {
+      setIsFormView(Boolean(draftLoaded.isFormView || locationId));
+      setEditingId(draftLoaded.editingId);
+      setShowAddForm(draftLoaded.showAddForm);
+    } else if (locationId) {
+      setIsFormView(true);
+    }
+
     const locations = locationsData?.data?.results || locationsData?.data || [];
+    const defaultLocationValues: LocationFormValues = {
+      name: "",
+      venue_address: "",
+      sort_order: 0,
+      is_active: true,
+    };
+
+    let nextValues = defaultLocationValues;
     if (locationId && Array.isArray(locations)) {
       const currentLoc = locations.find((l: any) => l.id === locationId);
       if (currentLoc) {
-        locationForm.reset({
+        nextValues = {
           name: currentLoc.name,
           venue_address: currentLoc.venue_address,
           sort_order: currentLoc.sort_order,
           is_active: currentLoc.is_active,
-        });
+        };
       }
-    } else {
-      locationForm.reset({
-        name: "",
-        venue_address: "",
-        sort_order: 0,
-        is_active: true,
-      });
     }
-  }, [locationId, locationsData, locationForm]);
+
+    locationForm.reset({
+      ...nextValues,
+      ...(locationDraftLoaded ?? {}),
+    });
+    hydrationRef.current = true;
+  }, [draftLoaded, locationDraftLoaded, locationForm, locationId, locationsData]);
+
+  useEffect(() => {
+    if (!hydrationRef.current) return;
+
+    const subscription = locationForm.watch((values) => {
+      saveQualificationDraft(sessionDraftKey, {
+        isFormView: Boolean(isFormView || locationId),
+        editingId,
+        showAddForm,
+      });
+      if (!locationId || isFormView) {
+        saveQualificationDraft(locationDraftKey, values);
+      }
+    });
+
+    saveQualificationDraft(sessionDraftKey, {
+      isFormView: Boolean(isFormView || locationId),
+      editingId,
+      showAddForm,
+    });
+
+    if (!locationId || isFormView) {
+      saveQualificationDraft(locationDraftKey, locationForm.getValues());
+    }
+
+    return () => subscription.unsubscribe();
+  }, [editingId, isFormView, locationDraftKey, locationForm, locationId, sessionDraftKey, showAddForm]);
 
   const onLocationSubmit = async (payload: LocationFormValues) => {
     if (locationId) {
@@ -569,6 +720,9 @@ const QualificationSessions = () => {
         description: result.message,
         variant: result.type === "error" ? "destructive" : "default",
       });
+      if (result.type === "success") {
+        clearQualificationDraft(locationDraftKey);
+      }
     } else {
       const [data, error] = await TryCatch(
         createQualificationSessionLocation({
@@ -590,6 +744,7 @@ const QualificationSessions = () => {
       });
 
       if (result.type === "success") {
+        clearQualificationDraft(locationDraftKey);
         navigate(
           `/admin/qualifications/${qualificationId}/edit?step=4&location=${data?.data?.id}`,
         );
@@ -607,6 +762,10 @@ const QualificationSessions = () => {
   // ── Add date ──────────────────────────────────────────────────────────────
   const handleAddDate = async (values: SessionDateValues) => {
     if (!locationId) return;
+    const dateDraftKey = buildQualificationDraftKey(
+      "sessions",
+      `${qualificationId || "new"}:location:${locationId}:add-date`,
+    );
 
     const payload = {
       date: format(values.start_at, "yyyy-MM-dd"),
@@ -633,12 +792,17 @@ const QualificationSessions = () => {
     if (data?.success) {
       refetch();
       setShowAddForm(false);
+      clearQualificationDraft(dateDraftKey);
     }
   };
 
   // ── Edit date ─────────────────────────────────────────────────────────────
   const handleEditDate = async (id: string, values: SessionDateValues) => {
     if (!locationId) return;
+    const dateDraftKey = buildQualificationDraftKey(
+      "sessions",
+      `${qualificationId || "new"}:location:${locationId}:date:${id}`,
+    );
 
     const payload = {
       date: format(values.start_at, "yyyy-MM-dd"),
@@ -669,6 +833,7 @@ const QualificationSessions = () => {
     if (data?.success) {
       refetch();
       setEditingId(null);
+      clearQualificationDraft(dateDraftKey);
     }
   };
 
@@ -971,6 +1136,10 @@ const QualificationSessions = () => {
                                   ? new Date(item.start_at)
                                   : undefined,
                             }}
+                            draftKey={buildQualificationDraftKey(
+                              "sessions",
+                              `${qualificationId || "new"}:location:${locationId}:date:${item.id}`,
+                            )}
                             onSave={(values) => handleUpdateDate(item.id, values)}
                             onCancel={() => setEditingId(null)}
                             isSaving={isCreatingDate || isUpdatingDate}
@@ -1009,6 +1178,10 @@ const QualificationSessions = () => {
                       </div>
                       <SessionDateForm
                         locationId={locationId!}
+                        draftKey={buildQualificationDraftKey(
+                          "sessions",
+                          `${qualificationId || "new"}:location:${locationId}:add-date`,
+                        )}
                         onSave={handleAddDate}
                         onCancel={() => setShowAddForm(false)}
                         isSaving={isCreatingDate}
