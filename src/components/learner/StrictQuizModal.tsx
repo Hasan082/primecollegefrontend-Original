@@ -95,7 +95,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
       : null;
   const latestAttempt = previousAttempts[0];
   const canRetakeFromLatest = typeof latestAttempt?.can_retake === "boolean" ? latestAttempt.can_retake : null;
-  
+
   const quizConfig = (quizConfigData as any)?.data || quizConfigData;
   const maxAttempts =
     typeof attemptsPayload?.max_attempts === "number"
@@ -106,7 +106,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
     typeof remainingAttempts === "number"
       ? remainingAttempts <= 0
       : canRetakeFromLatest === false;
-  const canTake = !maxAttemptsReached; 
+  const canTake = !maxAttemptsReached;
 
   const finalizePendingAttempt = useCallback(async () => {
     const pendingAttempt = [...previousAttempts]
@@ -188,7 +188,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
   const exitFullscreen = useCallback(() => {
     try {
       if (document.fullscreenElement) document.exitFullscreen();
-    } catch {}
+    } catch { }
     setIsFullscreen(false);
   }, []);
 
@@ -251,7 +251,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
   }, [phase, result, triggerWarning]);
 
   useEffect(() => {
-    return () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); };
+    return () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => { }); };
   }, []);
 
   const startQuiz = async () => {
@@ -313,7 +313,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
       toast({ title: `${unanswered.length} question(s) unanswered`, description: "Please answer all questions before submitting.", variant: "destructive" });
       return;
     }
-    
+
     try {
       const res = await submitQuizMutation({
         attemptId,
@@ -486,8 +486,8 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
             </div>
 
             {canTake ? (
-              <button 
-                onClick={startQuiz} 
+              <button
+                onClick={startQuiz}
                 disabled={isStarting}
                 className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
               >
@@ -568,8 +568,8 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
               </ul>
             </div>
 
-            <button 
-              onClick={handleClose} 
+            <button
+              onClick={handleClose}
               className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
             >
               Close & Return to Unit
@@ -626,8 +626,8 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
 
             <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
               <p className="text-sm text-muted-foreground">{answeredCount} of {totalQuestions} answered</p>
-              <button 
-                onClick={handleSubmit} 
+              <button
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
               >
@@ -655,7 +655,7 @@ const StrictQuizModal = ({ qualificationId, unitId, unitCode, unitName, onClose,
 
             {/* Score Circle */}
             <div className="mb-8">
-              <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full border-4 ${result.passed ? "border-green-500" : "border-destructive"}`}>
+              <div className={`inline-flex items-center justify-center w-40 h-40 rounded-full border-4 ${result.passed ? "border-green-500" : "border-destructive"}`}>
                 <div>
                   <p className={`text-3xl font-bold ${result.passed ? "text-green-600" : "text-destructive"}`}>{result.score_percent}%</p>
                   <p className="text-xs text-muted-foreground">Score</p>

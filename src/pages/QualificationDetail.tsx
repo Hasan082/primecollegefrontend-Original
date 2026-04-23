@@ -310,18 +310,18 @@ const QualificationDetail = () => {
   const rawBlocks = qualification?.body_blocks || [];
   const bodyBlocks = qualification
     ? filterOutSystemBlocks(getRenderableBlocks(rawBlocks, detailPageSlug || slug))
-        .filter((block) => block.type !== "qualification_slider")
-        .map((block) =>
-          block.type === "blog"
-            ? {
-                ...block,
-                data: {
-                  ...(block.data as any),
-                  items: blogItems,
-                },
-              }
-            : block,
-        )
+      .filter((block) => block.type !== "qualification_slider")
+      .map((block) =>
+        block.type === "blog"
+          ? {
+            ...block,
+            data: {
+              ...(block.data as any),
+              items: blogItems,
+            },
+          }
+          : block,
+      )
     : [];
 
   const hasCmsBody = detailPagePublished !== false && bodyBlocks.length > 0;
