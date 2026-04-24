@@ -26,7 +26,8 @@ const PageCard = ({
   isPageDeleting,
   deletingId,
 }: PageCardProps) => {
-  const blockCount = safeParseBlocks(page.blocks).length;
+  const visibleBlocks = safeParseBlocks(page.blocks).filter((b) => b.type !== "hero");
+  const blockCount = visibleBlocks.length;
   const previewPath = getPreviewPath({
     slug: page.slug,
     pageType,
@@ -62,7 +63,7 @@ const PageCard = ({
               {page.page_context.qualification_title}
             </Badge>
           ) : null}
-          {safeParseBlocks(page.blocks)
+          {visibleBlocks
             .slice(0, 3)
             .map((b) => (
               <Badge key={b.id} variant="secondary" className="text-[10px]">

@@ -64,11 +64,8 @@ const PageEditor = () => {
       : queryPageType !== "general"
         ? queryPageType
         : rememberOrResolvePageType(cmsPage);
-    const resolvedBlocks = getRenderableBlocks(cmsPage, resolvedSlug);
-    const normalizedBlocks =
-      resolvedPageType === "qualification_detail"
-        ? resolvedBlocks.filter((block) => block.type !== "hero" && block.type !== "qualification_hero")
-        : resolvedBlocks;
+    const resolvedBlocks = getRenderableBlocks(cmsPage, resolvedSlug, resolvedPageType);
+    const normalizedBlocks = resolvedBlocks;
 
     setPageTitle(cmsPage.title || "Untitled");
     setBlocks(normalizedBlocks);

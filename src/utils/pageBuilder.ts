@@ -144,12 +144,33 @@ const normalizeHomePageBlocks = (blocks: ContentBlock[]): ContentBlock[] => {
 export const normalizePageBlocksForSlug = (
   blocks: ContentBlock[],
   slug?: string,
+  pageType?: CmsPageCategory,
 ): ContentBlock[] => {
   if ((slug || "") === "home") return normalizeHomePageBlocks(blocks);
-  if ((slug || "") === "contact" || (slug || "") === "about" || isQualificationPageSlug(slug)) {
+  if ((slug || "") === "contact" || (slug || "") === "about") {
     return blocks.filter((block) => block.type !== "hero" && block.type !== "qualification_hero");
   }
-  if (slug && slug !== "home" && slug !== "contact" && slug !== "about") {
+  if (pageType === "qualification_detail" || isQualificationPageSlug(slug)) {
+    const qHeroIndex = blocks.findIndex((block) => block.type === "qualification_hero");
+    const filteredBlocks = blocks.filter((block) => block.type !== "qualification_hero" && block.type !== "hero");
+
+    if (qHeroIndex >= 0) {
+      const qHero = blocks[qHeroIndex];
+      return [{ ...qHero, isLocked: true, isFixed: true }, ...filteredBlocks];
+    }
+    return [
+      {
+        id: "static_qualification_hero",
+        type: "qualification_hero",
+        label: BLOCK_TYPE_LABELS.qualification_hero,
+        isLocked: true,
+        isFixed: true,
+        data: {},
+      } as ContentBlock,
+      ...filteredBlocks,
+    ];
+  }
+  if (slug && slug !== "home" && slug !== "contact" && slug !== "about" && pageType !== "qualification_detail" && !isQualificationPageSlug(slug)) {
     const heroIndex = blocks.findIndex((block) => block.type === "hero");
     if (heroIndex >= 0) {
       const heroBlock = normalizeHeroBlock(blocks[heroIndex]);
@@ -270,17 +291,19 @@ export const getFallbackBlocksForPageType = (
 export const getRenderableBlocks = (
   pageOrBlocks: CMSPage | ContentBlock[] | string | null | undefined,
   fallbackSlug?: string,
+  pageType?: CmsPageCategory,
 ): ContentBlock[] => {
   if (Array.isArray(pageOrBlocks) || typeof pageOrBlocks === "string" || !pageOrBlocks) {
     const parsed = safeParseBlocks(pageOrBlocks);
     const resolvedBlocks = parsed.length > 0 ? parsed : getFallbackBlocksForSlug(fallbackSlug || "");
-    return normalizePageBlocksForSlug(resolvedBlocks, fallbackSlug);
+    return normalizePageBlocksForSlug(resolvedBlocks, fallbackSlug, pageType);
   }
 
   const parsed = safeParseBlocks(pageOrBlocks.blocks);
   const resolvedSlug = fallbackSlug || pageOrBlocks.slug || "";
+  const resolvedPageType = pageType || pageOrBlocks.page_type;
   const resolvedBlocks = parsed.length > 0 ? parsed : getFallbackBlocksForSlug(resolvedSlug);
-  return normalizePageBlocksForSlug(resolvedBlocks, resolvedSlug);
+  return normalizePageBlocksForSlug(resolvedBlocks, resolvedSlug, resolvedPageType);
 };
 
 export const normalizeCmsPageCategory = (value?: string | null): CmsPageCategory => {
@@ -305,9 +328,7 @@ export const getAllowedBlockTypesForPage = (
   const hideHeroForCurrentPage =
     currentSlug === "home" ||
     currentSlug === "about" ||
-    currentSlug === "contact" ||
-    pageType === "qualification_detail" ||
-    isQualificationPageSlug(currentSlug);
+    currentSlug === "contact";
 
   return ALL_BLOCK_TYPES.filter((type) => {
     if (type === "qualification_hero") return false;
