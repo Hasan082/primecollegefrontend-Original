@@ -23,15 +23,16 @@ import { ArrowLeft, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   useGetIqaAssignedEnrolmentsQuery,
-  useGetIqaReviewQueueQuery,
-  useSubmitIqaBulkReviewMutation,
+  useGetIqaSamplesQuery,
+  useStartIqaSampleReviewMutation,
+  useSubmitIqaSampleDecisionMutation,
 } from "@/redux/apis/iqa/iqaApi";
 import {
   getIqaWorkflowBadgeVariant,
   getIqaWorkflowLabel,
   getSubmissionOutcomeLabel,
 } from "@/lib/iqaStatus";
-import type { IQAReviewQueueItem } from "@/types/iqa.types";
+import type { UnitIQASampleItem } from "@/types/iqa.types";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
@@ -43,31 +44,32 @@ const inboxScopes = [
 ] as const;
 
 function getDaysWaiting(submittedAt?: string | null) {
-  if (!submittedAt) {
-    return null;
-  }
-
+  if (!submittedAt) return null;
   const submitted = new Date(submittedAt);
   const now = new Date();
-  const diffMs = now.getTime() - submitted.getTime();
+  return Math.max(0, Math.floor((now.getTime() - submitted.getTime()) / (1000 * 60 * 60 * 24)));
+}
 
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+function getSampleWorkflowStatus(item: UnitIQASampleItem) {
+  if (item.review_status === "approved") return "IQA Approved";
+  if (item.review_status === "action_required") return "Assessor Action Required";
+  if (item.review_status === "escalated") return "Escalated to Admin";
+  if (item.review_status === "auto_cleared") return "Auto-Cleared (Not Sampled)";
+  return "Pending IQA Review";
 }
 
 function matchesInboxScope(
-  item: IQAReviewQueueItem,
+  item: UnitIQASampleItem,
   scope: (typeof inboxScopes)[number]["value"],
 ) {
-  const label = getIqaWorkflowLabel(item.iqa_status);
+  const label = getIqaWorkflowLabel(getSampleWorkflowStatus(item));
 
   if (scope === "resolved") {
-    return label === "Signed Off";
+    return label === "Signed Off" || label === "Auto Cleared";
   }
-
   if (scope === "escalated") {
     return label === "Escalated";
   }
-
   if (scope === "all") {
     return true;
   }
@@ -77,153 +79,139 @@ function matchesInboxScope(
 
 const SamplingQueue = () => {
   const { toast } = useToast();
-  const [scope, setScope] =
-    useState<(typeof inboxScopes)[number]["value"]>("needs_attention");
+  const [scope, setScope] = useState<(typeof inboxScopes)[number]["value"]>("needs_attention");
   const [query, setQuery] = useState({
-    trainer_id: "",
-    qualification_id: "",
+    trainer: "",
+    qualification: "",
   });
-  const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<string[]>([]);
+  const [selectedSampleIds, setSelectedSampleIds] = useState<string[]>([]);
   const [bulkDecision, setBulkDecision] = useState<"approved" | "changes_required" | "referred_back">("approved");
   const [bulkNotes, setBulkNotes] = useState("");
 
-  const { data, isLoading, isError } = useGetIqaReviewQueueQuery(query);
+  const { data, isLoading, isError } = useGetIqaSamplesQuery({
+    ...query,
+    mine: true,
+  });
   const { data: enrolmentsResponse } = useGetIqaAssignedEnrolmentsQuery();
-  const [submitBulkReview, { isLoading: isSubmittingBulk }] = useSubmitIqaBulkReviewMutation();
+  const [startSampleReview] = useStartIqaSampleReviewMutation();
+  const [submitSampleDecision, { isLoading: isSubmittingBulk }] = useSubmitIqaSampleDecisionMutation();
 
   const enrollmentsData = enrolmentsResponse?.data?.results || [];
-
   const trainers: any = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          enrollmentsData
-            .map((enrollment) => enrollment.trainer)
-            .filter(Boolean)
-            .map((trainer) => [trainer.id, trainer]),
-        ).values(),
-      ),
+    () => Array.from(new Map(
+      enrollmentsData
+        .map((enrollment) => enrollment.trainer)
+        .filter(Boolean)
+        .map((trainer) => [trainer.id, trainer]),
+    ).values()),
     [enrollmentsData],
   );
   const qualifications: any = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          enrollmentsData
-            .map((enrollment) => enrollment.qualification)
-            .filter(Boolean)
-            .map((qualification) => [qualification.id, qualification]),
-        ).values(),
-      ),
+    () => Array.from(new Map(
+      enrollmentsData
+        .map((enrollment) => enrollment.qualification)
+        .filter(Boolean)
+        .map((qualification) => [qualification.id, qualification]),
+    ).values()),
     [enrollmentsData],
   );
 
   const entries = useMemo(
-    () =>
-      [...(data?.data?.results || [])]
-        .filter((item) => matchesInboxScope(item, scope))
-        .sort((left, right) => {
-          const leftDate = left.submitted_at ? new Date(left.submitted_at).getTime() : 0;
-          const rightDate = right.submitted_at ? new Date(right.submitted_at).getTime() : 0;
-          return leftDate - rightDate;
-        }),
-    [data?.data?.results, scope],
+    () => [...(data?.results || [])]
+      .filter((item) => matchesInboxScope(item, scope))
+      .sort((left, right) => {
+        const leftDate = left.trigger_submission.submitted_at ? new Date(left.trigger_submission.submitted_at).getTime() : 0;
+        const rightDate = right.trigger_submission.submitted_at ? new Date(right.trigger_submission.submitted_at).getTime() : 0;
+        return leftDate - rightDate;
+      }),
+    [data?.results, scope],
   );
 
   const scopeCounts = useMemo(() => {
-    const allItems = data?.data?.results || [];
+    const allItems = data?.results || [];
     return {
       needsAttention: allItems.filter((item) => matchesInboxScope(item, "needs_attention")).length,
       escalated: allItems.filter((item) => matchesInboxScope(item, "escalated")).length,
       resolved: allItems.filter((item) => matchesInboxScope(item, "resolved")).length,
       all: allItems.length,
     };
-  }, [data?.data?.results]);
+  }, [data?.results]);
 
   const selectableEntries = useMemo(
-    () =>
-      entries.filter(
-        (item) => !item.has_open_admin_concern && !item.iqa_reviewed_at && getIqaWorkflowLabel(item.iqa_status) !== "Escalated",
-      ),
+    () => entries.filter((item) => item.review_status === "pending" || item.review_status === "in_progress"),
     [entries],
   );
   const selectedEntries = useMemo(
-    () => entries.filter((item) => selectedSubmissionIds.includes(item.submission_id)),
-    [entries, selectedSubmissionIds],
+    () => entries.filter((item) => selectedSampleIds.includes(item.id)),
+    [entries, selectedSampleIds],
   );
 
   const canBulkReview = scope === "needs_attention" || scope === "all";
 
-  const toggleSubmission = (submissionId: string, checked: boolean) => {
-    setSelectedSubmissionIds((prev) =>
-      checked
-        ? prev.includes(submissionId)
-          ? prev
-          : [...prev, submissionId]
-        : prev.filter((id) => id !== submissionId),
+  const toggleSample = (sampleId: string, checked: boolean) => {
+    setSelectedSampleIds((prev) =>
+      checked ? (prev.includes(sampleId) ? prev : [...prev, sampleId]) : prev.filter((id) => id !== sampleId),
     );
   };
 
   const toggleAllCurrent = (checked: boolean) => {
-    setSelectedSubmissionIds(checked ? selectableEntries.map((item) => item.submission_id) : []);
+    setSelectedSampleIds(checked ? selectableEntries.map((item) => item.id) : []);
   };
 
   const handleBulkReview = async () => {
-    if (!selectedSubmissionIds.length) {
-      toast({ title: "Select at least one submission", variant: "destructive" });
+    if (!selectedEntries.length) {
+      toast({ title: "Select at least one sample", variant: "destructive" });
       return;
     }
 
-    try {
-      const response = await submitBulkReview({
-        submission_ids: selectedSubmissionIds,
-        iqa_decision: bulkDecision,
-        iqa_review_notes: bulkNotes.trim(),
-        iqa_sampled: true,
-      }).unwrap();
+    const body = {
+      decision: bulkDecision === "approved" ? "approved" : "action_required",
+      comments: bulkNotes.trim(),
+      action_type: bulkDecision === "approved" ? "" : bulkDecision,
+    } as const;
 
-      if (response.data.failed.length > 0) {
-        toast({
-          title: "Bulk review completed with some skipped items",
-          description: `${response.data.processed.length} processed, ${response.data.failed.length} skipped.`,
-        });
-      } else {
-        toast({
-          title: "Bulk IQA review completed",
-          description: `${response.data.processed.length} submissions updated.`,
-        });
+    const processed: string[] = [];
+    const failed: string[] = [];
+
+    for (const item of selectedEntries) {
+      try {
+        if (item.review_status === "pending") {
+          await startSampleReview(item.id).unwrap();
+        }
+        await submitSampleDecision({ sampleId: item.id, body }).unwrap();
+        processed.push(item.id);
+      } catch {
+        failed.push(item.id);
       }
-      setSelectedSubmissionIds([]);
-      setBulkNotes("");
-    } catch {
-      toast({ title: "Bulk IQA review failed", variant: "destructive" });
     }
+
+    if (failed.length > 0) {
+      toast({
+        title: "Bulk review completed with some skipped items",
+        description: `${processed.length} processed, ${failed.length} skipped.`,
+      });
+    } else {
+      toast({
+        title: "Bulk IQA review completed",
+        description: `${processed.length} samples updated.`,
+      });
+    }
+
+    setSelectedSampleIds([]);
+    setBulkNotes("");
   };
 
   if (isLoading) {
-    return (
-      <div className="py-20 text-center text-muted-foreground">
-        Loading sampling queue...
-      </div>
-    );
+    return <div className="py-20 text-center text-muted-foreground">Loading sampling queue...</div>;
   }
 
   if (isError) {
-    return (
-      <div className="py-20 text-center text-muted-foreground">
-        Failed to load sampling queue.
-      </div>
-    );
+    return <div className="py-20 text-center text-muted-foreground">Failed to load sampling queue.</div>;
   }
 
   return (
     <div className="space-y-6">
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-2"
-        onClick={() => window.history.back()}
-      >
+      <Button variant="outline" size="sm" className="gap-2" onClick={() => window.history.back()}>
         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
       </Button>
 
@@ -235,97 +223,52 @@ const SamplingQueue = () => {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <Card className={scope === "needs_attention" ? "border-primary" : undefined}>
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Needs Attention
-            </p>
-            <p className="mt-1 text-2xl font-semibold">{scopeCounts.needsAttention}</p>
-          </CardContent>
-        </Card>
-        <Card className={scope === "escalated" ? "border-primary" : undefined}>
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Escalated</p>
-            <p className="mt-1 text-2xl font-semibold">{scopeCounts.escalated}</p>
-          </CardContent>
-        </Card>
-        <Card className={scope === "resolved" ? "border-primary" : undefined}>
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Resolved</p>
-            <p className="mt-1 text-2xl font-semibold">{scopeCounts.resolved}</p>
-          </CardContent>
-        </Card>
-        <Card className={scope === "all" ? "border-primary" : undefined}>
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">All Items</p>
-            <p className="mt-1 text-2xl font-semibold">{scopeCounts.all}</p>
-          </CardContent>
-        </Card>
+        {[
+          ["needs_attention", "Needs Attention", scopeCounts.needsAttention],
+          ["escalated", "Escalated", scopeCounts.escalated],
+          ["resolved", "Resolved", scopeCounts.resolved],
+          ["all", "All Items", scopeCounts.all],
+        ].map(([value, label, count]) => (
+          <Card key={String(value)} className={scope === value ? "border-primary" : undefined}>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+              <p className="mt-1 text-2xl font-semibold">{count}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Tabs
-          value={scope}
-          onValueChange={(value) => setScope(value as typeof scope)}
-          className="w-full lg:w-auto"
-        >
+        <Tabs value={scope} onValueChange={(value) => setScope(value as typeof scope)} className="w-full lg:w-auto">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-auto">
-            <TabsTrigger value="needs_attention">
-              Needs Attention ({scopeCounts.needsAttention})
-            </TabsTrigger>
-            <TabsTrigger value="escalated">
-              Escalated ({scopeCounts.escalated})
-            </TabsTrigger>
-            <TabsTrigger value="resolved">
-              Resolved ({scopeCounts.resolved})
-            </TabsTrigger>
-            <TabsTrigger value="all">
-              All Items ({scopeCounts.all})
-            </TabsTrigger>
+            <TabsTrigger value="needs_attention">Needs Attention ({scopeCounts.needsAttention})</TabsTrigger>
+            <TabsTrigger value="escalated">Escalated ({scopeCounts.escalated})</TabsTrigger>
+            <TabsTrigger value="resolved">Resolved ({scopeCounts.resolved})</TabsTrigger>
+            <TabsTrigger value="all">All Items ({scopeCounts.all})</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Select
-          value={query.trainer_id || "all"}
-          onValueChange={(value) =>
-            setQuery((prev) => ({
-              ...prev,
-              trainer_id: value === "all" ? "" : value,
-            }))
-          }
-        >
+        <Select value={query.trainer || "all"} onValueChange={(value) => setQuery((prev) => ({ ...prev, trainer: value === "all" ? "" : value }))}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="All Trainers" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Trainers</SelectItem>
             {trainers.map((trainer) => (
-              <SelectItem key={trainer?.id} value={trainer?.id}>
-                {trainer?.name}
-              </SelectItem>
+              <SelectItem key={trainer?.id} value={trainer?.id}>{trainer?.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={query.qualification_id || "all"}
-          onValueChange={(value) =>
-            setQuery((prev) => ({
-              ...prev,
-              qualification_id: value === "all" ? "" : value,
-            }))
-          }
-        >
+        <Select value={query.qualification || "all"} onValueChange={(value) => setQuery((prev) => ({ ...prev, qualification: value === "all" ? "" : value }))}>
           <SelectTrigger className="w-[220px]">
             <SelectValue placeholder="All Qualifications" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Qualifications</SelectItem>
             {qualifications?.map((qualification) => (
-              <SelectItem key={qualification?.id} value={qualification?.id}>
-                {qualification?.title}
-              </SelectItem>
+              <SelectItem key={qualification?.id} value={qualification?.id}>{qualification?.title}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -336,8 +279,7 @@ const SamplingQueue = () => {
           <CardContent className="p-4 space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm font-medium">
-                Bulk Review
-                {selectedSubmissionIds.length > 0 ? ` (${selectedSubmissionIds.length} selected)` : ""}
+                Bulk Review{selectedSampleIds.length > 0 ? ` (${selectedSampleIds.length} selected)` : ""}
               </p>
               <Select value={bulkDecision} onValueChange={(value) => setBulkDecision(value as typeof bulkDecision)}>
                 <SelectTrigger className="w-[220px]">
@@ -349,10 +291,7 @@ const SamplingQueue = () => {
                   <SelectItem value="referred_back">Refer Back</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                onClick={handleBulkReview}
-                disabled={isSubmittingBulk || selectedSubmissionIds.length === 0}
-              >
+              <Button onClick={handleBulkReview} disabled={isSubmittingBulk || selectedSampleIds.length === 0}>
                 Apply to Selected
               </Button>
             </div>
@@ -360,7 +299,7 @@ const SamplingQueue = () => {
               value={bulkNotes}
               onChange={(event) => setBulkNotes(event.target.value)}
               rows={3}
-              placeholder="Optional shared IQA note for all selected submissions..."
+              placeholder="Optional shared IQA note for all selected samples..."
             />
           </CardContent>
         </Card>
@@ -371,14 +310,16 @@ const SamplingQueue = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                {canBulkReview ? <TableHead className="w-10">
-                  <input
-                    type="checkbox"
-                    aria-label="Select all current submissions"
-                    checked={selectableEntries.length > 0 && selectedSubmissionIds.length === selectableEntries.length}
-                    onChange={(event) => toggleAllCurrent(event.target.checked)}
-                  />
-                </TableHead> : null}
+                {canBulkReview ? (
+                  <TableHead className="w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all current samples"
+                      checked={selectableEntries.length > 0 && selectedSampleIds.length === selectableEntries.length}
+                      onChange={(event) => toggleAllCurrent(event.target.checked)}
+                    />
+                  </TableHead>
+                ) : null}
                 <TableHead>Learner</TableHead>
                 <TableHead>Unit</TableHead>
                 <TableHead>Qualification</TableHead>
@@ -394,106 +335,75 @@ const SamplingQueue = () => {
             <TableBody>
               {entries.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={canBulkReview ? 11 : 10}
-                    className="text-center text-sm text-muted-foreground py-10"
-                  >
+                  <TableCell colSpan={canBulkReview ? 11 : 10} className="text-center text-sm text-muted-foreground py-10">
                     {scope === "needs_attention"
                       ? "No active IQA items need attention."
                       : scope === "escalated"
                         ? "No escalated IQA items found."
-                      : "No IQA items found for this view."}
+                        : "No IQA items found for this view."}
                   </TableCell>
                 </TableRow>
               ) : (
                 entries.map((item) => {
-                  const daysWaiting = getDaysWaiting(item.submitted_at);
+                  const submittedAt = item.trigger_submission.submitted_at;
+                  const daysWaiting = getDaysWaiting(submittedAt);
+                  const workflowStatus = getSampleWorkflowStatus(item);
 
                   return (
-                  <TableRow key={item.submission_id}>
-                    {canBulkReview ? (
+                    <TableRow key={item.id}>
+                      {canBulkReview ? (
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${item.learner.name}`}
+                            disabled={!(item.review_status === "pending" || item.review_status === "in_progress")}
+                            checked={selectedSampleIds.includes(item.id)}
+                            onChange={(event) => toggleSample(item.id, event.target.checked)}
+                          />
+                        </TableCell>
+                      ) : null}
+                      <TableCell className="font-medium text-sm">{item.learner.name}</TableCell>
+                      <TableCell className="text-sm">{item.unit.code}: {item.unit.title}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{item.qualification.title}</TableCell>
+                      <TableCell className="text-sm">{item.trainer?.name || "Unassigned"}</TableCell>
                       <TableCell>
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${item.learner.name}`}
-                          disabled={item.has_open_admin_concern || Boolean(item.iqa_reviewed_at)}
-                          checked={selectedSubmissionIds.includes(item.submission_id)}
-                          onChange={(event) => toggleSubmission(item.submission_id, event.target.checked)}
-                        />
+                        <Badge variant={item.trigger_submission.status === "competent" ? "default" : "secondary"} className="text-xs">
+                          {getSubmissionOutcomeLabel(item.trigger_submission.status)}
+                        </Badge>
                       </TableCell>
-                    ) : null}
-                    <TableCell className="font-medium text-sm">
-                      {item.learner.name}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {item.unit.unit_code}: {item.unit.title}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {item.qualification.title}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {item.trainer?.name || "Unassigned"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          item.status === "competent" ? "default" : "secondary"
-                        }
-                        className="text-xs"
-                      >
-                        {getSubmissionOutcomeLabel(item.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {item.submitted_at
-                        ? new Date(item.submitted_at).toLocaleDateString()
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {daysWaiting === null ? (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      ) : (
-                        <Badge
-                          variant={daysWaiting >= 5 ? "destructive" : "outline"}
-                          className="text-xs"
-                        >
-                          {daysWaiting}d
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {item.iqa_reviewed_at
-                        ? new Date(item.iqa_reviewed_at).toLocaleDateString()
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Badge
-                          variant={getIqaWorkflowBadgeVariant(
-                            getIqaWorkflowLabel(item.iqa_status),
-                          )}
-                          className="text-xs"
-                        >
-                          {getIqaWorkflowLabel(item.iqa_status)}
-                        </Badge>
-                        {item.has_open_admin_concern ? (
+                      <TableCell className="text-sm text-muted-foreground">
+                        {submittedAt ? new Date(submittedAt).toLocaleDateString() : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {daysWaiting === null ? (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        ) : (
+                          <Badge variant={daysWaiting >= 5 ? "destructive" : "outline"} className="text-xs">
+                            {daysWaiting}d
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {item.reviewed_at ? new Date(item.reviewed_at).toLocaleDateString() : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <Badge variant={getIqaWorkflowBadgeVariant(getIqaWorkflowLabel(workflowStatus))} className="text-xs">
+                            {getIqaWorkflowLabel(workflowStatus)}
+                          </Badge>
                           <div className="text-[11px] text-muted-foreground">
-                            {item.admin_concern_status} since{" "}
-                            {item.admin_concern_raised_at
-                              ? new Date(item.admin_concern_raised_at).toLocaleDateString()
-                              : "—"}
+                            {item.manually_sampled ? "Manual sample" : item.sampling_reason.replace(/_/g, " ")}
                           </div>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/iqa/review/${item.submission_id}`}>
-                          <Eye className="w-3.5 h-3.5 mr-1" /> Review
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/iqa/review/${item.id}`}>
+                            <Eye className="w-3.5 h-3.5 mr-1" /> Review
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}

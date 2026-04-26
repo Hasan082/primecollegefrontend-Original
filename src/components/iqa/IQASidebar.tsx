@@ -4,7 +4,6 @@ import {
   Users,
   BarChart3,
   Settings,
-  ClipboardList,
   FolderTree,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -29,7 +28,6 @@ const mainNavItems = [
     icon: FolderTree,
   },
   { title: "IQA Inbox", url: "/iqa/sampling", icon: ClipboardCheck },
-  // { title: "Checklists", url: "/iqa/checklists", icon: ClipboardList },
   { title: "Trainer Performance", url: "/iqa/trainers", icon: Users },
   { title: "Reports", url: "/iqa/reports", icon: BarChart3 },
 ];
@@ -38,7 +36,11 @@ const toolsNavItems = [
   { title: "Sampling Settings", url: "/iqa/settings", icon: Settings },
 ];
 
-const IQASidebar = () => {
+interface IQASidebarProps {
+  canManageSamplingSettings?: boolean;
+}
+
+const IQASidebar = ({ canManageSamplingSettings = false }: IQASidebarProps) => {
   const location = useLocation();
 
   const renderNavItems = (items: typeof mainNavItems) =>
@@ -64,6 +66,8 @@ const IQASidebar = () => {
       </SidebarMenuItem>
     ));
 
+  const visibleTools = canManageSamplingSettings ? toolsNavItems : [];
+
   return (
     <Sidebar
       collapsible="offcanvas"
@@ -75,13 +79,17 @@ const IQASidebar = () => {
             <SidebarMenu>{renderNavItems(mainNavItems)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarSeparator />
-        <SidebarGroup>
-          <SidebarGroupLabel>Configuration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderNavItems(toolsNavItems)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {visibleTools.length > 0 ? (
+          <>
+            <SidebarSeparator />
+            <SidebarGroup>
+              <SidebarGroupLabel>Configuration</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>{renderNavItems(visibleTools)}</SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        ) : null}
       </SidebarContent>
     </Sidebar>
   );

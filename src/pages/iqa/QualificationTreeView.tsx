@@ -216,8 +216,8 @@ const UnitRow = ({
     );
 
   const config = statusConfig[unitStatus];
-  const reviewLink = queueItem?.submission_id
-    ? `/iqa/review/${queueItem.submission_id}`
+  const reviewLink = queueItem?.sample_id || queueItem?.submission_id
+    ? `/iqa/review/${queueItem?.sample_id || queueItem?.submission_id}`
     : null;
 
   return (

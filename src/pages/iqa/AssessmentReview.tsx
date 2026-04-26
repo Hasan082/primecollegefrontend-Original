@@ -32,13 +32,15 @@ import {
   useGetIqaEvidenceSubmissionDetailQuery,
   useGetIqaEnrolmentContentQuery,
   useGetIqaReviewQueueQuery,
+  useGetIqaSampleDetailQuery,
+  useGetIqaSamplesQuery,
   useGetIqaSubmissionHistoryQuery,
   useGetIqaWrittenAssignmentQuery,
   useGetIqaWrittenSubmissionDetailQuery,
   useRaiseIqaEvidenceConcernMutation,
   useRaiseIqaWrittenConcernMutation,
-  useSubmitIqaEvidenceReviewMutation,
-  useSubmitIqaWrittenReviewMutation,
+  useStartIqaSampleReviewMutation,
+  useSubmitIqaSampleDecisionMutation,
 } from "@/redux/apis/iqa/iqaApi";
 import ResourceSection from "@/components/shared/ResourceSection";
 
@@ -102,16 +104,68 @@ const AssessmentReview = () => {
   const [notes, setNotes] = useState("");
   const [concernNote, setConcernNote] = useState("");
 
-  const { data: queueData, isLoading: isLoadingQueue } =
-    useGetIqaReviewQueueQuery();
-  const queueItem = useMemo(
-    () =>
-      queueData?.data?.results?.find((item) => item.submission_id === id) ||
-      null,
-    [queueData?.data?.results, id],
+  const { data: sampleDetail, isLoading: isLoadingSampleDetail, isError: isSampleDetailError } =
+    useGetIqaSampleDetailQuery(id || "", { skip: !id });
+  const { data: samplesResponse, isLoading: isLoadingSamples } = useGetIqaSamplesQuery(
+    { mine: true },
+    { skip: !id || Boolean(sampleDetail) },
   );
+  const sample = useMemo(() => {
+    if (sampleDetail) return sampleDetail;
+    return (samplesResponse?.results || []).find(
+      (item) => item.id === id || item.trigger_submission.id === id,
+    ) || null;
+  }, [sampleDetail, samplesResponse?.results, id]);
 
-  const submissionType = queueItem?.submission_type;
+  const { data: queueData, isLoading: isLoadingQueue } = useGetIqaReviewQueueQuery();
+  const queueItem = useMemo(() => {
+    const submissionId = sample?.trigger_submission.id || id;
+    const matched = queueData?.data?.results?.find(
+      (item) => item.sample_id === id || item.submission_id === id || item.submission_id === submissionId,
+    );
+    if (matched) {
+      return matched;
+    }
+    if (!sample) {
+      return null;
+    }
+
+    const workflowStatus =
+      sample.review_status === "approved"
+        ? "IQA Approved"
+        : sample.review_status === "action_required"
+          ? "Assessor Action Required"
+          : sample.review_status === "escalated"
+            ? "Escalated to Admin"
+            : sample.review_status === "auto_cleared"
+              ? "Auto-Cleared (Not Sampled)"
+              : "Pending IQA Review";
+
+    return {
+      sample_id: sample.id,
+      submission_id: sample.trigger_submission.id,
+      enrolment_id: "",
+      submission_type: sample.trigger_submission.submission_type,
+      learner: sample.learner,
+      trainer: sample.trainer,
+      qualification: sample.qualification,
+      unit: {
+        id: sample.unit.id,
+        unit_code: sample.unit.code,
+        title: sample.unit.title,
+      },
+      status: sample.trigger_submission.status,
+      iqa_decision: sample.review_status === "approved" ? "approved" : sample.review_status === "action_required" ? "changes_required" : null,
+      iqa_reviewed_at: sample.reviewed_at,
+      submitted_at: sample.trigger_submission.submitted_at,
+      outcome_set_at: sample.trigger_submission.outcome_set_at,
+      iqa_status: workflowStatus,
+      sampling_reason: sample.sampling_reason,
+      has_open_admin_concern: false,
+    };
+  }, [id, queueData?.data?.results, sample]);
+
+  const submissionType = sample?.trigger_submission.submission_type || queueItem?.submission_type;
   const isWritten = submissionType === "written";
   const isEvidence = submissionType === "evidence";
   const { data: historyData } = useGetIqaSubmissionHistoryQuery(
@@ -140,26 +194,24 @@ const AssessmentReview = () => {
   );
 
   const { data: writtenData, isLoading: isLoadingWritten } =
-    useGetIqaWrittenSubmissionDetailQuery(id!, {
-      skip: !id || !isWritten,
+    useGetIqaWrittenSubmissionDetailQuery(sample?.trigger_submission.id || "", {
+      skip: !sample?.trigger_submission.id || !isWritten,
     });
   const { data: evidenceData, isLoading: isLoadingEvidence } =
-    useGetIqaEvidenceSubmissionDetailQuery(id!, {
-      skip: !id || !isEvidence,
+    useGetIqaEvidenceSubmissionDetailQuery(sample?.trigger_submission.id || "", {
+      skip: !sample?.trigger_submission.id || !isEvidence,
     });
-  const [submitWrittenReview, { isLoading: isSavingWritten }] =
-    useSubmitIqaWrittenReviewMutation();
-  const [submitEvidenceReview, { isLoading: isSavingEvidence }] =
-    useSubmitIqaEvidenceReviewMutation();
+  const [startSampleReview] = useStartIqaSampleReviewMutation();
+  const [submitSampleDecision, { isLoading: isSavingDecision }] =
+    useSubmitIqaSampleDecisionMutation();
   const [raiseWrittenConcern, { isLoading: isRaisingWrittenConcern }] =
     useRaiseIqaWrittenConcernMutation();
   const [raiseEvidenceConcern, { isLoading: isRaisingEvidenceConcern }] =
     useRaiseIqaEvidenceConcernMutation();
 
-  const isLoading = isLoadingQueue || isLoadingWritten || isLoadingEvidence;
+  const isLoading = isLoadingSampleDetail || isLoadingSamples || isLoadingQueue || isLoadingWritten || isLoadingEvidence;
   const isSaving =
-    isSavingWritten ||
-    isSavingEvidence ||
+    isSavingDecision ||
     isRaisingWrittenConcern ||
     isRaisingEvidenceConcern;
 
@@ -198,9 +250,9 @@ const AssessmentReview = () => {
   const currentUnit = useMemo(
     () =>
       enrolmentContentData?.data?.units?.find(
-        (unit) => unit.id === queueItem?.unit.id,
+        (unit) => unit.id === sample?.unit.id,
       ) || null,
-    [enrolmentContentData?.data?.units, queueItem?.unit.id],
+    [enrolmentContentData?.data?.units, sample?.unit.id],
   );
   const writtenAssignmentSubmissions =
     writtenAssignmentData?.data?.submissions || [];
@@ -227,35 +279,24 @@ const AssessmentReview = () => {
   );
 
   const handleReviewSubmit = async () => {
-    if (!id || !notes.trim()) {
+    if (!sample || !notes.trim()) {
       toast({ title: "IQA review notes are required", variant: "destructive" });
       return;
     }
 
-    const payload = {
-      iqa_sampled: true,
-      iqa_decision: decision,
-      iqa_review_notes: notes.trim(),
-    };
-
     try {
-      if (isWritten) {
-        await submitWrittenReview({
-          submissionId: id,
-          body: payload,
-        }).unwrap();
-      } else if (isEvidence) {
-        await submitEvidenceReview({
-          submissionId: id,
-          body: payload,
-        }).unwrap();
-      } else {
-        toast({
-          title: "Submission type not found in queue",
-          variant: "destructive",
-        });
-        return;
+      if (sample.review_status === "pending") {
+        await startSampleReview(sample.id).unwrap();
       }
+
+      await submitSampleDecision({
+        sampleId: sample.id,
+        body: {
+          decision: decision === "approved" ? "approved" : "action_required",
+          comments: notes.trim(),
+          action_type: decision === "approved" ? "" : decision,
+        },
+      }).unwrap();
 
       toast({ title: "IQA review submitted" });
       navigate("/iqa/sampling");
@@ -265,7 +306,7 @@ const AssessmentReview = () => {
   };
 
   const handleRaiseConcern = async () => {
-    if (!id || !concernNote.trim()) {
+    if (!sample?.trigger_submission.id || !concernNote.trim()) {
       toast({ title: "Concern note is required", variant: "destructive" });
       return;
     }
@@ -273,12 +314,12 @@ const AssessmentReview = () => {
     try {
       if (isWritten) {
         await raiseWrittenConcern({
-          submissionId: id,
+          submissionId: sample.trigger_submission.id,
           body: { concern_note: concernNote.trim() },
         }).unwrap();
       } else if (isEvidence) {
         await raiseEvidenceConcern({
-          submissionId: id,
+          submissionId: sample.trigger_submission.id,
           body: { concern_note: concernNote.trim() },
         }).unwrap();
       } else {
@@ -304,7 +345,7 @@ const AssessmentReview = () => {
     );
   }
 
-  if (!queueItem) {
+  if ((!sample && isSampleDetailError) || !queueItem) {
     return (
       <div className="space-y-4">
         <Button variant="outline" size="sm" asChild>
@@ -359,7 +400,7 @@ const AssessmentReview = () => {
           </p>
           <p>
             <strong>Submission Type:</strong>{" "}
-            {getSubmissionTypeLabel(queueItem.submission_type)}
+            {getSubmissionTypeLabel(sample?.trigger_submission.submission_type)}
           </p>
           <p>
             <strong>Trainer Outcome:</strong>{" "}

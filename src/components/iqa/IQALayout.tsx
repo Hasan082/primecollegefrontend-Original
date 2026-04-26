@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, Link } from "react-router-dom";
+import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { User, UserCircle, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import logo from "@/assets/prime-logo-white-notext.png";
@@ -19,15 +19,25 @@ const IQALayout = () => {
   const { data: userData, isLoading } = useGetMeQuery(undefined);
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const user = userData?.data?.user;
+  const staffRole = user?.staff_profile?.staff_role || "";
+  const canManageSamplingSettings = user?.role === "admin" || staffRole === "lead_iqa" || staffRole === "admin";
 
   useEffect(() => {
     if (
       !isLoading &&
-      (!userData?.data?.user || userData?.data?.user.role !== "iqa")
+      (!user || user.role !== "iqa")
     ) {
       navigate("/staff-login", { replace: true });
+      return;
     }
-  }, [userData, isLoading, navigate]);
+
+    if (!isLoading && location.pathname === "/iqa/settings" && !canManageSamplingSettings) {
+      navigate("/iqa/dashboard", { replace: true });
+    }
+  }, [user, isLoading, navigate, location.pathname, canManageSamplingSettings]);
 
   const handleLogout = () => {
     logout("/staff-login");
@@ -35,8 +45,19 @@ const IQALayout = () => {
 
   if (isLoading) return <LoadingSpinner />;
 
-  if (!userData?.data?.user || userData?.data?.user.role !== "iqa") {
+  if (!user || user.role !== "iqa") {
     return <LoadingSpinner />;
+  }
+
+  if (location.pathname === "/iqa/settings" && !canManageSamplingSettings) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="text-center">
+          <p className="text-lg font-semibold">You do not have access to Sampling Settings.</p>
+          <p className="text-sm text-muted-foreground mt-2">Sampling policy changes are restricted to admin or lead IQA users.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -106,7 +127,7 @@ const IQALayout = () => {
           </div>
         </header>
         <div className="flex flex-1">
-          <IQASidebar />
+          <IQASidebar canManageSamplingSettings={canManageSamplingSettings} />
           <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
             <div className="max-w-6xl mx-auto w-full">
               <Outlet />

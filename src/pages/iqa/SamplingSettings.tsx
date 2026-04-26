@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -7,27 +7,20 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
-  useCreateSamplingPlanMutation,
+  useCreateCourseSamplingPlanMutation,
   useGetChecklistQualificationOptionsQuery,
-  useGetSamplingPlansQuery,
-  useUpdateSamplingPlanMutation,
+  useGetCourseSamplingPlansQuery,
+  useGetIqaSamplingConfigQuery,
+  useUpdateCourseSamplingPlanMutation,
+  useUpdateIqaSamplingConfigMutation,
 } from "@/redux/apis/iqa/iqaApi";
 import type {
   ChecklistQualificationOption,
-  SamplingPlan,
-  SamplingPlanWritePayload,
+  CourseSamplingPlanItem,
+  IQASamplingConfig,
 } from "@/types/iqa.types";
-
-const strategyOptions = [
-  { value: "percentage", label: "Percentage Sampling" },
-  { value: "full", label: "100% Sampling" },
-  { value: "risk_based", label: "Risk Based" },
-  { value: "new_assessor", label: "New Trainer" },
-  { value: "custom", label: "Custom" },
-] as const;
-
-const today = new Date().toISOString().slice(0, 10);
 
 const toArray = <T,>(value: unknown): T[] => {
   if (Array.isArray(value)) return value as T[];
@@ -46,68 +39,109 @@ const toArray = <T,>(value: unknown): T[] => {
 
 const SamplingSettings = () => {
   const { toast } = useToast();
-  const { data: plansResponse, isLoading: isLoadingPlans, isError: isPlansError } = useGetSamplingPlansQuery({ mine: true });
-  const { data: qualificationsResponse, isLoading: isLoadingQualifications } = useGetChecklistQualificationOptionsQuery();
-  const [createSamplingPlan, { isLoading: isCreating }] = useCreateSamplingPlanMutation();
-  const [updateSamplingPlan, { isLoading: isUpdating }] = useUpdateSamplingPlanMutation();
+  const {
+    data: configResponse,
+    isLoading: isLoadingConfig,
+    isError: isConfigError,
+  } = useGetIqaSamplingConfigQuery();
+  const {
+    data: plansResponse,
+    isLoading: isLoadingPlans,
+    isError: isPlansError,
+  } = useGetCourseSamplingPlansQuery();
+  const {
+    data: qualificationsResponse,
+    isLoading: isLoadingQualifications,
+  } = useGetChecklistQualificationOptionsQuery();
 
+  const [updateSamplingConfig, { isLoading: isSavingConfig }] =
+    useUpdateIqaSamplingConfigMutation();
+  const [createCourseSamplingPlan, { isLoading: isCreatingPlan }] =
+    useCreateCourseSamplingPlanMutation();
+  const [updateCourseSamplingPlan, { isLoading: isUpdatingPlan }] =
+    useUpdateCourseSamplingPlanMutation();
+
+  const [globalConfig, setGlobalConfig] = useState<IQASamplingConfig | null>(null);
   const [selectedQualificationId, setSelectedQualificationId] = useState("");
-  const [newPlanStrategy, setNewPlanStrategy] = useState<"percentage" | "full" | "risk_based" | "new_assessor" | "custom">("percentage");
   const [newPlanPercentage, setNewPlanPercentage] = useState(25);
-  const [newPlanStatus, setNewPlanStatus] = useState<"draft" | "active" | "closed">("draft");
+  const [newPlanSampleAll, setNewPlanSampleAll] = useState(false);
 
-  const plans = useMemo<SamplingPlan[]>(() => toArray<SamplingPlan>(plansResponse), [plansResponse]);
+  useEffect(() => {
+    if (configResponse) {
+      setGlobalConfig(configResponse);
+    }
+  }, [configResponse]);
+
+  const plans = useMemo<CourseSamplingPlanItem[]>(() => toArray<CourseSamplingPlanItem>(plansResponse), [plansResponse]);
   const qualifications = useMemo<ChecklistQualificationOption[]>(
     () => toArray<ChecklistQualificationOption>(qualificationsResponse),
     [qualificationsResponse],
   );
   const qualificationOptions = useMemo(
-    () => qualifications.filter((item) => !plans.some((plan) => plan.qualification === item.id)),
+    () => qualifications.filter((item) => !plans.some((plan) => plan.qualification.id === item.id)),
     [plans, qualifications],
   );
 
-  const handleCreate = async () => {
+  const handleSaveGlobalConfig = async () => {
+    if (!globalConfig) {
+      return;
+    }
+
+    try {
+      await updateSamplingConfig({
+        random_percentage: globalConfig.random_percentage,
+        new_trainer_percentage: globalConfig.new_trainer_percentage,
+        resubmission_always_sampled: globalConfig.resubmission_always_sampled,
+        escalation_always_sampled: globalConfig.escalation_always_sampled,
+        audit_window_months: globalConfig.audit_window_months,
+      }).unwrap();
+      toast({ title: "Sampling configuration updated" });
+    } catch {
+      toast({ title: "Failed to update sampling configuration", variant: "destructive" });
+    }
+  };
+
+  const handleCreatePlan = async () => {
     if (!selectedQualificationId) {
       toast({ title: "Please select a qualification", variant: "destructive" });
       return;
     }
 
     try {
-      await createSamplingPlan({
-        qualification: selectedQualificationId,
-        strategy: newPlanStrategy,
-        sample_percentage: newPlanPercentage,
-        status: newPlanStatus,
-        start_date: today,
-        academic_year: new Date().getFullYear().toString(),
+      await createCourseSamplingPlan({
+        qualification_id: selectedQualificationId,
+        sampling_rate_percent: newPlanSampleAll ? 100 : newPlanPercentage,
+        sample_all: newPlanSampleAll,
       }).unwrap();
       setSelectedQualificationId("");
-      setNewPlanStrategy("percentage");
       setNewPlanPercentage(25);
-      setNewPlanStatus("draft");
-      toast({ title: "Sampling plan created" });
+      setNewPlanSampleAll(false);
+      toast({ title: "Course sampling plan created" });
     } catch {
-      toast({ title: "Failed to create sampling plan", variant: "destructive" });
+      toast({ title: "Failed to create course sampling plan", variant: "destructive" });
     }
   };
 
-  const handleQuickUpdate = async (
-    planId: string,
-    body: Partial<SamplingPlanWritePayload>,
+  const handlePlanUpdate = async (
+    qualificationId: string,
+    body: { sampling_rate_percent?: number; sample_all?: boolean },
   ) => {
     try {
-      await updateSamplingPlan({ planId, body }).unwrap();
-      toast({ title: "Sampling plan updated" });
+      await updateCourseSamplingPlan({
+        qualificationId,
+        body,
+      }).unwrap();
+      toast({ title: "Course sampling plan updated" });
     } catch {
-      toast({ title: "Failed to update sampling plan", variant: "destructive" });
+      toast({ title: "Failed to update course sampling plan", variant: "destructive" });
     }
   };
 
-  if (isLoadingPlans || isLoadingQualifications) {
+  if (isLoadingConfig || isLoadingPlans || isLoadingQualifications || !globalConfig) {
     return <div className="py-20 text-center text-muted-foreground">Loading sampling settings...</div>;
   }
 
-  if (isPlansError) {
+  if (isConfigError || isPlansError) {
     return <div className="py-20 text-center text-muted-foreground">Failed to load sampling settings.</div>;
   }
 
@@ -119,15 +153,83 @@ const SamplingSettings = () => {
 
       <div>
         <h1 className="text-2xl font-bold">Sampling Configuration</h1>
-        <p className="text-sm text-muted-foreground">Manage real IQA sampling plans from the backend API</p>
+        <p className="text-sm text-muted-foreground">Manage the live IQA sampling rules and qualification-specific override rates</p>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Create Sampling Plan</CardTitle>
+          <CardTitle className="text-base">Global Sampling Rules</CardTitle>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2">
+            <Label>Random sampling rate: <strong>{globalConfig.random_percentage}%</strong></Label>
+            <Slider
+              value={[globalConfig.random_percentage]}
+              onValueChange={([value]) => setGlobalConfig((prev) => prev ? { ...prev, random_percentage: value } : prev)}
+              min={0}
+              max={100}
+              step={5}
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label>New trainer sampling rate: <strong>{globalConfig.new_trainer_percentage}%</strong></Label>
+            <Slider
+              value={[globalConfig.new_trainer_percentage]}
+              onValueChange={([value]) => setGlobalConfig((prev) => prev ? { ...prev, new_trainer_percentage: value } : prev)}
+              min={0}
+              max={100}
+              step={5}
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label>Audit window: <strong>{globalConfig.audit_window_months} months</strong></Label>
+            <Slider
+              value={[globalConfig.audit_window_months]}
+              onValueChange={([value]) => setGlobalConfig((prev) => prev ? { ...prev, audit_window_months: value } : prev)}
+              min={1}
+              max={24}
+              step={1}
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Always sample resubmissions</p>
+              <p className="text-xs text-muted-foreground">Force IQA review when a unit is signed off again after resubmission.</p>
+            </div>
+            <Switch
+              checked={globalConfig.resubmission_always_sampled}
+              onCheckedChange={(checked) => setGlobalConfig((prev) => prev ? { ...prev, resubmission_always_sampled: checked } : prev)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Always sample escalations</p>
+              <p className="text-xs text-muted-foreground">Force IQA review when trainer or learner escalation flags apply.</p>
+            </div>
+            <Switch
+              checked={globalConfig.escalation_always_sampled}
+              onCheckedChange={(checked) => setGlobalConfig((prev) => prev ? { ...prev, escalation_always_sampled: checked } : prev)}
+            />
+          </div>
+
+          <div className="md:col-span-2 flex justify-end">
+            <Button onClick={handleSaveGlobalConfig} disabled={isSavingConfig}>
+              {isSavingConfig ? "Saving..." : "Save Global Rules"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Add Qualification Override</CardTitle>
+        </CardHeader>
+        <CardContent className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-2 md:col-span-2">
             <Label>Qualification</Label>
             <Select value={selectedQualificationId} onValueChange={setSelectedQualificationId}>
               <SelectTrigger>
@@ -143,44 +245,29 @@ const SamplingSettings = () => {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Strategy</Label>
-            <Select value={newPlanStrategy} onValueChange={(value) => setNewPlanStrategy(value as typeof newPlanStrategy)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {strategyOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-2 md:col-span-2">
-            <Label>Sampling percentage: <strong>{newPlanPercentage}%</strong></Label>
-            <Slider value={[newPlanPercentage]} onValueChange={([value]) => setNewPlanPercentage(value)} min={0} max={100} step={5} />
+            <Label>Qualification sampling rate: <strong>{newPlanSampleAll ? 100 : newPlanPercentage}%</strong></Label>
+            <Slider
+              value={[newPlanSampleAll ? 100 : newPlanPercentage]}
+              onValueChange={([value]) => setNewPlanPercentage(value)}
+              min={0}
+              max={100}
+              step={5}
+              disabled={newPlanSampleAll}
+            />
           </div>
 
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={newPlanStatus} onValueChange={(value) => setNewPlanStatus(value as typeof newPlanStatus)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="md:col-span-2 flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Sample all units for this qualification</p>
+              <p className="text-xs text-muted-foreground">Enable 100% IQA review for every trainer sign-off on this course.</p>
+            </div>
+            <Switch checked={newPlanSampleAll} onCheckedChange={setNewPlanSampleAll} />
           </div>
 
           <div className="md:col-span-2 flex justify-end">
-            <Button onClick={handleCreate} disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create Plan"}
+            <Button onClick={handleCreatePlan} disabled={isCreatingPlan}>
+              {isCreatingPlan ? "Creating..." : "Create Override"}
             </Button>
           </div>
         </CardContent>
@@ -190,77 +277,45 @@ const SamplingSettings = () => {
         {plans.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-sm text-muted-foreground">
-              No sampling plans found for your IQA profile.
+              No qualification-specific overrides are configured yet.
             </CardContent>
           </Card>
         ) : (
-          plans.map((plan) => {
-            const currentPercentage = Number(plan.sample_percentage);
-            return (
-              <Card key={plan.id}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">{plan.qualification_title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label>Strategy</Label>
-                      <Select
-                        value={plan.strategy}
-                        onValueChange={(value) => handleQuickUpdate(plan.id, {
-                          strategy: value as typeof plan.strategy,
-                        })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {strategyOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+          plans.map((plan) => (
+            <Card key={plan.qualification.id}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{plan.qualification.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label>Sampling rate: <strong>{plan.sample_all ? 100 : plan.sampling_rate_percent}%</strong></Label>
+                  <Slider
+                    value={[plan.sample_all ? 100 : plan.sampling_rate_percent]}
+                    onValueChange={([value]) => handlePlanUpdate(plan.qualification.id, { sampling_rate_percent: value })}
+                    min={0}
+                    max={100}
+                    step={5}
+                    disabled={isUpdatingPlan || plan.sample_all}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select
-                        value={plan.status}
-                        onValueChange={(value) => handleQuickUpdate(plan.id, {
-                          status: value as typeof plan.status,
-                        })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <p className="text-sm font-medium">Sample all</p>
+                    <p className="text-xs text-muted-foreground">Created by {plan.created_by.name}</p>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label>Sampling percentage: <strong>{currentPercentage}%</strong></Label>
-                    <Slider
-                      value={[currentPercentage]}
-                      onValueChange={([value]) => handleQuickUpdate(plan.id, {
-                        sample_percentage: value,
-                      })}
-                      min={0}
-                      max={100}
-                      step={5}
-                      disabled={isUpdating}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
+                  <Switch
+                    checked={plan.sample_all}
+                    onCheckedChange={(checked) => handlePlanUpdate(plan.qualification.id, {
+                      sample_all: checked,
+                      sampling_rate_percent: checked ? 100 : plan.sampling_rate_percent,
+                    })}
+                    disabled={isUpdatingPlan}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
     </div>

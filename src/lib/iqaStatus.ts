@@ -9,27 +9,33 @@ export type LifecycleLabel =
   | "Action Required"
   | "Signed Off"
   | "Completed"
-  | "Escalated";
+  | "Escalated"
+  | "Auto Cleared";
 
 export type IqaWorkflowLabel =
   | "Awaiting IQA"
   | "Signed Off"
   | "Action Required"
-  | "Escalated";
+  | "Escalated"
+  | "Auto Cleared";
 
 export const IQA_WORKFLOW_LABELS: IqaWorkflowLabel[] = [
   "Awaiting IQA",
   "Signed Off",
   "Action Required",
   "Escalated",
+  "Auto Cleared",
 ];
 
 export function getIqaWorkflowLabel(iqaStatus?: string | null): IqaWorkflowLabel {
-  if (iqaStatus === "Pending IQA Review") {
+  if (iqaStatus === "Pending IQA Review" || iqaStatus === "In Progress") {
     return "Awaiting IQA";
   }
   if (iqaStatus === "IQA Approved") {
     return "Signed Off";
+  }
+  if (iqaStatus === "Auto-Cleared (Not Sampled)" || iqaStatus === "Not Sampled") {
+    return "Auto Cleared";
   }
   if (iqaStatus === "Escalated to Admin") {
     return "Escalated";
@@ -48,6 +54,9 @@ export function getIqaWorkflowBadgeVariant(
   }
   if (label === "Action Required") {
     return "secondary";
+  }
+  if (label === "Auto Cleared") {
+    return "outline";
   }
   return "outline";
 }
@@ -110,7 +119,8 @@ export function getLifecycleLabel(value?: string | null): LifecycleLabel {
     normalized === "waiting_for_iqa_review" ||
     normalized === "pending_iqa_review" ||
     normalized === "awaiting_iqa_review" ||
-    normalized === "awaiting_iqa_assessment"
+    normalized === "awaiting_iqa_assessment" ||
+    normalized === "in_progress"
   ) {
     return "Awaiting IQA";
   }
@@ -141,6 +151,9 @@ export function getLifecycleLabel(value?: string | null): LifecycleLabel {
   }
   if (normalized === "escalated_to_admin" || normalized === "escalated") {
     return "Escalated";
+  }
+  if (normalized === "auto_cleared" || normalized === "not_sampled") {
+    return "Auto Cleared";
   }
 
   return "Not Started";

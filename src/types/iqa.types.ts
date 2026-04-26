@@ -248,6 +248,7 @@ export interface IQAEvidenceSubmissionReviewResponse {
 
 export interface IQAReviewQueueItem {
   submission_id: string;
+  sample_id?: string;
   enrolment_id: string;
   submission_type: "written" | "evidence" | string;
   learner: {
@@ -413,4 +414,129 @@ export interface IQAReviewQueueResponse {
     previous: string | null;
     results: IQAReviewQueueItem[];
   };
+}
+
+
+export interface IQASamplingConfig {
+  random_percentage: number;
+  new_trainer_percentage: number;
+  resubmission_always_sampled: boolean;
+  escalation_always_sampled: boolean;
+  audit_window_months: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseSamplingPlanQualification {
+  id: string;
+  title: string;
+  qualification_code: string;
+}
+
+export interface CourseSamplingPlanActor {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface CourseSamplingPlanItem {
+  qualification: CourseSamplingPlanQualification;
+  sampling_rate_percent: number;
+  sample_all: boolean;
+  created_by: CourseSamplingPlanActor;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseSamplingPlanWritePayload {
+  qualification_id?: string;
+  sampling_rate_percent?: number;
+  sample_all?: boolean;
+}
+
+export interface UnitIQASampleTriggerSubmission {
+  id: string;
+  submission_type: string;
+  status: string;
+  submitted_at: string | null;
+  outcome_set_at: string | null;
+}
+
+export interface UnitIQASampleItem {
+  id: string;
+  learner: {
+    id: string;
+    name: string;
+    qualification_learner_id: string;
+  };
+  qualification: {
+    id: string;
+    title: string;
+  };
+  unit: {
+    id: string;
+    code: string;
+    title: string;
+  };
+  trainer: {
+    id: string;
+    name: string;
+  };
+  sampling_decision: 'sampled' | 'not_sampled';
+  sampling_reason:
+    | 'random'
+    | 'new_trainer'
+    | 'resubmission'
+    | 'escalation'
+    | 'course_sample_all'
+    | 'not_selected';
+  resolved_rate_percent: number;
+  review_status:
+    | 'pending'
+    | 'in_progress'
+    | 'approved'
+    | 'action_required'
+    | 'escalated'
+    | 'auto_cleared';
+  sampled_at: string;
+  reviewed_at: string | null;
+  iqa_reviewer: {
+    id: string;
+    name: string;
+  } | null;
+  trigger_submission: UnitIQASampleTriggerSubmission;
+  review_comments: string;
+  vacs_responses: Record<string, unknown>;
+  action_type: string;
+  affected_criteria: string[];
+  manually_sampled: boolean;
+}
+
+export interface UnitIQASampleListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: UnitIQASampleItem[];
+}
+
+export interface UnitIQASampleListParams {
+  status?: string;
+  trainer?: string;
+  qualification?: string;
+  sampling_decision?: string;
+  date_from?: string;
+  date_to?: string;
+  mine?: boolean | string;
+}
+
+export interface UnitIQASampleDecisionPayload {
+  decision: 'approved' | 'action_required' | 'escalated';
+  comments?: string;
+  vacs?: Record<string, unknown>;
+  action_type?: string;
+  affected_criteria?: string[];
+}
+
+export interface UnitIQAManualSamplePayload {
+  reason: string;
 }

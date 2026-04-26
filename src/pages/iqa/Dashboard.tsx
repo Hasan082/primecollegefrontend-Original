@@ -66,7 +66,7 @@ const IQADashboard = () => {
               <p className="text-sm text-muted-foreground">No pending reviews</p>
             ) : (
               pending_reviews.map((item) => (
-                <Link key={item.submission_id} to={`/iqa/review/${item.submission_id}`} className="block border rounded-lg p-3 hover:bg-muted/50 transition-colors">
+                <Link key={item.sample_id || item.submission_id} to={`/iqa/review/${item.sample_id || item.submission_id}`} className="block border rounded-lg p-3 hover:bg-muted/50 transition-colors">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium">{item.learner.name}</span>
                     <Badge

@@ -16,6 +16,7 @@ import type {
   IQAEvidenceSubmissionReviewResponse,
   IQAReviewQueueResponse,
   IQASubmissionHistoryResponse,
+  IQASamplingConfig,
   IQAWrittenAssignmentResponse,
   IQAWrittenAssignmentDetailResponse,
   IQAWrittenAssignmentReviewPayload,
@@ -26,6 +27,13 @@ import type {
   SubmissionAdminConcernCreatePayload,
   SubmissionAdminConcernResponse,
   TrainerPerformanceResponse,
+  CourseSamplingPlanItem,
+  CourseSamplingPlanWritePayload,
+  UnitIQAManualSamplePayload,
+  UnitIQASampleDecisionPayload,
+  UnitIQASampleItem,
+  UnitIQASampleListParams,
+  UnitIQASampleListResponse,
 } from "@/types/iqa.types";
 
 const iqaApi = api.injectEndpoints({
@@ -265,6 +273,115 @@ const iqaApi = api.injectEndpoints({
       }),
       invalidatesTags: ["ChecklistTemplates"],
     }),
+    getIqaSamplingConfig: builder.query<IQASamplingConfig, void>({
+      query: () => ({
+        url: "/api/iqa/sampling-config/",
+        method: "GET",
+      }),
+      providesTags: ["Enrolments"],
+    }),
+    updateIqaSamplingConfig: builder.mutation<
+      IQASamplingConfig,
+      Partial<IQASamplingConfig>
+    >({
+      query: (body) => ({
+        url: "/api/iqa/sampling-config/",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Enrolments"],
+    }),
+    getCourseSamplingPlans: builder.query<
+      CourseSamplingPlanItem[],
+      { qualification_id?: string } | void
+    >({
+      query: (args) => ({
+        url: "/api/iqa/course-sampling-plans/",
+        method: "GET",
+        params: cleanObject(args || {}),
+      }),
+      providesTags: ["Enrolments"],
+    }),
+    createCourseSamplingPlan: builder.mutation<
+      CourseSamplingPlanItem,
+      CourseSamplingPlanWritePayload
+    >({
+      query: (body) => ({
+        url: "/api/iqa/course-sampling-plans/",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Enrolments"],
+    }),
+    updateCourseSamplingPlan: builder.mutation<
+      CourseSamplingPlanItem,
+      { qualificationId: string; body: Partial<CourseSamplingPlanWritePayload> }
+    >({
+      query: ({ qualificationId, body }) => ({
+        url: `/api/iqa/course-sampling-plans/${qualificationId}/`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Enrolments"],
+    }),
+    getIqaSamples: builder.query<
+      UnitIQASampleListResponse,
+      UnitIQASampleListParams | void
+    >({
+      query: (args) => ({
+        url: "/api/iqa/samples/",
+        method: "GET",
+        params: cleanObject(args || {}),
+      }),
+      providesTags: ["Enrolments"],
+    }),
+    getIqaSampleDetail: builder.query<UnitIQASampleItem, string>({
+      query: (sampleId) => ({
+        url: `/api/iqa/samples/${sampleId}/`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, sampleId) => [
+        { type: "Enrolments", id: `IQA_SAMPLE_${sampleId}` },
+      ],
+    }),
+    startIqaSampleReview: builder.mutation<UnitIQASampleItem, string>({
+      query: (sampleId) => ({
+        url: `/api/iqa/samples/${sampleId}/start-review/`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, sampleId) => [
+        { type: "Enrolments", id: `IQA_SAMPLE_${sampleId}` },
+        "Enrolments",
+      ],
+    }),
+    submitIqaSampleDecision: builder.mutation<
+      UnitIQASampleItem,
+      { sampleId: string; body: UnitIQASampleDecisionPayload }
+    >({
+      query: ({ sampleId, body }) => ({
+        url: `/api/iqa/samples/${sampleId}/decision/`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { sampleId }) => [
+        { type: "Enrolments", id: `IQA_SAMPLE_${sampleId}` },
+        "Enrolments",
+      ],
+    }),
+    manualSampleIqaUnit: builder.mutation<
+      UnitIQASampleItem,
+      { sampleId: string; body: UnitIQAManualSamplePayload }
+    >({
+      query: ({ sampleId, body }) => ({
+        url: `/api/iqa/samples/${sampleId}/manual-sample/`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { sampleId }) => [
+        { type: "Enrolments", id: `IQA_SAMPLE_${sampleId}` },
+        "Enrolments",
+      ],
+    }),
     getTrainerPerformance: builder.query<
       TrainerPerformanceResponse,
       Record<string, unknown> | void
@@ -301,6 +418,16 @@ export const {
   useGetSamplingPlansQuery,
   useCreateSamplingPlanMutation,
   useUpdateSamplingPlanMutation,
+  useGetIqaSamplingConfigQuery,
+  useUpdateIqaSamplingConfigMutation,
+  useGetCourseSamplingPlansQuery,
+  useCreateCourseSamplingPlanMutation,
+  useUpdateCourseSamplingPlanMutation,
+  useGetIqaSamplesQuery,
+  useGetIqaSampleDetailQuery,
+  useStartIqaSampleReviewMutation,
+  useSubmitIqaSampleDecisionMutation,
+  useManualSampleIqaUnitMutation,
   useGetTrainerPerformanceQuery,
 } = iqaApi;
 
