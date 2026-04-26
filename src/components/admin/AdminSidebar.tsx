@@ -1,4 +1,4 @@
-import { LayoutDashboard, GraduationCap, Users, UserCheck, BarChart3, FileText, Blocks, BookOpen, ClipboardCheck, Download, Shield, ClipboardList, PanelTop, PanelBottom, Mail, CalendarPlus, BookText, ChevronDown } from "lucide-react";
+import { LayoutDashboard, GraduationCap, Users, UserCheck, BarChart3, FileText, Blocks, BookOpen, ClipboardCheck, Download, Shield, ClipboardList, PanelTop, PanelBottom, Mail, CalendarPlus, BookText, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -26,6 +26,7 @@ const mainNavItems = [
   { title: "Trainers", url: "/admin/trainers", icon: UserCheck },
   { title: "IQA", url: "/admin/iqa", icon: Shield },
   { title: "IQA Checklists", url: "/admin/checklists", icon: ClipboardList },
+  { title: "IQA Sampling", url: "/admin/iqa-sampling", icon: SlidersHorizontal },
   { title: "Progress", url: "/admin/progress", icon: BarChart3 },
 ];
 

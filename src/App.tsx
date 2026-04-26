@@ -106,6 +106,7 @@ const AdminQualificationDetail = lazy(
 );
 const IQAManagement = lazy(() => import("./pages/admin/IQAManagement"));
 const ChecklistBuilder = lazy(() => import("./pages/admin/ChecklistBuilder"));
+const IQASamplingSettings = lazy(() => import("./pages/admin/IQASamplingSettings"));
 const Enrollments = lazy(() => import("./pages/admin/Enrollments"));
 const ExtensionPlanManagement = lazy(
   () => import("./pages/admin/ExtensionPlanManagement"),
@@ -271,6 +272,7 @@ const App = () => {
                     <Route path="eqa-export" element={<EQAExport />} />
                     <Route path="iqa" element={<IQAManagement />} />
                     <Route path="checklists" element={<ChecklistBuilder />} />
+                    <Route path="iqa-sampling" element={<IQASamplingSettings />} />
                     <Route path="pages" element={<PageManagement />} />
                     <Route path="pages/:pageId" element={<PageEditor />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
