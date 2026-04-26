@@ -71,6 +71,11 @@ const withCacheBust = (url?: string | null) => {
 const normalizeSelectValue = (value: unknown) =>
   typeof value === "string" ? value : "";
 
+type QualificationMainDraft = {
+  values: QualificationMainFormValues;
+  clearFeaturedImage: boolean;
+}
+
 type QualificationPayload = Omit<QualificationMainFormValues, "featured_image"> & {
   featured_image_key?: string;
   clear_featured_image?: boolean;
@@ -82,10 +87,7 @@ type PresignResponse = {
   fields: Record<string, string>;
 };
 
-type QualificationMainDraft = {
-  values: QualificationMainFormValues;
-  clearFeaturedImage: boolean;
-};
+
 
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
 
@@ -178,29 +180,29 @@ const STATUS_OPTIONS: {
   label: string;
   color: string;
 }[] = [
-  { value: "draft", label: "Draft", color: "bg-yellow-100 text-yellow-800" },
-  { value: "active", label: "Active", color: "bg-green-100 text-green-800" },
-  { value: "inactive", label: "Inactive", color: "bg-red-100 text-red-800" },
-  { value: "archived", label: "Archived", color: "bg-gray-100 text-gray-700" },
-];
+    { value: "draft", label: "Draft", color: "bg-yellow-100 text-yellow-800" },
+    { value: "active", label: "Active", color: "bg-green-100 text-green-800" },
+    { value: "inactive", label: "Inactive", color: "bg-red-100 text-red-800" },
+    { value: "archived", label: "Archived", color: "bg-gray-100 text-gray-700" },
+  ];
 const BOOLEAN_FIELDS: {
   name: "is_session" | "is_active";
   label: string;
   description: string;
 }[] = [
-  {
-    name: "is_session",
-    label: "Session-based",
-    description:
-      "Enable if this qualification is delivered through scheduled sessions",
-  },
-  {
-    name: "is_active",
-    label: "Active",
-    description:
-      "Inactive qualifications are hidden from learners and enrolment",
-  },
-];
+    {
+      name: "is_session",
+      label: "Session-based",
+      description:
+        "Enable if this qualification is delivered through scheduled sessions",
+    },
+    {
+      name: "is_active",
+      label: "Active",
+      description:
+        "Inactive qualifications are hidden from learners and enrolment",
+    },
+  ];
 
 const defaultValues: Partial<QualificationMainFormValues> = {
   title: "",

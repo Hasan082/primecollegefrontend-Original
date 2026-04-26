@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useSubmitContactFormMutation } from "@/redux/apis/contactApi";
 import { Image } from "@/components/Image";
-import { Users, Award, CheckCircle, Clock, Target } from "lucide-react";
+import { Users, Award, CheckCircle, Clock, Target, GraduationCap } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import HeroSlider from "@/components/HeroSlider";
 import Section from "@/components/Section";
@@ -30,6 +30,7 @@ import heroExecutive from "@/assets/hero-executive.jpg";
 import heroCare from "@/assets/hero-care.jpg";
 import aboutHero from "@/assets/about-hero.jpg";
 import contactBanner from "@/assets/contact-banner.jpg";
+import qualificationsBanner from "@/assets/qualifications-banner.jpg";
 
 const heroImageMap: Record<string, string> = {
   classroom: heroClassroom,
@@ -470,6 +471,22 @@ const renderQualificationFinalCta = (block: ContentBlock) => {
         ) : null}
       </div>
     </section>
+  );
+};
+
+const renderQualificationHero = (block: ContentBlock) => {
+  return (
+    <div className="relative h-[300px] overflow-hidden bg-primary/10 border-b border-border flex items-center justify-center">
+      <div className="text-center">
+        <GraduationCap className="w-12 h-12 text-primary mx-auto mb-4" />
+        <h1 className="text-3xl font-bold text-foreground mb-2">Qualification Header</h1>
+        <p className="text-muted-foreground italic">Dynamic Qualification Content</p>
+        <div className="mt-4 flex gap-2 justify-center">
+          <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs font-bold uppercase">Dynamic Category</span>
+          <span className="px-3 py-1 bg-secondary/20 text-secondary-foreground rounded-full text-xs font-bold uppercase">Level X</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -1264,7 +1281,7 @@ export const CMSBlockRenderer = ({
       return <QualificationSlider block={sliderBlock} />;
     }
     case "qualification_hero":
-      return null;
+      return renderQualificationHero(block);
     default:
       return null;
   }

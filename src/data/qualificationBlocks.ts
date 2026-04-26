@@ -4,6 +4,14 @@ import type { ContentBlock } from "@/types/pageBuilder";
 
 export const getQualificationDefaultBlocks = (): ContentBlock[] => [
   {
+    id: "static_qualification_hero",
+    type: "qualification_hero",
+    label: "Qualification Hero",
+    isLocked: true,
+    isFixed: true,
+    data: {},
+  },
+  {
     id: "qualification_why",
     type: "image-text",
     label: "Why Choose This Qualification",
