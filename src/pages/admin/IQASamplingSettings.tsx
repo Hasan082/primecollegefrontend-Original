@@ -27,10 +27,13 @@ const toArray = <T,>(value: unknown): T[] => {
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
     if (Array.isArray(record.results)) return record.results as T[];
-    if (record.data && typeof record.data === "object") {
-      const data = record.data as Record<string, unknown>;
-      if (Array.isArray(data.results)) return data.results as T[];
-      if (Array.isArray(data.items)) return data.items as T[];
+    if (record.data !== undefined) {
+      if (Array.isArray(record.data)) return record.data as T[];
+      if (typeof record.data === "object" && record.data !== null) {
+        const data = record.data as Record<string, unknown>;
+        if (Array.isArray(data.results)) return data.results as T[];
+        if (Array.isArray(data.items)) return data.items as T[];
+      }
     }
     if (Array.isArray(record.items)) return record.items as T[];
   }
