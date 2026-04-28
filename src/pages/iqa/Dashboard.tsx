@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, AlertTriangle, ShieldAlert, ArrowRight } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, AlertTriangle, ShieldAlert, ArrowRight, TrendingUp, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useGetIqaDashboardQuery } from "@/redux/apis/iqa/iqaApi";
+import { useGetIqaDashboardQuery, useGetQaDashboardQuery } from "@/redux/apis/iqa/iqaApi";
 import {
   getIqaWorkflowBadgeVariant,
   getIqaWorkflowLabel,
@@ -12,6 +12,7 @@ import {
 
 const IQADashboard = () => {
   const { data, isLoading, isError } = useGetIqaDashboardQuery();
+  const { data: qaStats } = useGetQaDashboardQuery();
 
   if (isLoading) {
     return <div className="py-20 text-center text-muted-foreground">Loading IQA dashboard...</div>;
@@ -50,6 +51,69 @@ const IQADashboard = () => {
           </Card>
         ))}
       </div>
+
+      {qaStats && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-500" /> Sampling Queue
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[
+                { label: "Pending review", value: qaStats.queue.pending, color: "text-amber-600" },
+                { label: "In progress", value: qaStats.queue.in_progress, color: "text-blue-600" },
+                { label: "Escalated", value: qaStats.queue.escalated, color: "text-red-600" },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className={`font-semibold ${row.color}`}>{row.value}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-500" /> This Month
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[
+                { label: "Approved", value: qaStats.this_month.approved, color: "text-green-600" },
+                { label: "Action required", value: qaStats.this_month.action_required, color: "text-orange-600" },
+                { label: "Escalated", value: qaStats.this_month.escalated, color: "text-red-600" },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className={`font-semibold ${row.color}`}>{row.value}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-500" /> All Time Totals
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[
+                { label: "Units sampled", value: qaStats.totals.sampled, color: "text-blue-600" },
+                { label: "Auto-cleared", value: qaStats.totals.not_sampled, color: "text-muted-foreground" },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className={`font-semibold ${row.color}`}>{row.value}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card>

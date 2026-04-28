@@ -85,7 +85,7 @@ const SamplingQueue = () => {
     qualification: "",
   });
   const [selectedSampleIds, setSelectedSampleIds] = useState<string[]>([]);
-  const [bulkDecision, setBulkDecision] = useState<"approved" | "changes_required" | "referred_back">("approved");
+  const [bulkDecision, setBulkDecision] = useState<"approved" | "action_required" | "escalated">("approved");
   const [bulkNotes, setBulkNotes] = useState("");
 
   const { data, isLoading, isError } = useGetIqaSamplesQuery({
@@ -165,9 +165,9 @@ const SamplingQueue = () => {
     }
 
     const body = {
-      decision: bulkDecision === "approved" ? "approved" : "action_required",
+      decision: bulkDecision,
       comments: bulkNotes.trim(),
-      action_type: bulkDecision === "approved" ? "" : bulkDecision,
+      action_type: bulkDecision === "action_required" ? "bulk_review" : "",
     } as const;
 
     const processed: string[] = [];
@@ -286,9 +286,9 @@ const SamplingQueue = () => {
                   <SelectValue placeholder="Bulk Decision" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="approved">Signed Off</SelectItem>
-                  <SelectItem value="changes_required">Action Required</SelectItem>
-                  <SelectItem value="referred_back">Refer Back</SelectItem>
+                  <SelectItem value="approved">Approve</SelectItem>
+                  <SelectItem value="action_required">Action Required</SelectItem>
+                  <SelectItem value="escalated">Escalate to Admin</SelectItem>
                 </SelectContent>
               </Select>
               <Button onClick={handleBulkReview} disabled={isSubmittingBulk || selectedSampleIds.length === 0}>

@@ -1,11 +1,14 @@
 import { cleanObject } from "@/utils/cleanObject";
 import { api } from "../../api";
 import type {
+  AuditLogListResponse,
   ChecklistCompletion,
   ChecklistCompletionCreatePayload,
   ChecklistCompletionListResponse,
   ChecklistQualificationOption,
   ChecklistTemplateListResponse,
+  CourseSamplingPlanItem,
+  CourseSamplingPlanWritePayload,
   IQAAssignedEnrolmentListResponse,
   IQABulkReviewPayload,
   IQABulkReviewResponse,
@@ -15,25 +18,27 @@ import type {
   IQAEvidenceSubmissionReviewPayload,
   IQAEvidenceSubmissionReviewResponse,
   IQAReviewQueueResponse,
-  IQASubmissionHistoryResponse,
   IQASamplingConfig,
-  IQAWrittenAssignmentResponse,
+  IQASubmissionHistoryResponse,
   IQAWrittenAssignmentDetailResponse,
+  IQAWrittenAssignmentResponse,
   IQAWrittenAssignmentReviewPayload,
   IQAWrittenAssignmentReviewResponse,
+  QaDashboardData,
+  QaTrainerPerformanceResponse,
+  SampleFeedbackListResponse,
   SamplingPlan,
   SamplingPlanListResponse,
   SamplingPlanWritePayload,
   SubmissionAdminConcernCreatePayload,
   SubmissionAdminConcernResponse,
   TrainerPerformanceResponse,
-  CourseSamplingPlanItem,
-  CourseSamplingPlanWritePayload,
   UnitIQAManualSamplePayload,
   UnitIQASampleDecisionPayload,
   UnitIQASampleItem,
   UnitIQASampleListParams,
   UnitIQASampleListResponse,
+  UnitSignOffListResponse,
 } from "@/types/iqa.types";
 
 const iqaApi = api.injectEndpoints({
@@ -403,6 +408,59 @@ const iqaApi = api.injectEndpoints({
       }),
       providesTags: ["Enrolments"],
     }),
+
+    // ─── New QA Portal Endpoints ────────────────────────────────────────────
+
+    getQaDashboard: builder.query<QaDashboardData, void>({
+      query: () => ({ url: "/api/iqa/dashboard/", method: "GET" }),
+      providesTags: ["Enrolments"],
+    }),
+
+    getQaTrainerPerformance: builder.query<
+      QaTrainerPerformanceResponse,
+      { qualification?: string; trainer?: string } | void
+    >({
+      query: (args) => ({
+        url: "/api/iqa/trainer-performance/",
+        method: "GET",
+        params: cleanObject(args || {}),
+      }),
+      providesTags: ["Enrolments"],
+    }),
+
+    getSampleFeedback: builder.query<SampleFeedbackListResponse, string>({
+      query: (sampleId) => ({
+        url: `/api/iqa/samples/${sampleId}/feedback/`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, sampleId) => [
+        { type: "Enrolments", id: `FEEDBACK_${sampleId}` },
+      ],
+    }),
+
+    getSignoffs: builder.query<
+      UnitSignOffListResponse,
+      { enrolment?: string; trainer?: string; had_resubmission?: string; page?: number; page_size?: number } | void
+    >({
+      query: (args) => ({
+        url: "/api/iqa/signoffs/",
+        method: "GET",
+        params: cleanObject(args || {}),
+      }),
+      providesTags: ["Enrolments"],
+    }),
+
+    getAuditLogs: builder.query<
+      AuditLogListResponse,
+      { event_type?: string; enrolment?: string; entity_type?: string; entity_id?: string; page?: number; page_size?: number } | void
+    >({
+      query: (args) => ({
+        url: "/api/iqa/audit-logs/",
+        method: "GET",
+        params: cleanObject(args || {}),
+      }),
+      providesTags: ["Enrolments"],
+    }),
   }),
 });
 
@@ -439,6 +497,11 @@ export const {
   useSubmitIqaSampleDecisionMutation,
   useManualSampleIqaUnitMutation,
   useGetTrainerPerformanceQuery,
+  useGetQaDashboardQuery,
+  useGetQaTrainerPerformanceQuery,
+  useGetSampleFeedbackQuery,
+  useGetSignoffsQuery,
+  useGetAuditLogsQuery,
 } = iqaApi;
 
 export default iqaApi;

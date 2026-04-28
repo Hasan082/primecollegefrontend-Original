@@ -464,6 +464,7 @@ export interface UnitIQASampleTriggerSubmission {
 
 export interface UnitIQASampleItem {
   id: string;
+  enrolment_id: string;
   learner: {
     id: string;
     name: string;
@@ -539,4 +540,97 @@ export interface UnitIQASampleDecisionPayload {
 
 export interface UnitIQAManualSamplePayload {
   reason: string;
+}
+
+// ─── New QA Sampling Portal Types ────────────────────────────────────────────
+
+export interface QaDashboardQueue {
+  pending: number;
+  in_progress: number;
+  escalated: number;
+}
+
+export interface QaDashboardThisMonth {
+  approved: number;
+  action_required: number;
+  escalated: number;
+}
+
+export interface QaDashboardTotals {
+  sampled: number;
+  not_sampled: number;
+}
+
+export interface QaDashboardData {
+  queue: QaDashboardQueue;
+  this_month: QaDashboardThisMonth;
+  totals: QaDashboardTotals;
+}
+
+export interface QaTrainerPerformanceItem {
+  trainer: { id: string; name: string };
+  total_sampled: number;
+  approved: number;
+  action_required: number;
+  escalated: number;
+  pending: number;
+  in_progress: number;
+  approval_rate_percent: number | null;
+}
+
+export interface QaTrainerPerformanceResponse {
+  results: QaTrainerPerformanceItem[];
+}
+
+export interface UnitIQAFeedbackItem {
+  id: string;
+  comments: string;
+  action_type: string;
+  affected_criteria: string[];
+  created_by: { id: string; name: string };
+  created_at: string;
+}
+
+export interface SampleFeedbackListResponse {
+  results: UnitIQAFeedbackItem[];
+}
+
+export interface UnitSignOffSampleInfo {
+  id: string;
+  sampling_decision: string;
+  review_status: string;
+}
+
+export interface UnitSignOffItem {
+  id: string;
+  unit: { id: string; code: string; title: string };
+  outcome: string;
+  had_resubmission_cycle: boolean;
+  signed_off_at: string;
+  signed_off_by: { id: string; name: string };
+  iqa_sample: UnitSignOffSampleInfo | null;
+}
+
+export interface UnitSignOffListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: UnitSignOffItem[];
+}
+
+export interface AuditLogItem {
+  id: string;
+  event_type: string;
+  actor: { id: string; name: string } | null;
+  entity_type: string;
+  entity_id: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AuditLogListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: AuditLogItem[];
 }

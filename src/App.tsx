@@ -107,6 +107,8 @@ const AdminQualificationDetail = lazy(
 const IQAManagement = lazy(() => import("./pages/admin/IQAManagement"));
 const ChecklistBuilder = lazy(() => import("./pages/admin/ChecklistBuilder"));
 const IQASamplingSettings = lazy(() => import("./pages/admin/IQASamplingSettings"));
+const IQASignoffs = lazy(() => import("./pages/admin/IQASignoffs"));
+const IQAAuditLog = lazy(() => import("./pages/admin/IQAAuditLog"));
 const Enrollments = lazy(() => import("./pages/admin/Enrollments"));
 const ExtensionPlanManagement = lazy(
   () => import("./pages/admin/ExtensionPlanManagement"),
@@ -273,6 +275,8 @@ const App = () => {
                     <Route path="iqa" element={<IQAManagement />} />
                     <Route path="checklists" element={<ChecklistBuilder />} />
                     <Route path="iqa-sampling" element={<IQASamplingSettings />} />
+                    <Route path="iqa-signoffs" element={<IQASignoffs />} />
+                    <Route path="iqa-audit" element={<IQAAuditLog />} />
                     <Route path="pages" element={<PageManagement />} />
                     <Route path="pages/:pageId" element={<PageEditor />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
@@ -309,6 +313,7 @@ const App = () => {
                     <Route path="trainers" element={<TrainerPerformance />} />
                     <Route path="reports" element={<IQAReports />} />
                     <Route path="settings" element={<SamplingSettings />} />
+                    <Route path="checklists" element={<VerificationChecklists />} />
                     <Route path="profile" element={<IQAProfile />} />
                     <Route
                       path="change-password"

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   FileText,
+  AlertTriangle,
   Loader2,
   ShieldAlert,
   Image as ImageIcon,
@@ -29,6 +30,8 @@ import {
   getSubmissionTypeLabel,
 } from "@/lib/iqaStatus";
 import {
+  useCreateChecklistCompletionMutation,
+  useGetChecklistTemplatesForIqaQuery,
   useGetIqaEvidenceSubmissionDetailQuery,
   useGetIqaEnrolmentContentQuery,
   useGetIqaReviewQueueQuery,
@@ -37,6 +40,7 @@ import {
   useGetIqaSubmissionHistoryQuery,
   useGetIqaWrittenAssignmentQuery,
   useGetIqaWrittenSubmissionDetailQuery,
+  useGetSampleFeedbackQuery,
   useRaiseIqaEvidenceConcernMutation,
   useRaiseIqaWrittenConcernMutation,
   useStartIqaSampleReviewMutation,
@@ -90,19 +94,34 @@ function buildSubmissionTimeline(submission: any, queueItem: any) {
 
 const decisions = [
   { value: "approved", label: "Approve" },
-  { value: "changes_required", label: "Changes Required" },
-  { value: "referred_back", label: "Refer Back" },
+  { value: "action_required", label: "Action Required" },
+  { value: "escalated", label: "Escalate to Admin" },
 ] as const;
+
+const ACTION_TYPE_OPTIONS = [
+  { value: "reassess_criteria", label: "Reassess criteria" },
+  { value: "additional_evidence", label: "Additional evidence needed" },
+  { value: "clarification_needed", label: "Clarification needed" },
+  { value: "refer_back", label: "Refer back to trainer" },
+  { value: "other", label: "Other" },
+] as const;
+
+function getChecklistResponseOptions(responseType: string): { value: string; label: string }[] {
+  if (responseType === "yes_no") return [{ value: "yes", label: "Yes" }, { value: "no", label: "No" }];
+  if (responseType === "yes_no_na") return [{ value: "yes", label: "Yes" }, { value: "no", label: "No" }, { value: "na", label: "N/A" }];
+  return [{ value: "met", label: "Met" }, { value: "not_met", label: "Not Met" }, { value: "na", label: "N/A" }];
+}
 
 const AssessmentReview = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [decision, setDecision] = useState<
-    "approved" | "changes_required" | "referred_back"
-  >("approved");
+  const [decision, setDecision] = useState<"approved" | "action_required" | "escalated">("approved");
+  const [actionType, setActionType] = useState("reassess_criteria");
   const [notes, setNotes] = useState("");
   const [concernNote, setConcernNote] = useState("");
+  const [checklistResponses, setChecklistResponses] = useState<Record<string, Record<string, string>>>({});
+  const [checklistSummaries, setChecklistSummaries] = useState<Record<string, string>>({});
 
   const { data: sampleDetail, isLoading: isLoadingSampleDetail, isError: isSampleDetailError } =
     useGetIqaSampleDetailQuery(id || "", { skip: !id });
@@ -201,9 +220,26 @@ const AssessmentReview = () => {
     useGetIqaEvidenceSubmissionDetailQuery(sample?.trigger_submission.id || "", {
       skip: !sample?.trigger_submission.id || !isEvidence,
     });
+  const { data: feedbackData } = useGetSampleFeedbackQuery(id || "", {
+    skip: !id || sample?.review_status !== "action_required",
+  });
+  const feedbackItems = feedbackData?.results || [];
+
+  const { data: checklistData } = useGetChecklistTemplatesForIqaQuery(
+    sample ? { qualification_id: sample.qualification.id, is_active: "true" } : undefined,
+    { skip: !sample },
+  );
+  const applicableTemplates = useMemo(() => {
+    if (!sample || !checklistData?.results) return [];
+    return checklistData.results.filter(
+      (t) => t.unit_id === null || t.unit_id === sample.unit.id,
+    );
+  }, [checklistData?.results, sample]);
+
   const [startSampleReview] = useStartIqaSampleReviewMutation();
   const [submitSampleDecision, { isLoading: isSavingDecision }] =
     useSubmitIqaSampleDecisionMutation();
+  const [createChecklistCompletion] = useCreateChecklistCompletionMutation();
   const [raiseWrittenConcern, { isLoading: isRaisingWrittenConcern }] =
     useRaiseIqaWrittenConcernMutation();
   const [raiseEvidenceConcern, { isLoading: isRaisingEvidenceConcern }] =
@@ -219,7 +255,7 @@ const AssessmentReview = () => {
   const evidenceSubmission = evidenceData?.data;
   const submission = writtenSubmission || evidenceSubmission;
   const uiFlags = submission?.ui_flags;
-  const adminConcerns = submission?.admin_concerns || [];
+  const adminConcerns = (submission as any)?.admin_concerns || [];
   const evidenceCriteria = useMemo(() => {
     if (!evidenceSubmission) {
       return [];
@@ -289,12 +325,27 @@ const AssessmentReview = () => {
         await startSampleReview(sample.id).unwrap();
       }
 
+      const enrolmentId = sample.enrolment_id || queueItem?.enrolment_id || "";
+      if (enrolmentId) {
+        for (const template of applicableTemplates) {
+          const responses = checklistResponses[template.id] || {};
+          if (Object.keys(responses).length > 0) {
+            await createChecklistCompletion({
+              template_id: template.id,
+              enrolment_id: enrolmentId,
+              responses,
+              summary_comment: checklistSummaries[template.id] || "",
+            }).unwrap();
+          }
+        }
+      }
+
       await submitSampleDecision({
         sampleId: sample.id,
         body: {
-          decision: decision === "approved" ? "approved" : "action_required",
+          decision,
           comments: notes.trim(),
-          action_type: decision === "approved" ? "" : decision,
+          action_type: decision === "action_required" ? actionType : "",
         },
       }).unwrap();
 
@@ -359,8 +410,6 @@ const AssessmentReview = () => {
       </div>
     );
   }
-
-  console.log("currentUnit item:", currentUnit);
 
   return (
     <div className="space-y-6">
@@ -940,6 +989,116 @@ const AssessmentReview = () => {
         </Card>
       )}
 
+      {feedbackItems.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <AlertTriangle className="w-4 h-4" /> IQA Action Required — Feedback
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {feedbackItems.map((item) => (
+              <div key={item.id} className="rounded-lg border border-orange-200 bg-white p-4 text-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-orange-700">
+                    {item.action_type || "Action required"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(item.created_at).toLocaleDateString()} · {item.created_by.name}
+                  </span>
+                </div>
+                {item.comments && (
+                  <p className="whitespace-pre-wrap text-muted-foreground">{item.comments}</p>
+                )}
+                {item.affected_criteria.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {item.affected_criteria.map((c) => (
+                      <Badge key={c} variant="outline" className="text-xs border-orange-300 text-orange-700">
+                        {c}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {!uiFlags?.hide_iqa_review_form && applicableTemplates.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>IQA Checklists</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {applicableTemplates.map((template) => (
+              <div key={template.id} className="space-y-3">
+                <p className="text-sm font-semibold">
+                  {template.title}
+                  {template.unit_title ? (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      (Unit: {template.unit_title})
+                    </span>
+                  ) : null}
+                </p>
+                <div className="space-y-2">
+                  {template.items
+                    .filter((item) => item.is_active)
+                    .map((item) => {
+                      const selected = checklistResponses[template.id]?.[item.id];
+                      return (
+                        <div
+                          key={item.id}
+                          className="rounded-lg border p-3 text-sm space-y-2"
+                        >
+                          <p className="font-medium">{item.label}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {getChecklistResponseOptions(item.response_type).map((opt) => (
+                              <Button
+                                key={opt.value}
+                                type="button"
+                                size="sm"
+                                variant={selected === opt.value ? "default" : "outline"}
+                                onClick={() =>
+                                  setChecklistResponses((prev) => ({
+                                    ...prev,
+                                    [template.id]: {
+                                      ...(prev[template.id] || {}),
+                                      [item.id]: opt.value,
+                                    },
+                                  }))
+                                }
+                              >
+                                {opt.label}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">
+                    Summary comment (optional)
+                  </Label>
+                  <Textarea
+                    rows={2}
+                    value={checklistSummaries[template.id] || ""}
+                    onChange={(e) =>
+                      setChecklistSummaries((prev) => ({
+                        ...prev,
+                        [template.id]: e.target.value,
+                      }))
+                    }
+                    placeholder="Add any overall notes for this checklist..."
+                  />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {!uiFlags?.hide_iqa_review_form && (
         <Card>
           <CardHeader>
@@ -951,27 +1110,71 @@ const AssessmentReview = () => {
                 <Button
                   key={item.value}
                   type="button"
-                  variant={decision === item.value ? "default" : "outline"}
+                  variant={
+                    decision === item.value
+                      ? item.value === "escalated"
+                        ? "destructive"
+                        : "default"
+                      : "outline"
+                  }
                   onClick={() => setDecision(item.value)}
                 >
                   {item.label}
                 </Button>
               ))}
             </div>
+
+            {decision === "action_required" && (
+              <div className="space-y-2">
+                <Label>Action Type</Label>
+                <div className="flex flex-wrap gap-2">
+                  {ACTION_TYPE_OPTIONS.map((opt) => (
+                    <Button
+                      key={opt.value}
+                      type="button"
+                      size="sm"
+                      variant={actionType === opt.value ? "default" : "outline"}
+                      onClick={() => setActionType(opt.value)}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {decision === "escalated" && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                This unit will remain locked and flagged for admin review. The learner cannot progress until an admin resolves the escalation.
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label>IQA Notes</Label>
+              <Label>
+                {decision === "escalated" ? "Escalation reason" : "IQA Notes"}
+              </Label>
               <Textarea
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 rows={5}
-                placeholder="Add IQA review notes..."
+                placeholder={
+                  decision === "escalated"
+                    ? "Explain why this needs admin review..."
+                    : decision === "action_required"
+                      ? "Describe what action the trainer must take..."
+                      : "Add IQA review notes..."
+                }
               />
             </div>
-            <Button onClick={handleReviewSubmit} disabled={isSaving}>
+            <Button
+              onClick={handleReviewSubmit}
+              disabled={isSaving}
+              variant={decision === "escalated" ? "destructive" : "default"}
+            >
               {isSaving ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
-              Submit IQA Review
+              {decision === "escalated" ? "Escalate to Admin" : "Submit IQA Review"}
             </Button>
           </CardContent>
         </Card>
