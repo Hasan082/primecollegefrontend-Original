@@ -38,17 +38,31 @@ const createInitialState = (): BlogFormState => ({
   featureImage: null,
 });
 
-const getCategoryId = (blog: BlogDetail | undefined) => {
+const getCategoryId = (blog: BlogDetail | undefined): string => {
   if (!blog) return "";
-  if (typeof blog.blog_category === "string") return blog.blog_category;
-  if (
-    blog.blog_category &&
-    typeof blog.blog_category === "object" &&
-    "id" in blog.blog_category
-  ) {
-    return blog.blog_category.id;
+
+  // 1. Try blog_category field which could be an ID or an object
+  const blogCategory = blog.blog_category;
+  if (blogCategory) {
+    if (typeof blogCategory === "string" || typeof blogCategory === "number") {
+      return String(blogCategory);
+    }
+    if (typeof blogCategory === "object" && "id" in blogCategory) {
+      return String(blogCategory.id);
+    }
   }
-  return blog.category_id ?? "";
+
+  // 2. Fallback to category_id
+  if (blog.category_id !== undefined && blog.category_id !== null) {
+    return String(blog.category_id);
+  }
+
+  // 3. Fallback to category_slug if necessary (though usually ID is preferred)
+  if (blog.category_slug) {
+    return blog.category_slug;
+  }
+
+  return "";
 };
 
 const EditBlogModal = ({
