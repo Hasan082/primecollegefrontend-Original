@@ -94,8 +94,7 @@ function buildSubmissionTimeline(submission: any, queueItem: any) {
 
 const decisions = [
   { value: "approved", label: "Approve" },
-  { value: "action_required", label: "Action Required" },
-  { value: "escalated", label: "Escalate to Admin" },
+  { value: "action_required", label: "Refer Back to Trainer" },
 ] as const;
 
 const ACTION_TYPE_OPTIONS = [
@@ -116,7 +115,7 @@ const AssessmentReview = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [decision, setDecision] = useState<"approved" | "action_required" | "escalated">("approved");
+  const [decision, setDecision] = useState<"approved" | "action_required">("approved");
   const [actionType, setActionType] = useState("reassess_criteria");
   const [notes, setNotes] = useState("");
   const [concernNote, setConcernNote] = useState("");
@@ -152,13 +151,15 @@ const AssessmentReview = () => {
     const workflowStatus =
       sample.review_status === "approved"
         ? "IQA Approved"
-        : sample.review_status === "action_required"
-          ? "Assessor Action Required"
-          : sample.review_status === "escalated"
-            ? "Escalated to Admin"
-            : sample.review_status === "auto_cleared"
-              ? "Auto-Cleared (Not Sampled)"
-              : "Pending IQA Review";
+        : sample.review_status === "trainer_review"
+          ? "IQA Referred — Awaiting Trainer Response"
+          : sample.review_status === "action_required"
+            ? "Assessor Action Required"
+            : sample.review_status === "escalated"
+              ? "Escalated to Admin"
+              : sample.review_status === "auto_cleared"
+                ? "Auto-Cleared (Not Sampled)"
+                : "Pending IQA Review";
 
     return {
       sample_id: sample.id,
@@ -174,7 +175,7 @@ const AssessmentReview = () => {
         title: sample.unit.title,
       },
       status: sample.trigger_submission.status,
-      iqa_decision: sample.review_status === "approved" ? "approved" : sample.review_status === "action_required" ? "changes_required" : null,
+      iqa_decision: sample.review_status === "approved" ? "approved" : sample.review_status === "trainer_review" ? "referred_back" : null,
       iqa_reviewed_at: sample.reviewed_at,
       submitted_at: sample.trigger_submission.submitted_at,
       outcome_set_at: sample.trigger_submission.outcome_set_at,
@@ -221,7 +222,7 @@ const AssessmentReview = () => {
       skip: !sample?.trigger_submission.id || !isEvidence,
     });
   const { data: feedbackData } = useGetSampleFeedbackQuery(id || "", {
-    skip: !id || sample?.review_status !== "action_required",
+    skip: !id || !["action_required", "trainer_review"].includes(sample?.review_status ?? ""),
   });
   const feedbackItems = feedbackData?.results || [];
 
@@ -1110,13 +1111,7 @@ const AssessmentReview = () => {
                 <Button
                   key={item.value}
                   type="button"
-                  variant={
-                    decision === item.value
-                      ? item.value === "escalated"
-                        ? "destructive"
-                        : "default"
-                      : "outline"
-                  }
+                  variant={decision === item.value ? "default" : "outline"}
                   onClick={() => setDecision(item.value)}
                 >
                   {item.label}
@@ -1125,56 +1120,48 @@ const AssessmentReview = () => {
             </div>
 
             {decision === "action_required" && (
-              <div className="space-y-2">
-                <Label>Action Type</Label>
-                <div className="flex flex-wrap gap-2">
-                  {ACTION_TYPE_OPTIONS.map((opt) => (
-                    <Button
-                      key={opt.value}
-                      type="button"
-                      size="sm"
-                      variant={actionType === opt.value ? "default" : "outline"}
-                      onClick={() => setActionType(opt.value)}
-                    >
-                      {opt.label}
-                    </Button>
-                  ))}
+              <>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  This will be sent back to the <strong>trainer only</strong>. The learner will not be
+                  notified. Only the trainer can decide whether to request a learner resubmission.
                 </div>
-              </div>
-            )}
-
-            {decision === "escalated" && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                This unit will remain locked and flagged for admin review. The learner cannot progress until an admin resolves the escalation.
-              </div>
+                <div className="space-y-2">
+                  <Label>Action Type</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {ACTION_TYPE_OPTIONS.map((opt) => (
+                      <Button
+                        key={opt.value}
+                        type="button"
+                        size="sm"
+                        variant={actionType === opt.value ? "default" : "outline"}
+                        onClick={() => setActionType(opt.value)}
+                      >
+                        {opt.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             <div className="space-y-2">
               <Label>
-                {decision === "escalated" ? "Escalation reason" : "IQA Notes"}
+                {decision === "action_required" ? "Feedback to Trainer" : "IQA Notes"}
               </Label>
               <Textarea
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 rows={5}
                 placeholder={
-                  decision === "escalated"
-                    ? "Explain why this needs admin review..."
-                    : decision === "action_required"
-                      ? "Describe what action the trainer must take..."
-                      : "Add IQA review notes..."
+                  decision === "action_required"
+                    ? "Describe the issue with the assessment — the trainer will see this..."
+                    : "Add IQA review notes..."
                 }
               />
             </div>
-            <Button
-              onClick={handleReviewSubmit}
-              disabled={isSaving}
-              variant={decision === "escalated" ? "destructive" : "default"}
-            >
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : null}
-              {decision === "escalated" ? "Escalate to Admin" : "Submit IQA Review"}
+            <Button onClick={handleReviewSubmit} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {decision === "action_required" ? "Refer Back to Trainer" : "Approve Assessment"}
             </Button>
           </CardContent>
         </Card>

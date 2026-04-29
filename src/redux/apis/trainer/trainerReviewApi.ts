@@ -173,6 +173,18 @@ export interface TrainerUnitResourcesResponse {
   data: LearnerUnitOverviewResource[];
 }
 
+export interface TrainerIQAReferralRespondPayload {
+  updated_feedback: string;
+  updated_band?: string;
+  request_learner_resubmission: boolean;
+  trainer_response_to_iqa?: string;
+}
+
+export interface TrainerIQAReferralRespondResponse {
+  success: boolean;
+  message: string;
+}
+
 const trainerReviewApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getTrainerDashboard: builder.query<TrainerDashboardResponse, void>({
@@ -298,6 +310,20 @@ const trainerReviewApi = api.injectEndpoints({
         { type: "Enrolments", id: `TRAINER_RESOURCES_${unitId}` },
       ],
     }),
+    respondToIQAReferral: builder.mutation<
+      TrainerIQAReferralRespondResponse,
+      { sampleId: string; body: TrainerIQAReferralRespondPayload }
+    >({
+      query: ({ sampleId, body }) => ({
+        url: `/api/enrolments/trainer/iqa-samples/${sampleId}/respond/`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { sampleId }) => [
+        { type: "Enrolments", id: `IQA_SAMPLE_${sampleId}` },
+        "Enrolments",
+      ],
+    }),
   }),
 });
 
@@ -311,4 +337,5 @@ export const {
   useGetTrainerNotificationsQuery,
   useGetTrainerSubmissionRecordQuery,
   useGetTrainerUnitResourcesQuery,
+  useRespondToIQAReferralMutation,
 } = trainerReviewApi;

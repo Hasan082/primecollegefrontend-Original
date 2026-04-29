@@ -6,6 +6,7 @@ export type LifecycleLabel =
   | "Submitted"
   | "Awaiting Assessment"
   | "Awaiting IQA"
+  | "Trainer Review"
   | "Action Required"
   | "Signed Off"
   | "Completed"
@@ -15,6 +16,7 @@ export type LifecycleLabel =
 export type IqaWorkflowLabel =
   | "Awaiting IQA"
   | "Signed Off"
+  | "Trainer Review"
   | "Action Required"
   | "Escalated"
   | "Auto Cleared";
@@ -22,6 +24,7 @@ export type IqaWorkflowLabel =
 export const IQA_WORKFLOW_LABELS: IqaWorkflowLabel[] = [
   "Awaiting IQA",
   "Signed Off",
+  "Trainer Review",
   "Action Required",
   "Escalated",
   "Auto Cleared",
@@ -33,6 +36,9 @@ export function getIqaWorkflowLabel(iqaStatus?: string | null): IqaWorkflowLabel
   }
   if (iqaStatus === "IQA Approved") {
     return "Signed Off";
+  }
+  if (iqaStatus === "IQA Referred — Awaiting Trainer Response") {
+    return "Trainer Review";
   }
   if (iqaStatus === "Auto-Cleared (Not Sampled)" || iqaStatus === "Not Sampled") {
     return "Auto Cleared";
@@ -46,18 +52,33 @@ export function getIqaWorkflowLabel(iqaStatus?: string | null): IqaWorkflowLabel
 export function getIqaWorkflowBadgeVariant(
   label: IqaWorkflowLabel,
 ): "default" | "secondary" | "destructive" | "outline" {
-  if (label === "Signed Off") {
-    return "default";
+  if (label === "Signed Off") return "default";
+  if (label === "Escalated") return "destructive";
+  if (label === "Trainer Review" || label === "Action Required") return "secondary";
+  if (label === "Auto Cleared") return "outline";
+  return "outline";
+}
+
+export function getReviewStatusLabel(reviewStatus?: string | null): string {
+  switch (reviewStatus) {
+    case "pending": return "Pending IQA Review";
+    case "in_progress": return "In Progress";
+    case "approved": return "IQA Approved";
+    case "action_required": return "Assessor Action Required";
+    case "trainer_review": return "IQA Referred — Trainer Review";
+    case "escalated": return "Escalated to Admin";
+    case "auto_cleared": return "Auto Cleared";
+    default: return reviewStatus ? reviewStatus.replace(/_/g, " ") : "—";
   }
-  if (label === "Escalated") {
-    return "destructive";
-  }
-  if (label === "Action Required") {
-    return "secondary";
-  }
-  if (label === "Auto Cleared") {
-    return "outline";
-  }
+}
+
+export function getReviewStatusBadgeVariant(
+  reviewStatus?: string | null,
+): "default" | "secondary" | "destructive" | "outline" {
+  if (reviewStatus === "approved") return "default";
+  if (reviewStatus === "escalated") return "destructive";
+  if (reviewStatus === "trainer_review" || reviewStatus === "action_required") return "secondary";
+  if (reviewStatus === "auto_cleared") return "outline";
   return "outline";
 }
 
@@ -124,12 +145,14 @@ export function getLifecycleLabel(value?: string | null): LifecycleLabel {
   ) {
     return "Awaiting IQA";
   }
+  if (normalized === "trainer_review") {
+    return "Trainer Review";
+  }
   if (
     normalized === "resubmit" ||
     normalized === "resubmission_required" ||
     normalized === "not_competent" ||
     normalized === "not_yet_competent" ||
-    normalized === "changes_required" ||
     normalized === "referred_back" ||
     normalized === "assessor_action_required"
   ) {

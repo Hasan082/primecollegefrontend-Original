@@ -497,6 +497,7 @@ export interface UnitIQASampleItem {
     | 'in_progress'
     | 'approved'
     | 'action_required'
+    | 'trainer_review'
     | 'escalated'
     | 'auto_cleared';
   sampled_at: string;

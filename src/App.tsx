@@ -74,6 +74,12 @@ const TrainerProfile = lazy(() => import("./pages/trainer/Profile"));
 const TrainerChangePassword = lazy(
   () => import("./pages/trainer/ChangePassword"),
 );
+const IQAReferralResponse = lazy(
+  () => import("./pages/trainer/IQAReferralResponse"),
+);
+const TrainerIQAReferrals = lazy(
+  () => import("./pages/trainer/IQAReferrals"),
+);
 
 // admin dashboard
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -358,6 +364,14 @@ const App = () => {
                     <Route
                       path="change-password"
                       element={<TrainerChangePassword />}
+                    />
+                    <Route
+                      path="iqa-referrals"
+                      element={<TrainerIQAReferrals />}
+                    />
+                    <Route
+                      path="iqa-referral/:sampleId"
+                      element={<IQAReferralResponse />}
                     />
                   </Route>
                   <Route

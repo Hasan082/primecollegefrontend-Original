@@ -4,6 +4,7 @@ import {
   History,
   BookOpen,
   ClipboardCheck,
+  Flag,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -23,6 +24,7 @@ const navItems = [
   { title: "Dashboard", url: "/trainer/dashboard", icon: LayoutDashboard },
   { title: "Assigned Learners", url: "/trainer/learners", icon: Users },
   { title: "Assessment History", url: "/trainer/history", icon: History },
+  { title: "IQA Referrals", url: "/trainer/iqa-referrals", icon: Flag },
 ];
 
 const assessmentNavItems = [
