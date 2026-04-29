@@ -364,6 +364,8 @@ const QualificationDetail = () => {
                     {qualification.course_duration}
                   </span>
                 ) : null}
+
+                
                 <span className="rounded bg-white/10 px-4 py-2">
                   {formatMoney(
                     selectedSession?.effective_price ||
@@ -371,6 +373,13 @@ const QualificationDetail = () => {
                     qualification.currency,
                   )}
                 </span>
+                {
+                  qualification?.qualification_type?.slug === "cpd" ? <span className="rounded bg-white/10 px-4 py-2">
+                    CPD
+                  </span> : null
+
+                }
+
               </div>
 
               {usesSessionBooking ? (
