@@ -141,24 +141,8 @@ const PageManagement = () => {
         deletingId={deletingId}
         emptyMsg="No linked qualification detail pages detected yet."
       />
-      <SectionGroup
-        title="Blog Pages"
-        icon={<BookOpen className="h-5 w-5 text-primary" />}
-        pages={blogPages}
-        onDelete={handleDeletePage}
-        isDeleting={isPageDeleting}
-        deletingId={deletingId}
-        emptyMsg="No blog pages remembered in the admin yet."
-      />
-      <SectionGroup
-        title="Other CMS Pages"
-        icon={<Files className="h-5 w-5 text-primary" />}
-        pages={otherPages}
-        onDelete={handleDeletePage}
-        isDeleting={isPageDeleting}
-        deletingId={deletingId}
-        emptyMsg="No additional CMS pages yet."
-      />
+     
+      
 
       <AddPageDialog open={addOpen} onOpenChange={setAddOpen} newPage={newPage} setNewPage={setNewPage} onAdd={handleAddPage} />
     </div>

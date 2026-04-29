@@ -58,7 +58,7 @@ const IQASidebar = ({ canManageSamplingSettings = false }: IQASidebarProps) => {
         >
           <NavLink
             to={item.url}
-            className="hover:bg-sidebar-accent/50"
+            className="hover:bg-sidebar-accent/50 py-2.5"
             activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
           >
             <item.icon className="h-4 w-4" />
@@ -73,7 +73,7 @@ const IQASidebar = ({ canManageSamplingSettings = false }: IQASidebarProps) => {
   return (
     <Sidebar
       collapsible="offcanvas"
-      className="border-r border-sidebar-border top-14"
+      className="border-r border-sidebar-border top-14 h-[calc(100vh-3.5rem)]"
     >
       <SidebarContent>
         <SidebarGroup className="pt-4">
