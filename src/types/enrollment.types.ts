@@ -255,10 +255,18 @@ export interface EnrolmentOverviewResponse {
             title: string;
             slug: string;
             is_cpd: boolean;
+            is_session?: boolean;
             code?: string;
             requires_learner_declaration?: boolean;
             requires_course_evaluation?: boolean;
         };
+        session?: {
+            id: string;
+            title: string;
+            date: string;
+            location: string;
+            venue_address: string;
+        } | null;
         overall_progress: {
             completed_units: number;
             total_units: number;

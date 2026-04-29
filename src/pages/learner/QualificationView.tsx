@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, Circle, ShieldCheck, Loader2, FileCheck, ClipboardList, Lock, CalendarPlus, User, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, Circle, ShieldCheck, Loader2, FileCheck, ClipboardList, Lock, CalendarPlus, User, Mail, MapPin, Calendar, Building2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import CPDFinalAssessmentModal from "@/components/learner/CPDFinalAssessmentModal";
@@ -126,6 +126,8 @@ const QualificationView = () => {
   const pct = progress.progress_percent;
   const allUnitsDone = total > 0 && completed === total;
   const isCpd = qualification.is_cpd;
+  const isSession = qualification.is_session === true;
+  const session = enrolment.session || null;
   const isExpired = enrolment.access_expired;
   const requiresDeclaration = qualification.requires_learner_declaration === true;
   const requiresEvaluation = qualification.requires_course_evaluation === true;
@@ -251,10 +253,68 @@ const QualificationView = () => {
         </div>
       )}
 
-      <h2 className="text-xl font-bold text-primary mb-1">Qualification Units</h2>
-      <p className="text-sm text-muted-foreground mb-6">Select a unit to access learning resources {!qualification.is_cpd && "and submit assessment evidence"}</p>
+      {/* ── Session info card (only for session-based qualifications) ── */}
+      {isSession && session && (
+        <div className="bg-card border border-border rounded-xl p-6 mb-8 shadow-sm">
+          <h2 className="text-base font-bold text-primary mb-4 flex items-center gap-2">
+            <Calendar className="w-4 h-4" /> Session Details
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Calendar className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Session Title</p>
+                <p className="font-medium text-foreground">{session.title}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CalendarPlus className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Date</p>
+                <p className="font-medium text-foreground">
+                  {new Date(session.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <MapPin className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Location</p>
+                <p className="font-medium text-foreground capitalize">{session.location}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Building2 className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Venue Address</p>
+                <p className="font-medium text-foreground">{session.venue_address}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {allUnitsDone && qualification.is_cpd && (
+      {isSession && !session && (
+        <div className="bg-muted/40 border border-border rounded-xl p-6 mb-8 text-center text-muted-foreground text-sm">
+          No session details available yet. Please check back later.
+        </div>
+      )}
+
+      {/* ── Non-session content (units, declaration, evaluation) ── */}
+      {!isSession && (
+        <>
+          <h2 className="text-xl font-bold text-primary mb-1">Qualification Units</h2>
+          <p className="text-sm text-muted-foreground mb-6">Select a unit to access learning resources {!qualification.is_cpd && "and submit assessment evidence"}</p>
+
+      {qualification.is_cpd && (
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 mb-8">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -431,6 +491,8 @@ const QualificationView = () => {
           </div> 
         ) : null}
       </div>
+        </>
+      )}
 
 
       <ExtensionRequestModal
