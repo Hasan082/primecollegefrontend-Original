@@ -27,7 +27,6 @@ import { useParams, useSearchParams } from "react-router-dom";
 
 import AddBlockDialog from "@/components/admin/page-builder/AddBlockDialog";
 import BlockList from "@/components/admin/page-builder/BlockList";
-import BlockPreviewRenderer from "@/components/admin/page-builder/BlockPreviewRenderer";
 import EditBlockDialog from "@/components/admin/page-builder/EditBlockDialog";
 import PageEditorHeader from "@/components/admin/page-builder/PageEditorHeader";
 import SEOPanel from "@/components/admin/page-builder/SEOPanel";
@@ -48,7 +47,6 @@ const PageEditor = () => {
   const [meta, setMeta] = useState({ title: "", description: "" });
   const [addOpen, setAddOpen] = useState(false);
   const [editBlock, setEditBlock] = useState<ContentBlock | null>(null);
-  const [showPreview, setShowPreview] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -181,13 +179,11 @@ const PageEditor = () => {
         isPublished={isPublished}
         setIsPublished={setIsPublished}
         showPublishedToggle={showPublishedToggle}
-        showPreview={showPreview}
-        setShowPreview={setShowPreview}
         isSaving={isSaving}
         handleSave={() => savePage()}
       />
       <SEOPanel slug={slug} onSlugChange={setSlug} meta={meta} onMetaChange={setMeta} />
-      <div className={`grid gap-6 ${showPreview ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1 max-w-4xl"}`}>
+      <div className="grid grid-cols-1 max-w-4xl mx-auto gap-6">
         <BlockList
           blocks={visibleBlocks}
           setBlocks={setBlocks}
@@ -199,16 +195,6 @@ const PageEditor = () => {
           onAdd={() => setAddOpen(true)}
           isHomePage={isHomePage}
         />
-        {showPreview && (
-          <div className="hidden lg:block sticky top-6 rounded-lg border border-border bg-background overflow-hidden h-[80vh]">
-            <div className="bg-muted px-3 py-1.5 border-b border-border flex items-center gap-2 text-[9px] font-mono">
-              <span className="truncate flex-1">{previewPath}</span>
-            </div>
-            <div className="overflow-y-auto h-full pb-10">
-              <BlockPreviewRenderer blocks={visibleBlocks} pageTitle={pageTitle} pageSlug={slug} />
-            </div>
-          </div>
-        )}
       </div>
       <AddBlockDialog
         open={addOpen}

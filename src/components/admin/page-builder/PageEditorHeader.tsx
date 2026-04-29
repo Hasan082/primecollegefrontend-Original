@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,6 @@ interface PageEditorHeaderProps {
   isPublished: boolean;
   setIsPublished: (v: boolean) => void;
   showPublishedToggle: boolean;
-  showPreview: boolean;
-  setShowPreview: (v: boolean) => void;
   isSaving: boolean;
   handleSave: () => void;
 }
@@ -25,8 +23,6 @@ const PageEditorHeader = ({
   isPublished,
   setIsPublished,
   showPublishedToggle,
-  showPreview,
-  setShowPreview,
   isSaving,
   handleSave,
 }: PageEditorHeaderProps) => {
@@ -68,14 +64,10 @@ const PageEditorHeader = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => setShowPreview(!showPreview)}
+        onClick={() => window.open(previewPath, "_blank")}
       >
-        {showPreview ? (
-          <EyeOff className="h-3.5 w-3.5 mr-1.5" />
-        ) : (
-          <Eye className="h-3.5 w-3.5 mr-1.5" />
-        )}
-        {showPreview ? "Hide" : "Show"} Preview
+        <ArrowLeft className="h-3.5 w-3.5 mr-1.5 rotate-180" />
+        View Live
       </Button>
       <Button onClick={handleSave} disabled={isSaving}>
         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
