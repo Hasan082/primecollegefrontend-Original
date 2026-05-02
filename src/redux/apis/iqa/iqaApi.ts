@@ -32,6 +32,7 @@ import type {
   SamplingPlanWritePayload,
   SubmissionAdminConcernCreatePayload,
   SubmissionAdminConcernResponse,
+  TrainerPerformanceDetailResponse,
   TrainerPerformanceResponse,
   UnitIQAManualSamplePayload,
   UnitIQASampleDecisionPayload,
@@ -456,6 +457,20 @@ const iqaApi = api.injectEndpoints({
       providesTags: ["Enrolments"],
     }),
 
+    getTrainerPerformanceDetail: builder.query<
+      TrainerPerformanceDetailResponse,
+      { trainerId: string; params?: Record<string, unknown> }
+    >({
+      query: ({ trainerId, params }) => ({
+        url: `/api/enrolments/iqa/trainer-performance/${trainerId}/`,
+        method: "GET",
+        params: cleanObject(params || {}),
+      }),
+      providesTags: (_result, _error, { trainerId }) => [
+        { type: "Enrolments", id: `TRAINER_PERF_${trainerId}` },
+      ],
+    }),
+
     // ─── New QA Portal Endpoints ────────────────────────────────────────────
 
     getQaDashboard: builder.query<QaDashboardData, void>({
@@ -545,6 +560,7 @@ export const {
   useSubmitIqaSampleDecisionMutation,
   useManualSampleIqaUnitMutation,
   useGetTrainerPerformanceQuery,
+  useGetTrainerPerformanceDetailQuery,
   useGetQaDashboardQuery,
   useGetQaTrainerPerformanceQuery,
   useGetSampleFeedbackQuery,

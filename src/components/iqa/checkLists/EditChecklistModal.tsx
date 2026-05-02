@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { adminQualifications } from "@/data/adminMockData";
 import { useToast } from "@/hooks/use-toast";
 import {
   useGetQualificationOptionsQuery,
@@ -78,18 +77,8 @@ const EditChecklistModal = ({
     setErrors({});
   }, [template, open]);
 
-  const qualificationOptions = qualificationOptionsResponse?.data?.length
-    ? qualificationOptionsResponse.data
-    : adminQualifications;
-
-  const getMockUnits = (qualificationValue: string) =>
-    adminQualifications.find(
-      (qualification) => qualification.id === qualificationValue,
-    )?.units || [];
-
-  const unitOptions = unitOptionsResponse?.data?.length
-    ? unitOptionsResponse.data
-    : getMockUnits(qualificationId);
+  const qualificationOptions = qualificationOptionsResponse?.data ?? [];
+  const unitOptions = unitOptionsResponse?.data ?? [];
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);

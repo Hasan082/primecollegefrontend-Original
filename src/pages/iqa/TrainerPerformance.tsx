@@ -18,19 +18,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import TablePagination from "@/components/admin/TablePagination";
-import { useGetTrainerPerformanceQuery } from "@/redux/apis/iqa/iqaApi";
+import {
+  useGetTrainerPerformanceDetailQuery,
+  useGetTrainerPerformanceQuery,
+} from "@/redux/apis/iqa/iqaApi";
+import {
+  getIqaDecisionLabel,
+  getSubmissionOutcomeLabel,
+  getSubmissionTypeLabel,
+} from "@/lib/iqaStatus";
 
 const ITEMS_PER_PAGE = 10;
 
 const TrainerPerformance = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [openTrainer, setOpenTrainer] = useState<{ id: string; name: string } | null>(null);
   const { data, isLoading, isError, isFetching } = useGetTrainerPerformanceQuery(
     {
       page: currentPage,
       page_size: ITEMS_PER_PAGE,
     },
   );
+  const {
+    data: detailData,
+    isFetching: isDetailFetching,
+    isError: isDetailError,
+  } = useGetTrainerPerformanceDetailQuery(
+    { trainerId: openTrainer?.id ?? "" },
+    { skip: !openTrainer?.id },
+  );
+  const detail = detailData?.data;
 
   const summary = data?.data?.summary;
   const items = data?.data?.results ?? [];
@@ -183,15 +208,21 @@ const TrainerPerformance = () => {
                 items.map((item) => {
                   const metrics = item.metrics;
                   const approvalRate = metrics.approval_rate_percent ?? 0;
+                  const trainerId = item.trainer?.id;
+                  const trainerName = item.trainer?.name;
 
                   return (
                     <TableRow
-                      key={
-                        item.trainer?.id || item.trainer?.name || "unassigned"
-                      }
+                      key={trainerId || trainerName || "unassigned"}
+                      className={trainerId ? "cursor-pointer hover:bg-muted/40" : undefined}
+                      onClick={() => {
+                        if (trainerId) {
+                          setOpenTrainer({ id: trainerId, name: trainerName || "Trainer" });
+                        }
+                      }}
                     >
                       <TableCell className="font-medium">
-                        {item.trainer?.name || "Unassigned trainer"}
+                        {trainerName || "Unassigned trainer"}
                       </TableCell>
                       <TableCell className="text-center">
                         {metrics.assessments}
@@ -232,6 +263,154 @@ const TrainerPerformance = () => {
           />
         </CardContent>
       </Card>
+
+      <Dialog open={!!openTrainer} onOpenChange={(next) => !next && setOpenTrainer(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{openTrainer?.name || "Trainer"} — Performance Detail</DialogTitle>
+            <DialogDescription>
+              IQA-reviewed assessments, breakdowns, and recent activity for this trainer.
+            </DialogDescription>
+          </DialogHeader>
+
+          {isDetailFetching ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Loading detail...</p>
+          ) : isDetailError || !detail ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              Failed to load trainer detail.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: "Assessments", value: detail.summary.assessments },
+                  { label: "IQA Approvals", value: detail.summary.iqa_approvals },
+                  { label: "Flags", value: detail.summary.flags },
+                  { label: "Approval Rate", value: `${detail.summary.approval_rate_percent}%` },
+                  { label: "Flag Rate", value: `${detail.summary.flag_rate_percent}%` },
+                  { label: "Resub Rate", value: `${detail.summary.resub_rate_percent}%` },
+                  { label: "Avg Turnaround", value: `${detail.summary.avg_turnaround_days} days` },
+                  { label: "Avg Trainer Outcome", value: `${detail.summary.avg_trainer_outcome_days} days` },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    <p className="text-lg font-semibold">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {detail.qualification_breakdown.length > 0 ? (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Qualification Breakdown</h3>
+                  <div className="rounded-lg border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Qualification</TableHead>
+                          <TableHead className="text-center">Assess.</TableHead>
+                          <TableHead className="text-center">Approvals</TableHead>
+                          <TableHead className="text-center">Flags</TableHead>
+                          <TableHead className="text-center">Approval %</TableHead>
+                          <TableHead className="text-center">Avg TAT</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {detail.qualification_breakdown.map((row) => (
+                          <TableRow key={row.qualification.id}>
+                            <TableCell className="text-sm">{row.qualification.title}</TableCell>
+                            <TableCell className="text-center">{row.metrics.assessments}</TableCell>
+                            <TableCell className="text-center">{row.metrics.iqa_approvals}</TableCell>
+                            <TableCell className="text-center">{row.metrics.flags}</TableCell>
+                            <TableCell className="text-center">{row.metrics.approval_rate_percent}%</TableCell>
+                            <TableCell className="text-center">{row.metrics.avg_turnaround_days} d</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : null}
+
+              {(detail.submission_type_breakdown.written || detail.submission_type_breakdown.evidence) ? (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Submission Type Breakdown</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(["written", "evidence"] as const).map((key) => {
+                      const stats = detail.submission_type_breakdown[key];
+                      if (!stats) return null;
+                      return (
+                        <div key={key} className="rounded-lg border p-3">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {getSubmissionTypeLabel(key)}
+                          </p>
+                          <div className="mt-1 grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <p className="text-muted-foreground text-xs">Assess.</p>
+                              <p className="font-semibold">{stats.assessments}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">Approvals</p>
+                              <p className="font-semibold">{stats.iqa_approvals}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">Flags</p>
+                              <p className="font-semibold">{stats.flags}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {detail.recent_reviews.results.length > 0 ? (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">
+                    Recent Reviews ({detail.recent_reviews.count})
+                  </h3>
+                  <div className="rounded-lg border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Learner</TableHead>
+                          <TableHead>Unit</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Trainer Outcome</TableHead>
+                          <TableHead>IQA Decision</TableHead>
+                          <TableHead className="text-center">TAT</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {detail.recent_reviews.results.map((row) => (
+                          <TableRow key={row.submission_id}>
+                            <TableCell className="text-sm">{row.learner.name}</TableCell>
+                            <TableCell className="text-sm">
+                              {row.unit.unit_code}: {row.unit.title}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {getSubmissionTypeLabel(row.submission_type)}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {getSubmissionOutcomeLabel(row.trainer_outcome)}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {getIqaDecisionLabel(row.iqa_decision)}
+                            </TableCell>
+                            <TableCell className="text-center text-xs">
+                              {row.turnaround_days != null ? `${row.turnaround_days} d` : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

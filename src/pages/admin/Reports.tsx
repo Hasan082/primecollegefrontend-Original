@@ -6,7 +6,6 @@ import { ArrowLeft, Download, FileText, Users, GraduationCap, BarChart3, Calenda
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { adminLearners, adminQualifications } from "@/data/adminMockData";
 import {
   useLazyExportLearnerProgressReportQuery,
   useLazyExportEnrolmentSummaryReportQuery,
@@ -15,6 +14,8 @@ import {
   useLazyExportTrainerWorkloadReportQuery,
   useLazyExportEvidenceSubmissionLogReportQuery,
 } from "@/redux/apis/reportsApi";
+import { useGetDashboardOverviewQuery } from "@/redux/apis/adminDashboardApi";
+import { useGetQualificationOptionsQuery } from "@/redux/apis/qualification/qualificationApi";
 
 interface ReportType {
   id: string;
@@ -39,6 +40,13 @@ const Reports = () => {
   const [dateRange, setDateRange] = useState("all-time");
   const [loadingReport, setLoadingReport] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const { data: dashboardOverview } = useGetDashboardOverviewQuery({});
+  const { data: qualificationOptionsResponse } = useGetQualificationOptionsQuery(undefined);
+
+  const totalLearners = dashboardOverview?.data?.kpis?.total_learners ?? 0;
+  const completedLearners = dashboardOverview?.data?.kpis?.completed_enrolments ?? 0;
+  const qualificationCount = qualificationOptionsResponse?.data?.length ?? 0;
 
   // Import lazy queries
   const [getLearnerProgress] = useLazyExportLearnerProgressReportQuery();
@@ -71,12 +79,24 @@ const Reports = () => {
       }
 
       const response = await exportFn({
-        format,
+        export_format: format,
         date_range: dateRange as any,
       }).unwrap();
 
-      // Create blob URL and download
       const blob = response instanceof Blob ? response : new Blob([response]);
+
+      if (blob.type.includes("application/json")) {
+        const text = await blob.text();
+        let serverMessage = text;
+        try {
+          const parsed = JSON.parse(text);
+          serverMessage = parsed?.message || parsed?.detail || text;
+        } catch {
+          /* keep raw text */
+        }
+        throw new Error(serverMessage);
+      }
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -95,9 +115,13 @@ const Reports = () => {
       });
     } catch (error) {
       console.error("Export error:", error);
+      const description =
+        error instanceof Error
+          ? error.message
+          : `Failed to export ${report.title}. Please try again.`;
       toast({
         title: "Error",
-        description: `Failed to export ${report.title}. Please try again.`,
+        description,
         variant: "destructive",
       });
     } finally {
@@ -118,9 +142,9 @@ const Reports = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{adminLearners.length}</p><p className="text-xs text-muted-foreground">Total Records</p></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{adminQualifications.length}</p><p className="text-xs text-muted-foreground">Qualifications</p></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{adminLearners.filter(l => l.status === "completed").length}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{totalLearners}</p><p className="text-xs text-muted-foreground">Total Records</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{qualificationCount}</p><p className="text-xs text-muted-foreground">Qualifications</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{completedLearners}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
         <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">100%</p><p className="text-xs text-muted-foreground">Audit Compliance</p></CardContent></Card>
       </div>
 

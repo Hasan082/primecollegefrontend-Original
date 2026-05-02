@@ -55,7 +55,7 @@ import {
   Check,
   ChevronsUpDown,
 } from "lucide-react";
-import type { AdminLearner } from "@/data/adminMockData";
+import type { AdminLearner } from "@/types/admin.types";
 import {
   useGetEnrolledLearnerActionModalDataQuery,
   useUpdateEnrolmentStaffAssignmentMutation,

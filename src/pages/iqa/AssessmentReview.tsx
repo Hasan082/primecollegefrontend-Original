@@ -23,7 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   getIqaDecisionLabel,
-  getIqaWorkflowBadgeVariant,
+  getIqaWorkflowBadgeProps,
   getIqaWorkflowLabel,
   getLifecycleLabel,
   getSubmissionOutcomeLabel,
@@ -428,13 +428,15 @@ const AssessmentReview = () => {
             {queueItem.unit.title}
           </p>
         </div>
-        <Badge
-          variant={getIqaWorkflowBadgeVariant(
-            getIqaWorkflowLabel(queueItem.iqa_status),
-          )}
-        >
-          {getIqaWorkflowLabel(queueItem.iqa_status)}
-        </Badge>
+        {(() => {
+          const workflowLabel = getIqaWorkflowLabel(queueItem.iqa_status);
+          const badgeProps = getIqaWorkflowBadgeProps(workflowLabel);
+          return (
+            <Badge variant={badgeProps.variant} className={badgeProps.className}>
+              {workflowLabel}
+            </Badge>
+          );
+        })()}
       </div>
 
       <Card>

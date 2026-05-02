@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import TablePagination from "@/components/admin/TablePagination";
 import LearnerDetailModal from "@/components/admin/LearnerDetailModal";
-import { type AdminLearner } from "@/data/adminMockData";
+import { type AdminLearner } from "@/types/admin.types";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useGetEnrolledLearnersQuery } from "@/redux/apis/admin/learnerManagementApi";
 import { useGetQualificationOnlyListQuery } from "@/redux/apis/qualification/qualificationApi";

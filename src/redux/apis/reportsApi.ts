@@ -1,7 +1,7 @@
 import { api } from "../api";
 
 export interface ReportExportParams {
-  format: 'csv' | 'pdf';
+  export_format: 'csv' | 'pdf';
   date_range?: 'all-time' | 'this-month' | 'last-3-months' | 'last-6-months' | 'this-year';
   qualification_id?: string;
   category?: string;

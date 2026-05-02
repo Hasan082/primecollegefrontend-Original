@@ -85,6 +85,21 @@ const authApi = api.injectEndpoints({
         } catch {}
       }
     }),
+    presignProfilePicture: builder.mutation<
+      {
+        upload_url: string;
+        fields: Record<string, string>;
+        key: string;
+        public_url?: string;
+      },
+      { file_name: string; content_type: string }
+    >({
+      query: (body) => ({
+        url: "/api/auth/me/presign-profile-picture/",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -99,4 +114,5 @@ export const {
   useForgotPasswordConfirmMutation,
   useSetPasswordMutation,
   useUpdateMeMutation,
+  usePresignProfilePictureMutation,
 } = authApi;

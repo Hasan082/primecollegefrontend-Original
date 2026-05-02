@@ -390,6 +390,94 @@ export interface TrainerPerformanceResponse {
   };
 }
 
+export interface TrainerPerformanceDetailSummary {
+  assessments: number;
+  iqa_approvals: number;
+  flags: number;
+  changes_required: number;
+  referred_back: number;
+  resub_rate_percent: number;
+  approval_rate_percent: number;
+  flag_rate_percent: number;
+  avg_turnaround_days: number;
+  avg_trainer_outcome_days: number;
+}
+
+export interface TrainerPerformanceDetailQualificationBreakdown {
+  qualification: {
+    id: string;
+    title: string;
+  };
+  metrics: {
+    assessments: number;
+    iqa_approvals: number;
+    flags: number;
+    resub_rate_percent: number;
+    approval_rate_percent: number;
+    avg_turnaround_days: number;
+  };
+}
+
+export interface TrainerPerformanceDetailSubmissionTypeBreakdown {
+  written?: {
+    assessments: number;
+    iqa_approvals: number;
+    flags: number;
+  };
+  evidence?: {
+    assessments: number;
+    iqa_approvals: number;
+    flags: number;
+  };
+}
+
+export interface TrainerPerformanceDetailRecentReview {
+  submission_id: string;
+  submission_type: string;
+  learner: {
+    id: string;
+    name: string;
+    qualification_learner_id: string | null;
+  };
+  qualification: {
+    id: string;
+    title: string;
+  };
+  unit: {
+    id: string;
+    title: string;
+    unit_code: string;
+  };
+  trainer_outcome: string | null;
+  iqa_decision: string | null;
+  submitted_at: string | null;
+  outcome_set_at: string | null;
+  iqa_reviewed_at: string | null;
+  turnaround_days: number | null;
+}
+
+export interface TrainerPerformanceDetailResponse {
+  success: boolean;
+  message: string;
+  data: {
+    trainer: {
+      id: string;
+      name: string;
+      email: string;
+      is_active: boolean;
+    };
+    summary: TrainerPerformanceDetailSummary;
+    qualification_breakdown: TrainerPerformanceDetailQualificationBreakdown[];
+    submission_type_breakdown: TrainerPerformanceDetailSubmissionTypeBreakdown;
+    recent_reviews: {
+      count: number;
+      next: string | null;
+      previous: string | null;
+      results: TrainerPerformanceDetailRecentReview[];
+    };
+  };
+}
+
 export interface IQADashboardResponse {
   success: boolean;
   message: string;

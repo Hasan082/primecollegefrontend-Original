@@ -28,7 +28,7 @@ import {
   useSubmitIqaSampleDecisionMutation,
 } from "@/redux/apis/iqa/iqaApi";
 import {
-  getIqaWorkflowBadgeVariant,
+  getIqaWorkflowBadgeProps,
   getIqaWorkflowLabel,
   getSubmissionOutcomeLabel,
 } from "@/lib/iqaStatus";
@@ -85,7 +85,7 @@ const SamplingQueue = () => {
     qualification: "",
   });
   const [selectedSampleIds, setSelectedSampleIds] = useState<string[]>([]);
-  const [bulkDecision, setBulkDecision] = useState<"approved" | "action_required" | "escalated">("approved");
+  const [bulkDecision, setBulkDecision] = useState<"approved" | "action_required">("approved");
   const [bulkNotes, setBulkNotes] = useState("");
 
   const { data, isLoading, isError } = useGetIqaSamplesQuery({
@@ -288,7 +288,6 @@ const SamplingQueue = () => {
                 <SelectContent>
                   <SelectItem value="approved">Approve</SelectItem>
                   <SelectItem value="action_required">Action Required</SelectItem>
-                  <SelectItem value="escalated">Escalate to Admin</SelectItem>
                 </SelectContent>
               </Select>
               <Button onClick={handleBulkReview} disabled={isSubmittingBulk || selectedSampleIds.length === 0}>
@@ -388,9 +387,18 @@ const SamplingQueue = () => {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <Badge variant={getIqaWorkflowBadgeVariant(getIqaWorkflowLabel(workflowStatus))} className="text-xs">
-                            {getIqaWorkflowLabel(workflowStatus)}
-                          </Badge>
+                          {(() => {
+                            const workflowLabel = getIqaWorkflowLabel(workflowStatus);
+                            const badgeProps = getIqaWorkflowBadgeProps(workflowLabel);
+                            return (
+                              <Badge
+                                variant={badgeProps.variant}
+                                className={`text-xs ${badgeProps.className}`}
+                              >
+                                {workflowLabel}
+                              </Badge>
+                            );
+                          })()}
                           <div className="text-[11px] text-muted-foreground">
                             {item.manually_sampled ? "Manual sample" : item.sampling_reason.replace(/_/g, " ")}
                           </div>

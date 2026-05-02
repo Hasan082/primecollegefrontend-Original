@@ -66,6 +66,7 @@ export function getReviewStatusLabel(reviewStatus?: string | null): string {
     case "approved": return "IQA Approved";
     case "action_required": return "Assessor Action Required";
     case "trainer_review": return "IQA Referred — Trainer Review";
+    case "reassessed": return "Awaiting Re-IQA";
     case "escalated": return "Escalated to Admin";
     case "auto_cleared": return "Auto Cleared";
     default: return reviewStatus ? reviewStatus.replace(/_/g, " ") : "—";
@@ -77,9 +78,66 @@ export function getReviewStatusBadgeVariant(
 ): "default" | "secondary" | "destructive" | "outline" {
   if (reviewStatus === "approved") return "default";
   if (reviewStatus === "escalated") return "destructive";
-  if (reviewStatus === "trainer_review" || reviewStatus === "action_required") return "secondary";
+  if (
+    reviewStatus === "trainer_review" ||
+    reviewStatus === "action_required" ||
+    reviewStatus === "reassessed"
+  ) {
+    return "secondary";
+  }
   if (reviewStatus === "auto_cleared") return "outline";
   return "outline";
+}
+
+export type ReviewStatusBadgeProps = {
+  variant: "default" | "secondary" | "destructive" | "outline";
+  className: string;
+};
+
+export function getReviewStatusBadgeProps(
+  reviewStatus?: string | null,
+): ReviewStatusBadgeProps {
+  switch (reviewStatus) {
+    case "approved":
+      return { variant: "default", className: "bg-green-600 hover:bg-green-600 text-white" };
+    case "action_required":
+      return { variant: "secondary", className: "bg-amber-500 hover:bg-amber-500 text-white" };
+    case "trainer_review":
+      return { variant: "secondary", className: "bg-orange-500 hover:bg-orange-500 text-white" };
+    case "reassessed":
+      return { variant: "secondary", className: "bg-purple-600 hover:bg-purple-600 text-white" };
+    case "escalated":
+      return { variant: "destructive", className: "" };
+    case "in_progress":
+      return { variant: "default", className: "bg-blue-600 hover:bg-blue-600 text-white" };
+    case "auto_cleared":
+      return { variant: "outline", className: "bg-gray-200 text-gray-700" };
+    case "pending":
+      return { variant: "outline", className: "bg-gray-100 text-gray-700" };
+    default:
+      return { variant: "outline", className: "" };
+  }
+}
+
+export function getIqaWorkflowBadgeProps(
+  label: IqaWorkflowLabel,
+): ReviewStatusBadgeProps {
+  switch (label) {
+    case "Signed Off":
+      return { variant: "default", className: "bg-green-600 hover:bg-green-600 text-white" };
+    case "Action Required":
+      return { variant: "secondary", className: "bg-amber-500 hover:bg-amber-500 text-white" };
+    case "Trainer Review":
+      return { variant: "secondary", className: "bg-orange-500 hover:bg-orange-500 text-white" };
+    case "Escalated":
+      return { variant: "destructive", className: "" };
+    case "Awaiting IQA":
+      return { variant: "outline", className: "bg-gray-100 text-gray-700" };
+    case "Auto Cleared":
+      return { variant: "outline", className: "bg-gray-200 text-gray-700" };
+    default:
+      return { variant: "outline", className: "" };
+  }
 }
 
 export function getSubmissionOutcomeLabel(status?: string | null) {

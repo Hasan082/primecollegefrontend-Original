@@ -4,15 +4,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useUpdateMeMutation, useGetMeQuery } from "@/redux/apis/authApi";
+import {
+  useGetMeQuery,
+  usePresignProfilePictureMutation,
+  useUpdateMeMutation,
+} from "@/redux/apis/authApi";
 import { useEffect, useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { uploadFileToS3 } from "@/lib/s3Upload";
 
 const Profile = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: userData, isLoading: isFetchingUser } = useGetMeQuery(undefined);
   const [updateMe, { isLoading: isUpdating }] = useUpdateMeMutation();
+  const [presignProfilePicture] = usePresignProfilePictureMutation();
 
   const [form, setForm] = useState({
     first_name: "",
@@ -73,28 +79,32 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      const formData = new FormData();
-      formData.append("first_name", form.first_name);
-      formData.append("middle_name", form.middle_name);
-      formData.append("last_name", form.last_name);
-      formData.append("phone", form.phone);
-      formData.append("bio", form.bio);
-      formData.append("date_of_birth", form.date_of_birth);
-      
-      // Staff profile fields
-      Object.entries(form.staff_profile).forEach(([key, value]) => {
-        if (value) {
-          formData.append(`staff_profile.${key}`, value as string);
-        }
-      });
-
+      let profilePictureKey: string | null = null;
       if (profilePicture) {
-        formData.append("profile_picture", profilePicture);
+        const presign = await presignProfilePicture({
+          file_name: profilePicture.name,
+          content_type: profilePicture.type || "application/octet-stream",
+        }).unwrap();
+        profilePictureKey = await uploadFileToS3(presign, profilePicture);
       }
 
-      await updateMe(formData).unwrap();
+      const payload: Record<string, unknown> = {
+        first_name: form.first_name,
+        middle_name: form.middle_name,
+        last_name: form.last_name,
+        phone: form.phone,
+        bio: form.bio,
+        date_of_birth: form.date_of_birth,
+        staff_profile: form.staff_profile,
+      };
+      if (profilePictureKey) {
+        payload.profile_picture_key = profilePictureKey;
+      }
+
+      await updateMe(payload).unwrap();
+      setProfilePicture(null);
       toast({ title: "Profile Updated", description: "Your profile has been saved successfully." });
-    } catch (error) {
+    } catch {
       toast({ title: "Update Failed", description: "Failed to update profile.", variant: "destructive" });
     }
   };

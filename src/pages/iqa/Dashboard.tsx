@@ -5,7 +5,7 @@ import { ClipboardCheck, CheckCircle2, AlertTriangle, ShieldAlert, ArrowRight, T
 import { Link } from "react-router-dom";
 import { useGetIqaDashboardQuery, useGetQaDashboardQuery } from "@/redux/apis/iqa/iqaApi";
 import {
-  getIqaWorkflowBadgeVariant,
+  getIqaWorkflowBadgeProps,
   getIqaWorkflowLabel,
   getSubmissionOutcomeLabel,
 } from "@/lib/iqaStatus";
@@ -129,24 +129,28 @@ const IQADashboard = () => {
             {pending_reviews.length === 0 ? (
               <p className="text-sm text-muted-foreground">No pending reviews</p>
             ) : (
-              pending_reviews.map((item) => (
-                <Link key={item.sample_id || item.submission_id} to={`/iqa/review/${item.sample_id || item.submission_id}`} className="block border rounded-lg p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">{item.learner.name}</span>
-                    <Badge
-                      variant={getIqaWorkflowBadgeVariant(getIqaWorkflowLabel(item.iqa_status))}
-                      className="text-xs"
-                    >
-                      {getIqaWorkflowLabel(item.iqa_status)}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{item.unit.unit_code}: {item.unit.title}</p>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-xs text-muted-foreground">Trainer: {item.trainer?.name || "Unassigned"}</span>
-                    <Badge variant="outline" className="text-xs">{getSubmissionOutcomeLabel(item.status)}</Badge>
-                  </div>
-                </Link>
-              ))
+              pending_reviews.map((item) => {
+                const workflowLabel = getIqaWorkflowLabel(item.iqa_status);
+                const badgeProps = getIqaWorkflowBadgeProps(workflowLabel);
+                return (
+                  <Link key={item.sample_id || item.submission_id} to={`/iqa/review/${item.sample_id || item.submission_id}`} className="block border rounded-lg p-3 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">{item.learner.name}</span>
+                      <Badge
+                        variant={badgeProps.variant}
+                        className={`text-xs ${badgeProps.className}`}
+                      >
+                        {workflowLabel}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{item.unit.unit_code}: {item.unit.title}</p>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-xs text-muted-foreground">Trainer: {item.trainer?.name || "Unassigned"}</span>
+                      <Badge variant="outline" className="text-xs">{getSubmissionOutcomeLabel(item.status)}</Badge>
+                    </div>
+                  </Link>
+                );
+              })
             )}
           </CardContent>
         </Card>
