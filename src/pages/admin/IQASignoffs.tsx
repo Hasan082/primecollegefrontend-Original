@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -17,6 +16,10 @@ import { ArrowLeft, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useGetSignoffsQuery } from "@/redux/apis/iqa/iqaApi";
 import TablePagination from "@/components/admin/TablePagination";
+import {
+  SignoffLearnerCombobox,
+  TrainerCombobox,
+} from "@/components/admin/iqa/FilterCombobox";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -41,8 +44,8 @@ const reviewStatusLabel: Record<string, string> = {
 
 const IQASignoffs = () => {
   const [page, setPage] = useState(1);
-  const [enrolmentFilter, setEnrolmentFilter] = useState("");
-  const [trainerFilter, setTrainerFilter] = useState("");
+  const [selectedEnrolmentId, setSelectedEnrolmentId] = useState("");
+  const [selectedTrainerId, setSelectedTrainerId] = useState("");
   const [resubmissionOnly, setResubmissionOnly] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<{
     enrolment: string;
@@ -62,15 +65,15 @@ const IQASignoffs = () => {
   const handleApply = () => {
     setPage(1);
     setAppliedFilters({
-      enrolment: enrolmentFilter.trim(),
-      trainer: trainerFilter.trim(),
+      enrolment: selectedEnrolmentId,
+      trainer: selectedTrainerId,
       had_resubmission: resubmissionOnly ? "true" : "",
     });
   };
 
   const handleClear = () => {
-    setEnrolmentFilter("");
-    setTrainerFilter("");
+    setSelectedEnrolmentId("");
+    setSelectedTrainerId("");
     setResubmissionOnly(false);
     setPage(1);
     setAppliedFilters({ enrolment: "", trainer: "", had_resubmission: "" });
@@ -98,19 +101,19 @@ const IQASignoffs = () => {
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <Label>Enrolment ID</Label>
-            <Input
-              placeholder="Paste enrolment UUID…"
-              value={enrolmentFilter}
-              onChange={(e) => setEnrolmentFilter(e.target.value)}
+            <Label>Learner / Enrolment</Label>
+            <SignoffLearnerCombobox
+              value={selectedEnrolmentId}
+              onChange={setSelectedEnrolmentId}
+              placeholder="Search learner…"
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Trainer ID</Label>
-            <Input
-              placeholder="Paste trainer UUID…"
-              value={trainerFilter}
-              onChange={(e) => setTrainerFilter(e.target.value)}
+            <Label>Trainer</Label>
+            <TrainerCombobox
+              value={selectedTrainerId}
+              onChange={setSelectedTrainerId}
+              placeholder="Select trainer…"
             />
           </div>
           <div className="flex items-end gap-4">

@@ -48,8 +48,33 @@ const qualificationDetailsSchema = z
   .object({
     description: z
       .string()
-      .min(1, "Description is required")
-      .max(2000, "Description must be under 2000 characters"),
+      .max(2000, "Description must be under 2000 characters")
+      .optional(),
+
+    total_qualification_time: z
+      .number({ invalid_type_error: "Must be a number" })
+      .int("Must be a whole number")
+      .nonnegative("Must be 0 or greater")
+      .nullable()
+      .optional(),
+
+    guided_learning_hours: z
+      .number({ invalid_type_error: "Must be a number" })
+      .int("Must be a whole number")
+      .nonnegative("Must be 0 or greater")
+      .nullable()
+      .optional(),
+
+    credits: z
+      .number({ invalid_type_error: "Must be a number" })
+      .int("Must be a whole number")
+      .nonnegative("Must be 0 or greater")
+      .nullable()
+      .optional(),
+
+    qualification_number: z.string().optional(),
+
+    age_restriction: z.string().optional(),
 
     access_duration_months: z
       .number({ invalid_type_error: "Must be a number" })
@@ -98,6 +123,11 @@ export type QualificationDetailsFormValues = z.infer<
 
 const defaultValues: Partial<QualificationDetailsFormValues> = {
   description: "",
+  total_qualification_time: null,
+  guided_learning_hours: null,
+  credits: null,
+  qualification_number: "",
+  age_restriction: "",
   access_duration_months: 12,
   cpd_reference_number: "",
   cpd_hours: "0",
@@ -210,9 +240,19 @@ const QualificationDetails = () => {
     if (isEditMode && !data?.data) return;
 
     if (isEditMode && data?.data) {
+      const raw = data.data;
+      const normalized = {
+        ...raw,
+        description: raw.description ?? "",
+        total_qualification_time: raw.total_qualification_time ?? null,
+        guided_learning_hours: raw.guided_learning_hours ?? null,
+        credits: raw.credits ?? null,
+        qualification_number: raw.qualification_number ?? "",
+        age_restriction: raw.age_restriction ?? "",
+      };
       form.reset({
         ...defaultValues,
-        ...data.data,
+        ...normalized,
         ...(draftLoaded ?? {}),
       });
     } else {
@@ -310,19 +350,20 @@ const QualificationDetails = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Description – full width */}
+            {/* Qualification Overview – full width */}
             <div className="md:col-span-2">
               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Qualification Overview</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Enter qualification description…"
+                        placeholder="Enter qualification overview..."
                         className="min-h-[100px] resize-y"
                         {...field}
+                        value={field.value ?? ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -330,6 +371,116 @@ const QualificationDetails = () => {
                 )}
               />
             </div>
+
+            {/* Total Qualification Time */}
+            <FormField
+              control={form.control}
+              name="total_qualification_time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Total Qualification Time (TQT)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 580"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? null : parseInt(e.target.value, 10),
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Guided Learning Hours */}
+            <FormField
+              control={form.control}
+              name="guided_learning_hours"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Guided Learning Hours (GLH)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 391"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? null : parseInt(e.target.value, 10),
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Credits */}
+            <FormField
+              control={form.control}
+              name="credits"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Credits</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 58"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? null : parseInt(e.target.value, 10),
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Qualification Number */}
+            <FormField
+              control={form.control}
+              name="qualification_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Qualification Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. 610/0209/4"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Age Restriction */}
+            <FormField
+              control={form.control}
+              name="age_restriction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Age Restriction</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. 16+"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Access Duration */}
             <FormField
