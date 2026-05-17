@@ -31,6 +31,7 @@ export interface UnitRow {
   assignment_count: number;
   is_mandatory: boolean;
   is_active: boolean;
+  credit?: number | null;
   created_at: string;
   updated_at: string;
 }

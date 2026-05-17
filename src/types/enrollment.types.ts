@@ -229,6 +229,7 @@ export interface EnrolmentOverviewUnit {
     order: number;
     cpd_estimated_minutes: number;
     display_status: string;
+    credit?: number | null;
     progress: EnrolmentOverviewUnitProgress | null;
 }
 
@@ -354,6 +355,7 @@ export interface LearnerUnitOverviewResponse {
         requires_evidence: boolean;
         cpd_estimated_minutes: number;
         display_status: string;
+        credit?: number | null;
         progress: EnrolmentOverviewUnitProgress | null;
         resources: LearnerUnitOverviewResource[];
         quiz_summary: LearnerUnitQuizSummary;

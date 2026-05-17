@@ -72,6 +72,7 @@ const QualificationDetail = () => {
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newIsMandatory, setNewIsMandatory] = useState(true);
+  const [newCredit, setNewCredit] = useState<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -106,11 +107,13 @@ const QualificationDetail = () => {
           title: newName.trim(),
           order: units.length + 1,
           is_mandatory: newIsMandatory,
+          credit: newCredit,
         }
       }).unwrap();
       setNewCode("");
       setNewName("");
       setNewIsMandatory(true);
+      setNewCredit(null);
       setAddOpen(false);
       toast({ title: "Unit added successfully" });
     } catch (err) {
@@ -363,10 +366,22 @@ const QualificationDetail = () => {
                 className="h-11 font-semibold"
               />
             </div>
+            <div className="space-y-2">
+              <Label className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Credit</Label>
+              <Input
+                type="number"
+                min={0}
+                placeholder="e.g. 3"
+                value={newCredit ?? ""}
+                onChange={(e) =>
+                  setNewCredit(e.target.value === "" ? null : parseInt(e.target.value, 10))
+                }
+                className="h-11"
+              />
+            </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-4">
               <div className="space-y-0.5">
                 <Label className="font-bold text-sm">Mandatory Unit</Label>
-               
               </div>
               <div className="flex items-center gap-3">
                 <span className={`text-xs font-bold px-2.5 py-0.5 rounded ${

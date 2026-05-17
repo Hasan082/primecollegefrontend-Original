@@ -885,6 +885,15 @@ const UnitDetail = () => {
                   </div>
                 </>
               )}
+              {unit.credit != null && (
+                <>
+                  <hr className="border-border" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Credit</p>
+                    <p className="text-sm font-semibold text-primary">{unit.credit}</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

@@ -468,6 +468,11 @@ const QualificationView = () => {
                         Required time: {unit.cpd_estimated_minutes || 0} minutes
                       </p>
                     )}
+                    {unit.credit != null && (
+                      <p className="text-xs text-muted-foreground">
+                        Credit: {unit.credit}
+                      </p>
+                    )}
                   </div>
                 </div>
                 {isExpired && !allMandatoryCompetent ? (

@@ -48,6 +48,7 @@ export const SortableUnitRow = ({
     const [editCode, setEditCode] = useState(unit.unit_code);
     const [editName, setEditName] = useState(unit.title);
     const [editMandatory, setEditMandatory] = useState(unit.is_mandatory);
+    const [editCredit, setEditCredit] = useState<number | null>(unit.credit ?? null);
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -60,6 +61,7 @@ export const SortableUnitRow = ({
         setEditCode(unit.unit_code);
         setEditName(unit.title);
         setEditMandatory(unit.is_mandatory);
+        setEditCredit(unit.credit ?? null);
         setEditOpen(true);
     };
 
@@ -75,6 +77,7 @@ export const SortableUnitRow = ({
                     unit_code: editCode.trim(),
                     title: editName.trim(),
                     is_mandatory: editMandatory,
+                    credit: editCredit,
                 }
             }).unwrap();
             setEditOpen(false);
@@ -164,6 +167,19 @@ export const SortableUnitRow = ({
                                 onChange={(e) => setEditName(e.target.value)}
                                 placeholder="e.g. Principles of Business"
                                 className="h-11 font-semibold"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Credit</Label>
+                            <Input
+                                type="number"
+                                min={0}
+                                placeholder="e.g. 3"
+                                value={editCredit ?? ""}
+                                onChange={(e) =>
+                                    setEditCredit(e.target.value === "" ? null : parseInt(e.target.value, 10))
+                                }
+                                className="h-11"
                             />
                         </div>
                         <div className="flex items-center justify-between rounded-lg border border-border p-4">
