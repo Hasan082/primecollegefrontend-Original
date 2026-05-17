@@ -24,10 +24,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ArrowLeft, ChevronDown, Search } from "lucide-react";
+import { ArrowLeft, ChevronDown, Info, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useGetAuditLogsQuery } from "@/redux/apis/iqa/iqaApi";
 import TablePagination from "@/components/admin/TablePagination";
+import { LearnerCombobox } from "@/components/admin/iqa/FilterCombobox";
 
 const ITEMS_PER_PAGE = 25;
 
@@ -42,6 +43,13 @@ const EVENT_TYPES = [
   { value: "course_sampling_plan_updated", label: "Course Plan Updated" },
 ];
 
+const ENTITY_TYPES = [
+  { value: "all_types", label: "All Types" },
+  { value: "unit_iqa_sample", label: "Unit IQA Sample" },
+  { value: "unit_signoff", label: "Unit Sign-Off" },
+  { value: "enrolment", label: "Enrolment" },
+];
+
 const eventBadgeVariant = (
   eventType: string,
 ): "default" | "secondary" | "destructive" | "outline" => {
@@ -54,8 +62,8 @@ const eventBadgeVariant = (
 const IQAAuditLog = () => {
   const [page, setPage] = useState(1);
   const [eventTypeFilter, setEventTypeFilter] = useState("all_events");
-  const [enrolmentFilter, setEnrolmentFilter] = useState("");
-  const [entityTypeFilter, setEntityTypeFilter] = useState("");
+  const [selectedEnrolmentId, setSelectedEnrolmentId] = useState("");
+  const [entityTypeFilter, setEntityTypeFilter] = useState("all_types");
   const [entityIdFilter, setEntityIdFilter] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<{
     event_type: string;
@@ -77,16 +85,16 @@ const IQAAuditLog = () => {
     setPage(1);
     setAppliedFilters({
       event_type: eventTypeFilter === "all_events" ? "" : eventTypeFilter,
-      enrolment: enrolmentFilter.trim(),
-      entity_type: entityTypeFilter.trim(),
+      enrolment: selectedEnrolmentId,
+      entity_type: entityTypeFilter === "all_types" ? "" : entityTypeFilter,
       entity_id: entityIdFilter.trim(),
     });
   };
 
   const handleClear = () => {
     setEventTypeFilter("all_events");
-    setEnrolmentFilter("");
-    setEntityTypeFilter("");
+    setSelectedEnrolmentId("");
+    setEntityTypeFilter("all_types");
     setEntityIdFilter("");
     setPage(1);
     setAppliedFilters({ event_type: "", enrolment: "", entity_type: "", entity_id: "" });
@@ -129,20 +137,27 @@ const IQAAuditLog = () => {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Enrolment ID</Label>
-            <Input
-              placeholder="Paste enrolment UUID…"
-              value={enrolmentFilter}
-              onChange={(e) => setEnrolmentFilter(e.target.value)}
+            <Label>Learner / Enrolment</Label>
+            <LearnerCombobox
+              value={selectedEnrolmentId}
+              onChange={setSelectedEnrolmentId}
+              placeholder="Search learner…"
             />
           </div>
           <div className="space-y-1.5">
             <Label>Entity Type</Label>
-            <Input
-              placeholder="e.g. unit_iqa_sample"
-              value={entityTypeFilter}
-              onChange={(e) => setEntityTypeFilter(e.target.value)}
-            />
+            <Select value={entityTypeFilter} onValueChange={setEntityTypeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                {ENTITY_TYPES.map((et) => (
+                  <SelectItem key={et.value} value={et.value}>
+                    {et.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Entity ID</Label>
@@ -151,6 +166,10 @@ const IQAAuditLog = () => {
               value={entityIdFilter}
               onChange={(e) => setEntityIdFilter(e.target.value)}
             />
+            <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Info className="h-3 w-3 shrink-0" />
+              Copy the full ID shown in the Entity column below
+            </p>
           </div>
           <div className="md:col-span-2 lg:col-span-4 flex gap-2">
             <Button onClick={handleApply} size="sm" className="gap-1.5">
@@ -228,8 +247,8 @@ const IQAAuditLog = () => {
                                 {item.entity_type}
                               </span>
                               <br />
-                              <span className="font-mono">
-                                {item.entity_id.slice(0, 8)}…
+                              <span className="font-mono break-all">
+                                {item.entity_id}
                               </span>
                             </>
                           ) : (
