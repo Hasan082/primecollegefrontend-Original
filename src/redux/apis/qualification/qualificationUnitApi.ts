@@ -29,6 +29,7 @@ export interface UnitRow {
   resource_count: number;
   quiz_count: number;
   assignment_count: number;
+  is_mandatory: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;

@@ -4,8 +4,8 @@ import { FileText, Save, Plus, X, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/admin/page-builder/RichTextEditor";
 import { Badge } from "@/components/ui/badge";
+import RichTextEditor from "@/components/admin/page-builder/RichTextEditor";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -223,7 +223,7 @@ const PortfolioInstructionsEditor = ({
 
   const buildPayload = () => {
     return {
-      instructions: config.instructions.trim(),
+      instructions: config.instructions,
       accepted_file_types: config.acceptedFileTypes.join(","),
       max_files_per_submission: config.maxFilesPerSubmission,
       max_file_size_mb: config.maxFileSizeMB,
@@ -285,9 +285,9 @@ const PortfolioInstructionsEditor = ({
               value={config.instructions}
               onChange={(html) => {
                 update({ instructions: html });
-                if (stripHtml(html).length > 0) clearError("instructions");
+                if (html.replace(/<[^>]*>/g, "").trim()) clearError("instructions");
               }}
-              placeholder="Explain what evidence learners should upload for this unit..."
+              placeholder="Explain what evidence learners should upload for this unit. E.g. 'Upload a reflective account demonstrating your understanding of duty of care, supported by witness testimony from your supervisor...'"
             />
             {errors.instructions && (
               <p className="text-xs text-destructive">{errors.instructions}</p>

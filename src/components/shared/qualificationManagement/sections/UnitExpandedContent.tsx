@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
     FileUp, Loader2, AlertCircle, FileText, ExternalLink, Download, Clock, Save, Shield,
     BookOpen, Target, Timer, CheckCircle2,
@@ -17,11 +17,26 @@ import {
     usePresignUnitResourceUploadMutation,
     useCreateUnitResourceMutation,
     useDeleteUnitResourceMutation,
+    useUpdateUnitResourceMutation,
     UnitRow,
     useGetUnitCpdConfigQuery
 } from "@/redux/apis/qualification/qualificationUnitApi";
 import { CPDConfigDrawer } from "@/components/shared/qualificationManagement/drawers/CPDConfigDrawer";
 import { ResourceItem } from "./ResourceItem";
+import {
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 const mapFileToResourceType = (fileName: string) => {
     const extension = fileName.split(".").pop()?.toLowerCase() || "";
@@ -49,14 +64,42 @@ export const UnitExpandedContent = ({
     const [presignResourceUpload, { isLoading: isPresigning }] = usePresignUnitResourceUploadMutation();
     const [createResource, { isLoading: isCreatingResource }] = useCreateUnitResourceMutation();
     const [deleteResource] = useDeleteUnitResourceMutation();
+    const [updateResource] = useUpdateUnitResourceMutation();
 
     // CPD config data (fetched always for CPD units so we can show a preview)
     const { data: cpdConfig } = useGetUnitCpdConfigQuery(unit.id, { skip: !isCpd });
     const hasCpdConfig = !!cpdConfig?.id;
     const isUploading = isPresigning || isCreatingResource;
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
+
     // CPD state
     const [cpdOpen, setCpdOpen] = useState(false);
+
+    // Resource DnD sensors
+    const resourceSensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    const handleResourceDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id || !resources) return;
+        const oldIdx = resources.findIndex((r) => r.id === active.id);
+        const newIdx = resources.findIndex((r) => r.id === over.id);
+        if (oldIdx === -1 || newIdx === -1) return;
+        const movedItem = resources[oldIdx];
+        try {
+            await updateResource({
+                resourceId: movedItem.id,
+                unitId: unit.id,
+                payload: { order: newIdx + 1 },
+            }).unwrap();
+        } catch {
+            toast({ title: "Failed to reorder resource", variant: "destructive" });
+        }
+    };
 
     const uploadResourceFile = async (file: File): Promise<string> => {
         const presign = await presignResourceUpload({
@@ -86,8 +129,13 @@ export const UnitExpandedContent = ({
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
+        setUploadingFiles(files.map((f) => f.name));
+
         try {
             for (const file of files) {
+                setUploadingFiles((prev) =>
+                    prev.includes(file.name) ? prev : [...prev, file.name],
+                );
                 const fileKey = await uploadResourceFile(file);
                 await createResource({
                     unitId: unit.id,
@@ -103,12 +151,14 @@ export const UnitExpandedContent = ({
                         is_active: true,
                     }
                 }).unwrap();
+                setUploadingFiles((prev) => prev.filter((n) => n !== file.name));
             }
 
             toast({
                 title: files.length === 1 ? "Resource uploaded successfully" : "Resources uploaded successfully"
             });
         } catch (err) {
+            setUploadingFiles([]);
             toast({ title: "Upload failed", variant: "destructive" });
         }
         e.target.value = "";
@@ -158,38 +208,76 @@ export const UnitExpandedContent = ({
                                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Learning Resources</Label>
                                 <p className="text-[10px] text-muted-foreground">Study materials and handouts for this unit</p>
                             </div>
-                            <label className="cursor-pointer">
+                            <div>
                                 <Input
+                                    ref={fileInputRef}
                                     type="file"
                                     className="hidden"
                                     multiple
                                     onChange={handleFileUpload}
                                     disabled={isUploading}
                                 />
-                                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-semibold" asChild disabled={isUploading}>
-                                    <span>
-                                        {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />}
-                                        Upload
-                                    </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1.5 text-xs font-semibold"
+                                    disabled={isUploading}
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    {isUploading
+                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        : <FileUp className="w-3.5 h-3.5" />}
+                                    {isUploading ? "Uploading..." : "Upload"}
                                 </Button>
-                            </label>
+                            </div>
                         </div>
 
                         {isLoadingResources ? (
                             <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-                        ) : resources && resources.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-2">
-                                {resources.map((r) => (
-                                    <ResourceItem key={r.id} resource={r} onDelete={handleDeleteResource} />
-                                ))}
-                            </div>
                         ) : (
-                            <Alert className="bg-background py-3">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription className="text-xs text-muted-foreground">
-                                    No resources added yet. Learners will only see assessment tasks.
-                                </AlertDescription>
-                            </Alert>
+                            <DndContext
+                                sensors={resourceSensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleResourceDragEnd}
+                            >
+                                <SortableContext
+                                    items={(resources ?? []).map((r) => r.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {resources && resources.map((r) => (
+                                            <ResourceItem
+                                                key={r.id}
+                                                resource={r}
+                                                onDelete={handleDeleteResource}
+                                                unitId={unit.id}
+                                            />
+                                        ))}
+
+                                        {uploadingFiles.map((fileName) => (
+                                            <div
+                                                key={fileName}
+                                                className="flex items-center gap-3 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5 text-sm"
+                                            >
+                                                <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-medium truncate text-foreground">{fileName}</p>
+                                                    <p className="text-[10px] text-muted-foreground">Uploading…</p>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {(!resources || resources.length === 0) && uploadingFiles.length === 0 && (
+                                            <Alert className="bg-background py-3">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription className="text-xs text-muted-foreground">
+                                                    No resources added yet. Learners will only see assessment tasks.
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
                         )}
                     </div>
 
