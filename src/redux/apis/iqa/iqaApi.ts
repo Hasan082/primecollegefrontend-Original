@@ -505,6 +505,17 @@ const iqaApi = api.injectEndpoints({
       ],
     }),
 
+    getSignoffLearners: builder.query<
+      { results: { enrolment_id: string; name: string; email: string; learner_id: string }[] },
+      { search?: string } | void
+    >({
+      query: (args) => ({
+        url: "/api/iqa/signoffs/learners/",
+        method: "GET",
+        params: cleanObject(args || {}),
+      }),
+    }),
+
     getSignoffs: builder.query<
       UnitSignOffListResponse,
       { enrolment?: string; trainer?: string; had_resubmission?: string; page?: number; page_size?: number } | void
@@ -568,6 +579,7 @@ export const {
   useGetQaDashboardQuery,
   useGetQaTrainerPerformanceQuery,
   useGetSampleFeedbackQuery,
+  useGetSignoffLearnersQuery,
   useGetSignoffsQuery,
   useGetAuditLogsQuery,
 } = iqaApi;
