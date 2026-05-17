@@ -109,6 +109,20 @@ const MyQualifications = () => {
                     </span>
                   </div>
                   <Progress value={pct} className="h-3" />
+                  {(q.credits != null || q.guided_learning_hours != null) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {q.credits != null && (
+                        <span className="text-xs text-muted-foreground bg-muted/50 border border-border rounded px-2 py-0.5">
+                          Credits: <span className="font-semibold text-foreground">{q.credits}</span>
+                        </span>
+                      )}
+                      {q.guided_learning_hours != null && (
+                        <span className="text-xs text-muted-foreground bg-muted/50 border border-border rounded px-2 py-0.5">
+                          GLH: <span className="font-semibold text-foreground">{q.guided_learning_hours}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {enrolment.can_extend && (

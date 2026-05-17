@@ -12,11 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUpdatePortfolioConfigMutation, useGetPortfolioConfigQuery } from "@/redux/apis/quiz/quizApi";
 
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, "").trim();
+
 const portfolioConfigSchema = z.object({
-  instructions: z.string().refine(
-    (val) => val.replace(/<[^>]*>/g, "").trim().length > 0,
-    { message: "Instructions for Learners is required" }
-  ),
+  instructions: z.string().refine((val) => stripHtml(val).length > 0, "Instructions for Learners is required"),
   acceptedFileTypes: z.array(z.string()).min(1, "Select at least one accepted file type"),
   maxFilesPerSubmission: z
     .number({
@@ -286,7 +285,7 @@ const PortfolioInstructionsEditor = ({
               value={config.instructions}
               onChange={(html) => {
                 update({ instructions: html });
-                if (html.replace(/<[^>]*>/g, "").trim()) clearError("instructions");
+                if (stripHtml(html).length > 0) clearError("instructions");
               }}
               placeholder="Explain what evidence learners should upload for this unit. E.g. 'Upload a reflective account demonstrating your understanding of duty of care, supported by witness testimony from your supervisor...'"
             />
