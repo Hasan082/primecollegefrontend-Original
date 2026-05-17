@@ -193,6 +193,8 @@ export interface EnrolmentListItem {
         qualification_code: string;
         category: string;
         is_session: boolean;
+        credits?: number | null;
+        guided_learning_hours?: number | null;
     };
     overall_progress: {
         completed_units: number;
@@ -265,6 +267,12 @@ export interface EnrolmentOverviewResponse {
             requires_learner_declaration?: boolean;
             requires_course_evaluation?: boolean;
             instructions?: string;
+            description?: string | null;
+            total_qualification_time?: number | null;
+            guided_learning_hours?: number | null;
+            credits?: number | null;
+            qualification_number?: string | null;
+            age_restriction?: string | null;
         };
         session?: {
             id: string;
@@ -389,6 +397,12 @@ export interface EnrolmentContent {
         requires_learner_declaration?: boolean;
         requires_course_evaluation?: boolean;
         instructions?: string;
+        description?: string | null;
+        total_qualification_time?: number | null;
+        guided_learning_hours?: number | null;
+        credits?: number | null;
+        qualification_number?: string | null;
+        age_restriction?: string | null;
     };
     units: {
         id: string;

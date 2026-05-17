@@ -169,13 +169,63 @@ const QualificationView = () => {
                     Qualification Instructions
                   </h4>
                 </div>
-                <div 
+                <div
                   className="prose prose-sm max-w-none text-muted-foreground"
                   dangerouslySetInnerHTML={{ __html: qualification.instructions }}
                 />
               </div>
             )}
 
+            {qualification.description && (
+              <div className="mb-6 p-5 rounded-xl bg-muted/30 border border-border">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-4 w-1 bg-primary rounded-full" />
+                  <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest">
+                    Qualification Overview
+                  </h4>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{qualification.description}</p>
+              </div>
+            )}
+
+            {(qualification.total_qualification_time != null ||
+              qualification.guided_learning_hours != null ||
+              qualification.credits != null ||
+              qualification.qualification_number != null ||
+              qualification.age_restriction != null) && (
+              <div className="mb-6 flex flex-wrap gap-3">
+                {qualification.total_qualification_time != null && (
+                  <div className="flex flex-col gap-0.5 bg-muted/40 border border-border rounded-lg px-3 py-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Qualification Time (TQT)</span>
+                    <span className="text-sm font-semibold text-foreground">{qualification.total_qualification_time}</span>
+                  </div>
+                )}
+                {qualification.guided_learning_hours != null && (
+                  <div className="flex flex-col gap-0.5 bg-muted/40 border border-border rounded-lg px-3 py-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Guided Learning Hours (GLH)</span>
+                    <span className="text-sm font-semibold text-foreground">{qualification.guided_learning_hours}</span>
+                  </div>
+                )}
+                {qualification.credits != null && (
+                  <div className="flex flex-col gap-0.5 bg-muted/40 border border-border rounded-lg px-3 py-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Credits</span>
+                    <span className="text-sm font-semibold text-foreground">{qualification.credits}</span>
+                  </div>
+                )}
+                {qualification.qualification_number != null && (
+                  <div className="flex flex-col gap-0.5 bg-muted/40 border border-border rounded-lg px-3 py-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Qualification Number</span>
+                    <span className="text-sm font-semibold text-foreground">{qualification.qualification_number}</span>
+                  </div>
+                )}
+                {qualification.age_restriction != null && (
+                  <div className="flex flex-col gap-0.5 bg-muted/40 border border-border rounded-lg px-3 py-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Age Restriction</span>
+                    <span className="text-sm font-semibold text-foreground">{qualification.age_restriction}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="mt-6 pt-6 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
