@@ -72,7 +72,7 @@ function getTrainerActionNotice(submission?: TrainerSubmission) {
       title: "IQA Referred Back",
       description:
         submission.iqa_review_notes ||
-        "IQA referred this submission back. The learner must improve the work and resubmit before you can reassess it.",
+        "IQA referred this submission back to you for rechecking. Update your assessment and either send it back to IQA or request learner resubmission.",
     };
   }
 
@@ -203,6 +203,8 @@ const UnitManagement = () => {
 
   const latestWritten = writtenResponse?.data.submissions?.[0];
   const latestEvidence = evidenceResponse?.data.submissions?.[0];
+  const isWrittenReferralMode = latestWritten?.iqa_decision === "referred_back";
+  const isEvidenceReferralMode = latestEvidence?.iqa_decision === "referred_back";
   const latestActionNotice =
     getTrainerActionNotice(latestWritten) || getTrainerActionNotice(latestEvidence);
 
@@ -227,13 +229,21 @@ const UnitManagement = () => {
           assessor_band: getBand(score),
         },
       }).unwrap();
-      toast({ title: "Written assignment review submitted" });
+      toast({
+        title:
+          isWrittenReferralMode && writtenOutcome === "competent"
+            ? "Assessment updated and re-queued for IQA review"
+            : isWrittenReferralMode
+              ? "Learner resubmission requested"
+              : "Written assignment review submitted",
+      });
       setWrittenOutcome("");
       setWrittenFeedback("");
       refetchWritten();
       navigate(`/trainer/learner/${enrolmentId}`);
     } catch (error: any) {
-      const errorMessage = error?.data?.message || error?.data?.detail || error?.error || "Failed to submit written review";
+      const raw: string = error?.data?.message || error?.data?.detail || error?.error || "";
+      const errorMessage = raw || "Failed to submit written review";
       toast({ title: errorMessage, variant: "destructive" });
     }
   };
@@ -259,13 +269,21 @@ const UnitManagement = () => {
           assessor_band: getBand(score),
         },
       }).unwrap();
-      toast({ title: "Evidence review submitted" });
+      toast({
+        title:
+          isEvidenceReferralMode && evidenceOutcome === "competent"
+            ? "Assessment updated and re-queued for IQA review"
+            : isEvidenceReferralMode
+              ? "Learner resubmission requested"
+              : "Evidence review submitted",
+      });
       setEvidenceOutcome("");
       setEvidenceFeedback("");
       refetchEvidence();
       navigate(`/trainer/learner/${enrolmentId}`);
     } catch (error: any) {
-      const errorMessage = error?.data?.message || error?.data?.detail || error?.error || "Failed to submit evidence review";
+      const raw: string = error?.data?.message || error?.data?.detail || error?.error || "";
+      const errorMessage = raw || "Failed to submit evidence review";
       toast({ title: errorMessage, variant: "destructive" });
     }
   };
@@ -480,6 +498,14 @@ const UnitManagement = () => {
               )}
               {(latestWritten?.status === "pending" || latestWritten?.iqa_decision === "referred_back") ? (
                 <div className="space-y-3">
+                  {isWrittenReferralMode && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-sm font-semibold text-amber-800">Respond to IQA Referral</p>
+                      <p className="mt-1 text-sm text-amber-700">
+                        Update your assessment, then choose whether to send it back to IQA or request learner resubmission.
+                      </p>
+                    </div>
+                  )}
                   <div className="grid gap-2 md:grid-cols-3">
                     {outcomeOptions.map((option) => (
                       <Button
@@ -506,7 +532,11 @@ const UnitManagement = () => {
                   <Textarea
                     value={writtenFeedback}
                     onChange={(event) => setWrittenFeedback(event.target.value)}
-                    placeholder="Provide trainer feedback for the learner"
+                    placeholder={
+                      isWrittenReferralMode
+                        ? "Update your trainer feedback to address the IQA referral"
+                        : "Provide trainer feedback for the learner"
+                    }
                     className="min-h-[120px]"
                   />
                   <Button onClick={handleWrittenReview} disabled={isSavingWritten}>
@@ -515,7 +545,13 @@ const UnitManagement = () => {
                     ) : (
                       <Send className="w-4 h-4 mr-2" />
                     )}
-                    Submit Written Review
+                    {isWrittenReferralMode
+                      ? writtenOutcome === "competent"
+                        ? "Send Back to IQA"
+                        : writtenOutcome
+                          ? "Request Learner Resubmission"
+                          : "Submit Referral Response"
+                      : "Submit Written Review"}
                   </Button>
                 </div>
               ) : (
@@ -620,6 +656,14 @@ const UnitManagement = () => {
               )}
               {(latestEvidence?.status === "pending" || latestEvidence?.iqa_decision === "referred_back") ? (
                 <div className="space-y-3">
+                  {isEvidenceReferralMode && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-sm font-semibold text-amber-800">Respond to IQA Referral</p>
+                      <p className="mt-1 text-sm text-amber-700">
+                        Update your evidence assessment, then choose whether to send it back to IQA or request learner resubmission.
+                      </p>
+                    </div>
+                  )}
                   <div className="grid gap-2 md:grid-cols-3">
                     {outcomeOptions.map((option) => (
                       <Button
@@ -646,7 +690,11 @@ const UnitManagement = () => {
                   <Textarea
                     value={evidenceFeedback}
                     onChange={(event) => setEvidenceFeedback(event.target.value)}
-                    placeholder="Provide trainer feedback for the evidence portfolio"
+                    placeholder={
+                      isEvidenceReferralMode
+                        ? "Update your trainer feedback to address the IQA referral"
+                        : "Provide trainer feedback for the evidence portfolio"
+                    }
                     className="min-h-[120px]"
                   />
                   <Button onClick={handleEvidenceReview} disabled={isSavingEvidence}>
@@ -655,7 +703,13 @@ const UnitManagement = () => {
                     ) : (
                       <Send className="w-4 h-4 mr-2" />
                     )}
-                    Submit Evidence Review
+                    {isEvidenceReferralMode
+                      ? evidenceOutcome === "competent"
+                        ? "Send Back to IQA"
+                        : evidenceOutcome
+                          ? "Request Learner Resubmission"
+                          : "Submit Referral Response"
+                      : "Submit Evidence Review"}
                   </Button>
                 </div>
               ) : (
