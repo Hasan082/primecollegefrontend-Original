@@ -250,6 +250,8 @@ const iqaApi = api.injectEndpoints({
           params: filteredParams,
         };
       },
+      transformResponse: (response: { data: ChecklistTemplateListResponse } | ChecklistTemplateListResponse) =>
+        (response as { data: ChecklistTemplateListResponse }).data ?? (response as ChecklistTemplateListResponse),
       providesTags: ["ChecklistTemplates"],
     }),
     getChecklistQualificationOptions: builder.query<
@@ -409,6 +411,7 @@ const iqaApi = api.injectEndpoints({
         (response as { data: UnitIQASampleItem }).data ?? (response as UnitIQASampleItem),
       providesTags: (_result, _error, sampleId) => [
         { type: "Enrolments", id: `IQA_SAMPLE_${sampleId}` },
+        "Enrolments",
       ],
     }),
     startIqaSampleReview: builder.mutation<UnitIQASampleItem, string>({

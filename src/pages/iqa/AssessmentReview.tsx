@@ -1021,7 +1021,10 @@ const AssessmentReview = () => {
           </CardContent>
         </Card>
       )}
-      {submission?.iqa_decision && (
+      {submission?.iqa_decision &&
+        !["reassessed", "learner_resubmit_requested", "approved"].includes(
+          sample?.review_status ?? "",
+        ) && (
         <Card>
           <CardHeader>
             <CardTitle>IQA Review Summary</CardTitle>
@@ -1094,15 +1097,9 @@ const AssessmentReview = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {applicableTemplates.length === 0 && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-medium">No verification checklist configured</p>
-                  <p className="mt-1">
-                    Admin has not set up a checklist for this qualification. Approval is blocked until a checklist is added — please contact admin or refer this submission back to the trainer.
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                No verification checklist has been configured for this qualification. You can proceed to submit your decision below.
+              </p>
             )}
             {applicableTemplates.map((template) => (
               <div key={template.id} className="space-y-3">
