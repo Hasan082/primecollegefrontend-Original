@@ -3,8 +3,9 @@ import type { BlockType } from "@/types/pageBuilder";
 export interface ItemField {
   key: string;
   label: string;
-  type: "input" | "textarea";
+  type: "input" | "textarea" | "select";
   placeholder?: string;
+  options?: Array<{ value: string; label: string }>;
 }
 
 export const MEDIA_ENABLED_BLOCKS: BlockType[] = ["cards", "why-us", "features", "blog", "logos", "hero", "popular-qualifications", "info-cards"];
@@ -38,6 +39,19 @@ export const ITEM_FIELDS: Partial<Record<BlockType, ItemField[]>> = {
   ],
   logos: [
     { key: "title", label: "Name", type: "input", placeholder: "Partner name" },
+    {
+      key: "logo_card_bg",
+      label: "Card Background",
+      type: "select",
+      options: [
+        { value: "", label: "Default Card Background" },
+        { value: "bg-white", label: "White" },
+        { value: "bg-muted", label: "Muted Grey" },
+        { value: "bg-slate-50", label: "Light Slate" },
+        { value: "bg-primary", label: "Primary Blue" },
+        { value: "bg-transparent", label: "Transparent" },
+      ],
+    },
   ],
   blog: [
     { key: "title", label: "Title", type: "input", placeholder: "Post title" },

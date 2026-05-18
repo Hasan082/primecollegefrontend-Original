@@ -244,6 +244,7 @@ export interface LogosBlock extends BlockBase {
     items: Array<{
       title: string;
       image?: string;
+      logo_card_bg?: string;
     }>;
   };
 }

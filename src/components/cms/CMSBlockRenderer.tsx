@@ -1593,24 +1593,27 @@ export const CMSBlockRenderer = ({
             {d.title && renderRichText(d.title, "text-3xl font-bold text-foreground")}
           </div>
           <div className="container mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 items-center">
-            {d.items.map((item: any, i: number) => (
-              <div
-                key={item.title || i}
-                className="bg-card rounded-xl border border-border p-4 h-24 flex items-center justify-center"
-              >
-                {item.image ? (
-                  <Image
-                    image={resolveCmsImage(item.image) as any}
-                    alt={item.title}
-                    className="max-h-14 w-auto object-contain"
-                  />
-                ) : (
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {item.title}
-                  </span>
-                )}
-              </div>
-            ))}
+            {d.items.map((item: any, i: number) => {
+              const cardBg = item.logo_card_bg || "bg-card";
+              return (
+                <div
+                  key={item.title || i}
+                  className={`${cardBg} rounded-xl border border-border p-4 h-24 flex items-center justify-center`}
+                >
+                  {item.image ? (
+                    <Image
+                      image={resolveCmsImage(item.image) as any}
+                      alt={item.title}
+                      className="max-h-14 w-auto object-contain"
+                    />
+                  ) : (
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {item.title}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : (

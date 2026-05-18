@@ -16,7 +16,7 @@ const Footer = () => {
               image={footer?.footer_logo}
               alt={footer?.footer_logo_alt_text}
             />
-            <p className="text-sm text-primary-foreground/80">
+            <p className="text-sm mt-5 text-primary-foreground/80">
               {footer?.description}
             </p>
           </div>

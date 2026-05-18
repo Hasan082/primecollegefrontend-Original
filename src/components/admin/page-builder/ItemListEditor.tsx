@@ -103,11 +103,25 @@ const SortableItem = ({
           {fields.map((f) => (
             <div key={f.key}>
               <Label className="text-[10px] text-muted-foreground uppercase tracking-tight">{f.label}</Label>
-              <RichTextEditor 
-                value={item[f.key] || ""} 
-                onChange={(v) => onUpdate(f.key, v)} 
-                placeholder={f.placeholder} 
-              />
+              {f.type === "select" ? (
+                <select
+                  value={item[f.key] || ""}
+                  onChange={(e) => onUpdate(f.key, e.target.value)}
+                  className="w-full h-8 text-xs border rounded bg-background px-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {f.options?.map((opt: any) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <RichTextEditor 
+                  value={item[f.key] || ""} 
+                  onChange={(v) => onUpdate(f.key, v)} 
+                  placeholder={f.placeholder} 
+                />
+              )}
             </div>
           ))}
         </div>
