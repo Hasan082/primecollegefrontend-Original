@@ -447,11 +447,11 @@ const BlockEditorForm = ({ block, onSave, onClose, onUploadingChange, isGenericS
         </div>
       )}
 
-      {typeof local.ctaLabel === "string" && (
+      {(typeof local.ctaLabel === "string" || ["cta", "text", "image-text", "about-split", "pricing", "full-width-text-image"].includes(block.type)) && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Legacy CTA Label" value={local.ctaLabel as string} onChange={(v) => update("ctaLabel", v)} />
-            <Field label="Legacy CTA Href" value={local.ctaHref as string} onChange={(v) => update("ctaHref", v)} />
+            <Field label="Legacy CTA Label" value={(local.ctaLabel as string) || ""} onChange={(v) => update("ctaLabel", v)} />
+            <Field label="Legacy CTA Href" value={(local.ctaHref as string) || ""} onChange={(v) => update("ctaHref", v)} />
           </div>
           <MultiCTAEditor ctas={(local.ctas as any[]) || []} onChange={(v) => update("ctas", v)} />
         </div>

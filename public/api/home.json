@@ -175,7 +175,9 @@
       "id": "cta",
       "title": "Start Your Journey Today",
       "content": "Whether you are looking to start a new career, advance in your current role, or gain specialist knowledge, The Prime College has a qualification for you. Contact us today to discuss your options.",
-      "type": "cta"
+      "type": "cta",
+      "ctaLabel": "Browse All Courses",
+      "ctaHref": "/qualifications"
     },
     {
       "id": "blog",
