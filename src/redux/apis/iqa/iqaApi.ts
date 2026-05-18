@@ -276,6 +276,8 @@ const iqaApi = api.injectEndpoints({
           params: filteredParams,
         };
       },
+      transformResponse: (response: { data: ChecklistCompletionListResponse } | ChecklistCompletionListResponse) =>
+        (response as { data: ChecklistCompletionListResponse }).data ?? (response as ChecklistCompletionListResponse),
       providesTags: ["ChecklistCompletions"],
     }),
     getChecklistCompletionDetail: builder.query<ChecklistCompletion, string>({

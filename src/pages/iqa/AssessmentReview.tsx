@@ -14,6 +14,8 @@ import {
   ClipboardList,
   ThumbsUp,
   RotateCcw,
+  MessageSquare,
+  Reply,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -893,6 +895,52 @@ const AssessmentReview = () => {
                         </p>
                       </div>
                     </div>
+
+                    {/* IQA Referral Feedback */}
+                    {historyItem.iqa_referral_feedback?.length > 0 && (
+                      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+                        <p className="flex items-center gap-1.5 font-medium text-amber-800">
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          IQA Referral Feedback
+                        </p>
+                        <div className="mt-2 space-y-2">
+                          {historyItem.iqa_referral_feedback.map((fb) => (
+                            <div key={fb.id} className="rounded border border-amber-200 bg-white p-2.5">
+                              {fb.action_type && (
+                                <span className="mb-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                                  {fb.action_type}
+                                </span>
+                              )}
+                              {fb.affected_criteria?.length > 0 && (
+                                <p className="mb-1 text-[11px] text-amber-700">
+                                  Criteria: {fb.affected_criteria.join(", ")}
+                                </p>
+                              )}
+                              {fb.comments && (
+                                <p className="whitespace-pre-wrap text-muted-foreground">{fb.comments}</p>
+                              )}
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                {fb.created_by?.name ?? "IQA"} · {new Date(fb.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Trainer Response to IQA Referral */}
+                    {historyItem.trainer_iqa_response && (
+                      <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+                        <p className="flex items-center gap-1.5 font-medium text-blue-800">
+                          <Reply className="w-3.5 h-3.5" />
+                          Trainer Response to IQA Referral
+                        </p>
+                        <p className="mt-1.5 whitespace-pre-wrap text-muted-foreground">
+                          {historyItem.trainer_iqa_response}
+                        </p>
+                      </div>
+                    )}
+
                     <div className="mt-3 grid gap-3 lg:grid-cols-3">
                       <div className="rounded-lg border p-3 text-sm">
                         <p className="font-medium text-foreground">Assessor</p>
