@@ -96,11 +96,16 @@ const qualificationApi = api.injectEndpoints({
       },
       providesTags: ["Qualifications"],
     }),
-    getQualificationOptions: builder.query({
-      query: () => ({
+    getQualificationOptions: builder.query<
+      { data: { id: string; title: string }[] },
+      { exclude_with_checklist?: boolean } | void
+    >({
+      query: (params) => ({
         url: "/api/qualification/options/",
         method: "GET",
-      })
+        params: params ?? undefined,
+      }),
+      providesTags: ["ChecklistTemplates"],
     }),
     getQualificationSliderOptions: builder.query<QualificationOption[], void>({
       query: () => ({
