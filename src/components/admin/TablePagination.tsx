@@ -13,8 +13,10 @@ interface TablePaginationProps {
 const TablePagination = ({ currentPage, totalItems, itemsPerPage, onPageChange }: TablePaginationProps) => {
   const [inputPage, setInputPage] = useState("");
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  if (totalItems === 0) return null;
 
   const handleGoToPage = (e: React.FormEvent) => {
     e.preventDefault();

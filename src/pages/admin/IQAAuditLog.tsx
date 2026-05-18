@@ -236,7 +236,12 @@ const IQAAuditLog = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {item.actor?.name ?? (
+                          {item.actor ? (
+                            <div>
+                              <p className="font-medium">{item.actor.name}</p>
+                              <p className="text-xs text-muted-foreground">{item.actor.role}</p>
+                            </div>
+                          ) : (
                             <span className="text-muted-foreground">System</span>
                           )}
                         </TableCell>

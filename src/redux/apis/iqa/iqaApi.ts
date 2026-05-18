@@ -519,6 +519,8 @@ const iqaApi = api.injectEndpoints({
         method: "GET",
         params: cleanObject(args || {}),
       }),
+      transformResponse: (response: { data: { results: { enrolment_id: string; name: string; email: string; learner_id: string }[] } } | { results: { enrolment_id: string; name: string; email: string; learner_id: string }[] }) =>
+        (response as { data: { results: { enrolment_id: string; name: string; email: string; learner_id: string }[] } }).data ?? (response as { results: { enrolment_id: string; name: string; email: string; learner_id: string }[] }),
     }),
 
     getSignoffs: builder.query<
@@ -530,6 +532,8 @@ const iqaApi = api.injectEndpoints({
         method: "GET",
         params: cleanObject(args || {}),
       }),
+      transformResponse: (response: { data: UnitSignOffListResponse } | UnitSignOffListResponse) =>
+        (response as { data: UnitSignOffListResponse }).data ?? (response as UnitSignOffListResponse),
       providesTags: ["Enrolments"],
     }),
 
@@ -542,6 +546,8 @@ const iqaApi = api.injectEndpoints({
         method: "GET",
         params: cleanObject(args || {}),
       }),
+      transformResponse: (response: { data: AuditLogListResponse } | AuditLogListResponse) =>
+        (response as { data: AuditLogListResponse }).data ?? (response as AuditLogListResponse),
       providesTags: ["Enrolments"],
     }),
   }),

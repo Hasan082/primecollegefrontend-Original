@@ -722,7 +722,7 @@ export interface UnitSignOffListResponse {
 export interface AuditLogItem {
   id: string;
   event_type: string;
-  actor: { id: string; name: string } | null;
+  actor: { id: string; name: string; role: string } | null;
   entity_type: string;
   entity_id: string;
   metadata: Record<string, unknown>;

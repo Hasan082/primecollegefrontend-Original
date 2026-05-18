@@ -471,11 +471,16 @@ export interface EnrollmentAdminProgressItem {
     enrolled_at: string;
 }
 
+export interface EnrollmentAdminProgressData {
+    summary: EnrollmentAdminProgressSummary;
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: EnrollmentAdminProgressItem[];
+}
+
 export interface EnrollmentAdminProgressResponse {
     success: boolean;
     message: string;
-    data: {
-        summary: EnrollmentAdminProgressSummary;
-        results: EnrollmentAdminProgressItem[];
-    };
+    data: EnrollmentAdminProgressData;
 }
