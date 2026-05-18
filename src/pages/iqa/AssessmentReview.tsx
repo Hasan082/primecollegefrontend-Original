@@ -9,6 +9,11 @@ import {
   ShieldAlert,
   Image as ImageIcon,
   Play,
+  CheckCircle2,
+  Circle,
+  ClipboardList,
+  ThumbsUp,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1091,145 +1096,223 @@ const AssessmentReview = () => {
       )}
 
       {!uiFlags?.hide_iqa_review_form && (
-        <Card>
-          <CardHeader>
-            <CardTitle>IQA Checklists</CardTitle>
+        <Card className="overflow-hidden border-border/60 shadow-sm">
+          <CardHeader className="bg-muted/30 border-b px-6 py-4">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <ClipboardList className="w-4 h-4 text-primary" />
+              Verification Checklist
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {applicableTemplates.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No verification checklist has been configured for this qualification. You can proceed to submit your decision below.
-              </p>
-            )}
-            {applicableTemplates.map((template) => (
-              <div key={template.id} className="space-y-3">
-                <p className="text-sm font-semibold">
-                  {template.title}
-                  {template.unit_title ? (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      (Unit: {template.unit_title})
-                    </span>
-                  ) : null}
+          <CardContent className="p-6 space-y-8">
+            {applicableTemplates.length === 0 ? (
+              <div className="flex items-center gap-3 rounded-lg bg-muted/40 border border-dashed px-4 py-3">
+                <ClipboardList className="w-4 h-4 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  No verification checklist configured for this qualification — you can proceed to submit your decision below.
                 </p>
-                <div className="space-y-2">
-                  {template.items
-                    .filter((item) => item.is_active)
-                    .map((item) => {
-                      const selected = checklistResponses[template.id]?.[item.id];
-                      return (
-                        <div
-                          key={item.id}
-                          className="rounded-lg border p-3 text-sm space-y-2"
-                        >
-                          <p className="font-medium">{item.label}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {getChecklistResponseOptions(item.response_type).map((opt) => (
-                              <Button
-                                key={opt.value}
-                                type="button"
-                                size="sm"
-                                variant={selected === opt.value ? "default" : "outline"}
-                                onClick={() =>
-                                  setChecklistResponses((prev) => ({
-                                    ...prev,
-                                    [template.id]: {
-                                      ...(prev[template.id] || {}),
-                                      [item.id]: opt.value,
-                                    },
-                                  }))
-                                }
-                              >
-                                {opt.label}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Summary comment (optional)
-                  </Label>
-                  <Textarea
-                    rows={2}
-                    value={checklistSummaries[template.id] || ""}
-                    onChange={(e) =>
-                      setChecklistSummaries((prev) => ({
-                        ...prev,
-                        [template.id]: e.target.value,
-                      }))
-                    }
-                    placeholder="Add any overall notes for this checklist..."
-                  />
-                </div>
               </div>
-            ))}
+            ) : (
+              applicableTemplates.map((template) => {
+                const activeItems = template.items.filter((item) => item.is_active);
+                const answeredCount = activeItems.filter(
+                  (item) => checklistResponses[template.id]?.[item.id],
+                ).length;
+                return (
+                  <div key={template.id} className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-sm">{template.title}</p>
+                        {template.unit_title && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Unit: {template.unit_title}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 pt-0.5">
+                        {answeredCount}/{activeItems.length} answered
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {activeItems.map((item, idx) => {
+                        const selected = checklistResponses[template.id]?.[item.id];
+                        const isAnswered = Boolean(selected);
+                        return (
+                          <div
+                            key={item.id}
+                            className={`rounded-xl border px-4 py-3 text-sm transition-colors ${
+                              isAnswered
+                                ? "border-primary/20 bg-primary/5"
+                                : "border-border bg-background"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <span className="mt-0.5 shrink-0">
+                                {isAnswered ? (
+                                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                                ) : (
+                                  <Circle className="w-4 h-4 text-muted-foreground/40" />
+                                )}
+                              </span>
+                              <div className="flex-1 space-y-2.5">
+                                <p className="font-medium leading-snug">
+                                  <span className="text-muted-foreground mr-1.5">
+                                    {idx + 1}.
+                                  </span>
+                                  {item.label}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {getChecklistResponseOptions(item.response_type).map((opt) => {
+                                    const isSelected = selected === opt.value;
+                                    return (
+                                      <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() =>
+                                          setChecklistResponses((prev) => ({
+                                            ...prev,
+                                            [template.id]: {
+                                              ...(prev[template.id] || {}),
+                                              [item.id]: opt.value,
+                                            },
+                                          }))
+                                        }
+                                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-all ${
+                                          isSelected
+                                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                            : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                                        }`}
+                                      >
+                                        {opt.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">
+                        Summary comment <span className="opacity-60">(optional)</span>
+                      </Label>
+                      <Textarea
+                        rows={2}
+                        value={checklistSummaries[template.id] || ""}
+                        onChange={(e) =>
+                          setChecklistSummaries((prev) => ({
+                            ...prev,
+                            [template.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Add overall notes for this checklist..."
+                        className="resize-none text-sm"
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
       )}
 
       {!uiFlags?.hide_iqa_review_form && (
-        <Card>
-          <CardHeader>
-            <CardTitle>IQA Decision</CardTitle>
+        <Card className="overflow-hidden border-border/60 shadow-sm">
+          <CardHeader className="bg-muted/30 border-b px-6 py-4">
+            <CardTitle className="text-base font-semibold">IQA Decision</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {decisions.map((item) => (
-                <Button
-                  key={item.value}
-                  type="button"
-                  variant={decision === item.value ? "default" : "outline"}
-                  onClick={() => setDecision(item.value)}
-                >
-                  {item.label}
-                </Button>
-              ))}
+          <CardContent className="p-6 space-y-5">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setDecision("approved")}
+                className={`flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all ${
+                  decision === "approved"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                    : "border-border bg-background text-muted-foreground hover:border-emerald-300 hover:text-emerald-700"
+                }`}
+              >
+                <ThumbsUp className="w-4 h-4" />
+                Approve
+              </button>
+              <button
+                type="button"
+                onClick={() => setDecision("action_required")}
+                className={`flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all ${
+                  decision === "action_required"
+                    ? "border-amber-500 bg-amber-50 text-amber-700"
+                    : "border-border bg-background text-muted-foreground hover:border-amber-300 hover:text-amber-700"
+                }`}
+              >
+                <RotateCcw className="w-4 h-4" />
+                Refer Back
+              </button>
             </div>
 
             {decision === "action_required" && (
-              <>
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                  This will be sent back to the <strong>trainer only</strong>. The learner will not be
-                  notified. Only the trainer can decide whether to request a learner resubmission.
+              <div className="space-y-4">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  This will be sent back to the <strong>trainer only</strong>. The learner will not be notified.
                 </div>
                 <div className="space-y-2">
-                  <Label>Action Type</Label>
-                  <div className="flex flex-wrap gap-2">
+                  <Label className="text-sm font-medium">Action Type</Label>
+                  <div className="flex flex-wrap gap-1.5">
                     {ACTION_TYPE_OPTIONS.map((opt) => (
-                      <Button
+                      <button
                         key={opt.value}
                         type="button"
-                        size="sm"
-                        variant={actionType === opt.value ? "default" : "outline"}
                         onClick={() => setActionType(opt.value)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-all ${
+                          actionType === opt.value
+                            ? "bg-amber-500 text-white border-amber-500"
+                            : "bg-background text-muted-foreground border-border hover:border-amber-400 hover:text-amber-700"
+                        }`}
                       >
                         {opt.label}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
             <div className="space-y-2">
-              <Label>
+              <Label className="text-sm font-medium">
                 {decision === "action_required" ? "Feedback to Trainer" : "IQA Notes"}
               </Label>
               <Textarea
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
-                rows={5}
+                rows={4}
                 placeholder={
                   decision === "action_required"
-                    ? "Describe the issue with the assessment — the trainer will see this..."
+                    ? "Describe the issue — the trainer will see this..."
                     : "Add IQA review notes..."
                 }
+                className="resize-none text-sm"
               />
             </div>
-            <Button onClick={handleReviewSubmit} disabled={isSaving}>
-              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+
+            <Button
+              onClick={handleReviewSubmit}
+              disabled={isSaving}
+              className={`w-full gap-2 ${
+                decision === "approved"
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  : "bg-amber-500 hover:bg-amber-600 text-white"
+              }`}
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : decision === "approved" ? (
+                <ThumbsUp className="w-4 h-4" />
+              ) : (
+                <RotateCcw className="w-4 h-4" />
+              )}
               {decision === "action_required" ? "Refer Back to Trainer" : "Approve Assessment"}
             </Button>
           </CardContent>
