@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,11 @@ const IQAReferralResponse = () => {
     );
   }
 
-  if (sample.review_status !== "trainer_review") {
+  const isResponded =
+    sample.review_status === "reassessed" ||
+    sample.review_status === "learner_resubmit_requested";
+
+  if (!isResponded && sample.review_status !== "trainer_review") {
     return (
       <div className="p-6 text-center text-muted-foreground">
         <p>
@@ -139,6 +143,17 @@ const IQAReferralResponse = () => {
           IQA Referred
         </Badge>
       </div>
+
+      {isResponded && (
+        <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>
+            {sample.review_status === "learner_resubmit_requested"
+              ? "You requested a learner resubmission. The learner can now submit new work."
+              : "You have responded to this referral. It is now awaiting IQA re-review."}
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left — IQA feedback and submission context */}
@@ -237,8 +252,8 @@ const IQAReferralResponse = () => {
           )}
         </div>
 
-        {/* Right — Trainer response form */}
-        <div className="space-y-4">
+        {/* Right — Trainer response form (only when action is still required) */}
+        {!isResponded && <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Your Response</CardTitle>
@@ -341,7 +356,7 @@ const IQAReferralResponse = () => {
               </Button>
             </CardContent>
           </Card>
-        </div>
+        </div>}
       </div>
     </div>
   );

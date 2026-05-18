@@ -598,6 +598,8 @@ export interface UnitIQASampleItem {
     | 'approved'
     | 'action_required'
     | 'trainer_review'
+    | 'reassessed'
+    | 'learner_resubmit_requested'
     | 'escalated'
     | 'auto_cleared';
   sampled_at: string;
