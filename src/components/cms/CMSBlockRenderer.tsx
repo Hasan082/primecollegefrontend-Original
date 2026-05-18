@@ -1376,11 +1376,13 @@ export const CMSBlockRenderer = ({
                     ? renderRichText(d.headline, "mb-6 text-2xl font-bold text-foreground")
                     : null}
                   {showDescription ? (
-                    <div className="space-y-4 text-sm leading-relaxed text-muted-foreground prose prose-sm max-w-none">
+                    <>
                       {Array.isArray(d.paragraphs) && d.paragraphs.length > 0
-                        ? d.paragraphs.map((p: string, i: number) => renderRichText(p, "", i))
-                        : renderRichText(d.description)}
-                    </div>
+                        ? d.paragraphs.map((p: string, i: number) =>
+                            renderRichText(p, "text-sm leading-relaxed text-muted-foreground prose prose-sm max-w-none", i)
+                          )
+                        : renderRichText(d.description, "text-sm leading-relaxed text-muted-foreground prose prose-sm max-w-none")}
+                    </>
                   ) : null}
                   {showButton ? (
                     <div className={`mt-6 flex flex-wrap gap-4 ${buttonJustifyClass}`}>

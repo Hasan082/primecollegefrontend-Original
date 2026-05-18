@@ -28,6 +28,19 @@ import { CSS } from "@dnd-kit/utilities";
 import { ITEM_FIELDS, MEDIA_ENABLED_BLOCKS } from "./ItemFieldDefs";
 import { MediaPicker } from "./MediaPicker";
 
+const stripHtml = (html: any): string => {
+  if (typeof html !== "string") return String(html || "");
+  return html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+};
+
 const getNewItem = (blockType: BlockType): any => {
   const fields = ITEM_FIELDS[blockType];
   const item: any = { _dndId: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` };
@@ -89,12 +102,12 @@ const SortableItem = ({
         <div {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing">
           <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30" />
         </div>
-        <div className="flex-1 flex items-center gap-2" onClick={onToggle}>
-          <Badge variant="outline" className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">{index + 1}</Badge>
-          {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          <span className="text-sm truncate flex-1 font-medium">{item.title || item.question || item.name || item.id || `Item ${index + 1}`}</span>
+        <div className="flex-1 flex items-center gap-2 min-w-0" onClick={onToggle}>
+          <Badge variant="outline" className="h-5 w-5 p-0 flex items-center justify-center text-[10px] shrink-0">{index + 1}</Badge>
+          {isOpen ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+          <span className="text-sm truncate flex-1 font-medium">{stripHtml(item.title || item.question || item.name || item.id || `Item ${index + 1}`)}</span>
         </div>
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={(e) => { e.stopPropagation(); onRemove(); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive shrink-0" onClick={(e) => { e.stopPropagation(); onRemove(); }}><Trash2 className="h-3.5 w-3.5" /></Button>
       </div>
 
       {isOpen && (

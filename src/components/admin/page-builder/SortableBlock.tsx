@@ -13,9 +13,30 @@ interface SortableBlockProps {
   isFixed?: boolean;
 }
 
+const stripHtml = (html: any): string => {
+  if (typeof html !== "string") return String(html || "");
+  return html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+};
+
 const getBlockPreview = (block: ContentBlock): string => {
   const d = block.data as Record<string, unknown>;
-  return (d.title as string) || (d.headline as string) || (d.content as string)?.slice(0, 60) || block.type;
+  const rawText =
+    (d.title as string) ||
+    (d.headline as string) ||
+    (d.content as string) ||
+    (d.description as string) ||
+    (Array.isArray(d.paragraphs) && d.paragraphs[0] as string) ||
+    block.type;
+
+  return stripHtml(rawText);
 };
 
 const SortableBlock = ({ block, onEdit, onRemove, isFixed }: SortableBlockProps) => {
