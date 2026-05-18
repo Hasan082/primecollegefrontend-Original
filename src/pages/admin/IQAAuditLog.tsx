@@ -30,7 +30,22 @@ import { useGetAuditLogsQuery } from "@/redux/apis/iqa/iqaApi";
 import TablePagination from "@/components/admin/TablePagination";
 import { LearnerCombobox } from "@/components/admin/iqa/FilterCombobox";
 
-const ITEMS_PER_PAGE = 25;
+const ITEMS_PER_PAGE = 10;
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  unit_signoff_created: "Unit Sign-Off Created",
+  unit_signoff_backfilled: "Unit Sign-Off Backfilled",
+  iqa_sampling_decision: "Sampling Decision",
+  iqa_sampling_backfilled: "IQA Sampling Backfilled",
+  iqa_review_started: "IQA Review Started",
+  iqa_decision_submitted: "IQA Decision Submitted",
+  iqa_escalated_to_admin: "Escalated to Admin",
+  iqa_manual_sample_pulled: "Manual Sample Pulled",
+  iqa_checklist_completed: "Checklist Completed",
+  iqa_referral_trainer_responded: "Trainer Responded to Referral",
+  sampling_config_updated: "Sampling Config Updated",
+  course_sampling_plan_updated: "Course Plan Updated",
+};
 
 const EVENT_TYPES = [
   { value: "all_events", label: "All Events" },
@@ -38,7 +53,10 @@ const EVENT_TYPES = [
   { value: "iqa_sampling_decision", label: "Sampling Decision" },
   { value: "iqa_review_started", label: "IQA Review Started" },
   { value: "iqa_decision_submitted", label: "IQA Decision Submitted" },
+  { value: "iqa_escalated_to_admin", label: "Escalated to Admin" },
   { value: "iqa_manual_sample_pulled", label: "Manual Sample Pulled" },
+  { value: "iqa_checklist_completed", label: "Checklist Completed" },
+  { value: "iqa_referral_trainer_responded", label: "Trainer Responded to Referral" },
   { value: "sampling_config_updated", label: "Sampling Config Updated" },
   { value: "course_sampling_plan_updated", label: "Course Plan Updated" },
 ];
@@ -230,9 +248,9 @@ const IQAAuditLog = () => {
                         <TableCell>
                           <Badge
                             variant={eventBadgeVariant(item.event_type)}
-                            className="text-xs font-mono"
+                            className="text-xs"
                           >
-                            {item.event_type}
+                            {EVENT_TYPE_LABELS[item.event_type] ?? item.event_type}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">
