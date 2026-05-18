@@ -296,12 +296,14 @@ const IQAManagement = () => {
         </DialogContent>
       </Dialog>
 
-      <TablePagination
-        currentPage={currentPage}
-        totalItems={totalCount}
-        itemsPerPage={ITEMS_PER_PAGE}
-        onPageChange={setCurrentPage}
-      />
+      <Card className="overflow-hidden">
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={totalCount}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      </Card>
 
       <IQADetailModal
         trainer={iqas.find(iqa => iqa.id === selectedIQA?.id) || selectedIQA}
