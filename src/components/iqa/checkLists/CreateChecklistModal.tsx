@@ -58,7 +58,7 @@ const CreateChecklistModal = ({
   const [createChecklistTemplate, { isLoading }] =
     useCreateChecklistTemplateMutation();
   const { data: qualificationOptionsResponse } =
-    useGetQualificationOptionsQuery(undefined);
+    useGetQualificationOptionsQuery({ exclude_with_checklist: true });
   const { data: unitOptionsResponse } =
     useGetUnitOptionsByQualificationQuery(qualificationId, {
       skip: !qualificationId,

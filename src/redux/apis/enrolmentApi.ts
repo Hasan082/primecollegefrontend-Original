@@ -1,4 +1,5 @@
 import {
+  EnrollmentAdminProgressData,
   EnrollmentAdminProgressResponse,
   EnrolmentContentResponse,
   EnrolmentOverviewResponse,
@@ -346,7 +347,7 @@ const enrolmentApi = api.injectEndpoints({
         method: "GET",
       }),
     }),
-    getEnrollmentAdminProgress: builder.query({
+    getEnrollmentAdminProgress: builder.query<EnrollmentAdminProgressData, Record<string, unknown>>({
       query: (args) => {
         const filteredParams = cleanObject(args);
         return {
@@ -355,8 +356,7 @@ const enrolmentApi = api.injectEndpoints({
           params: filteredParams,
         };
       },
-      transformResponse: (response: any) => response.data,
-      // providesTags: ["AdminEnrolmentProgress"],
+      transformResponse: (response: EnrollmentAdminProgressResponse) => response.data,
     }),
   }),
 });

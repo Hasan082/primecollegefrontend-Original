@@ -283,6 +283,15 @@ export interface IQAReviewQueueItem {
   admin_concern_updated_at?: string | null;
 }
 
+export interface IQAReferralFeedbackItem {
+  id: string;
+  comments: string;
+  action_type: string;
+  affected_criteria: string[];
+  created_by: LearnerSubmissionActor | null;
+  created_at: string;
+}
+
 export interface IQASubmissionHistoryItem {
   id: string;
   submission_number: number;
@@ -299,6 +308,8 @@ export interface IQASubmissionHistoryItem {
   iqa_reviewed_at: string | null;
   assessor: LearnerSubmissionActor | null;
   iqa_reviewer: LearnerSubmissionActor | null;
+  iqa_referral_feedback: IQAReferralFeedbackItem[];
+  trainer_iqa_response: string | null;
 }
 
 export interface IQASubmissionHistoryResponse {
@@ -711,7 +722,7 @@ export interface UnitSignOffListResponse {
 export interface AuditLogItem {
   id: string;
   event_type: string;
-  actor: { id: string; name: string } | null;
+  actor: { id: string; name: string; role: string } | null;
   entity_type: string;
   entity_id: string;
   metadata: Record<string, unknown>;

@@ -297,12 +297,14 @@ const TrainerManagement = () => {
         </DialogContent>
       </Dialog>
 
-      <TablePagination
-        currentPage={currentPage}
-        totalItems={totalCount}
-        itemsPerPage={ITEMS_PER_PAGE}
-        onPageChange={setCurrentPage}
-      />
+      <Card className="overflow-hidden">
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={totalCount}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      </Card>
 
       <TrainerDetailModal
         trainer={trainers.find(t => t.id === selectedTrainer?.id) || selectedTrainer}
